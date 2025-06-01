@@ -5,7 +5,6 @@ import ApiError from "../utils/ApiError";
 export const createProject = async (projectData: any) => {
   const { project_name } = projectData;
 
-  // Check if project with same name exists
   const existingProject = await Project.findOne({ project_name });
   if (existingProject) {
     throw new ApiError(400, "Project already exists");

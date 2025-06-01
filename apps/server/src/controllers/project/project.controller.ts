@@ -56,3 +56,4 @@ export const deleteProjectsByIds = asyncHandler(async (req: Request, res: Respon
     data: result,
   });
 });
+ 

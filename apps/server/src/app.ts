@@ -5,6 +5,7 @@ import errorHandler from './middlewares/errorHandler.middleware';
 // Import routes
 import roleRoutes from "./routes/role.route";
 import userRoutes from "./routes/user.route";
+import projectRoutes from "./routes/project.route";
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.get("/", (_req, res) => {
 
 app.use("/roles", roleRoutes);
 app.use("/users", userRoutes);
+app.use("/projects", projectRoutes);
 
 app.use(errorHandler);
 

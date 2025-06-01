@@ -25,8 +25,8 @@ const userSchema = new mongoose.Schema({
         type: String,
         ref: "Role"
     }],      
-    projects : {
-        type: mongoose.Schema.Types.ObjectId,
+    project : {
+        type: String,
         ref: "Project"
     }
 },

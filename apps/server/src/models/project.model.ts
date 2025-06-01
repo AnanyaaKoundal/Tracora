@@ -28,12 +28,12 @@ const projectSchema = new mongoose.Schema({
         enum: ["Active", "Completed", "Inactive"],
         default: "Active"
     },
-    team_members: {
-        type: [mongoose.Schema.Types.ObjectId],
+    team_members: [{
+        type: String,
         ref: "User"
-    },
+    }],
     created_by: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: String,
         ref: 'User',
         required: true
     }

@@ -9,12 +9,12 @@ const commentSchema = new mongoose.Schema({
       unique: true
     },
     bug_id: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: "Bug",
       required: true,
     },
     sender: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: "User",
       required: true,
     },

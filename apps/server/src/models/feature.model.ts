@@ -22,21 +22,21 @@ const featureSchema = new mongoose.Schema({
         default: "Development"
     },
     project_id: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: String,
         ref: "Project",
         required: true
     },
     created_by: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: String,
         ref: 'User',
         required: true
     },
     developer: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: String,
         ref: "User"
     },
     tester: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: String,
         ref: "User"
     }
 },

@@ -24,28 +24,28 @@ const bugSchema = new mongoose.Schema({
         default: "Open"
     },
     feature_id: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: String,
         ref: "Feature",
         required: true
     },
     project_id: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: String,
         ref: "Project",
         required: true
     },
     reported_by: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: String,
         ref: 'User',
         required: true
     },
     assigned_to: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: String,
         ref: "User"
     },
-    comments: {
-        type: [mongoose.Schema.Types.ObjectId],
+    comments: [{
+        type: String,
         ref: "Comment"
-    }
+    }]
 },
     { timestamps: true}
 )

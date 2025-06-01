@@ -2,7 +2,9 @@ import express from 'express';
 import cors from "cors";
 import errorHandler from './middlewares/errorHandler.middleware';
 
+// Import routes
 import roleRoutes from "./routes/role.route";
+import userRoutes from "./routes/user.route";
 
 const app = express();
 
@@ -15,9 +17,8 @@ app.get("/", (_req, res) => {
   res.status(200).json({ message: "Server is healthy 🚀" });
 });
 
-// Import routes
 app.use("/roles", roleRoutes);
-
+app.use("/users", userRoutes);
 
 app.use(errorHandler);
 

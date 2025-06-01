@@ -21,10 +21,10 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    roleId: {
-        type: [mongoose.Schema.Types.ObjectId],
+    roleId: [{
+        type: String,
         ref: "Role"
-    },
+    }],      
     projects : {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Project"

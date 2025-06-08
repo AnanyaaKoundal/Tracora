@@ -20,7 +20,7 @@ export default function LandingPage() {
           Tracora helps development teams to report, track, and resolve bugs efficiently.
         </p>
         <Link href="/signup">
-          <button className="px-6 py-3 bg-indigo-600 text-white text-lg rounded hover:bg-indigo-700">
+          <button className="px-6 py-3 bg-primary text-white text-lg rounded hover:bg-indigo-700">
             Get Started
           </button>
         </Link>

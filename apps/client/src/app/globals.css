@@ -120,3 +120,8 @@
     @apply bg-background text-foreground;
   }
 }
+
+@theme {
+  --color-primary: #005A9C;
+  --color-secondary: #C41E3A;
+}

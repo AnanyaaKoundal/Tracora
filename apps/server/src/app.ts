@@ -6,10 +6,16 @@ import errorHandler from './middlewares/errorHandler.middleware';
 import roleRoutes from "./routes/role.route";
 import userRoutes from "./routes/user.route";
 import projectRoutes from "./routes/project.route";
+import auth from "./routes/auth.route";
 
 const app = express();
 
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:3000", // your frontend URL
+    credentials: true, // allow cookies / auth headers
+  })
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -21,6 +27,7 @@ app.get("/", (_req, res) => {
 app.use("/roles", roleRoutes);
 app.use("/users", userRoutes);
 app.use("/projects", projectRoutes);
+app.use("/auth", auth);
 
 app.use(errorHandler);
 

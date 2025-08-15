@@ -1,41 +1,37 @@
 import mongoose from "mongoose";
 
-const userSchema = new mongoose.Schema({
+const companySchema = new mongoose.Schema({
     company_id:{
         type: String,
         required: true,
-        ref: "Company"
+        unique: true,
     },
-    user_id: {
+    company_name: {
         type: String,
         required: true,
         unique: true
     }, 
-    user_name: {
+    company_email: {
         type: String,
         required: true
     },
-    email: {
+    company_phone: {
         type: String,
         required: true,
         unique: true
     },
-    contact_no:{
+    password:{
         type: String,
         required: true
     },
-    roleId: [{
+    roleId: {
         type: String,
         ref: "Role"
-    }],      
-    project : {
-        type: String,
-        ref: "Project"
-    }
+    },
 },
     { timestamps: true}
 )
 
-const User = mongoose.models.User || mongoose.model("User", userSchema);
+const Company = mongoose.models.Company || mongoose.model("User", companySchema);
 
-export default User;
+export default Company;

@@ -6,7 +6,8 @@ import errorHandler from './middlewares/errorHandler.middleware';
 import roleRoutes from "./routes/role.route";
 import userRoutes from "./routes/user.route";
 import projectRoutes from "./routes/project.route";
-import auth from "./routes/auth.route";
+import authRoutes from "./routes/auth.route";
+import adminRoutes from "./routes/admin.route";
 
 const app = express();
 
@@ -27,7 +28,8 @@ app.get("/", (_req, res) => {
 app.use("/roles", roleRoutes);
 app.use("/users", userRoutes);
 app.use("/projects", projectRoutes);
-app.use("/auth", auth);
+app.use("/auth", authRoutes);
+app.use("/admin", adminRoutes);
 
 app.use(errorHandler);
 

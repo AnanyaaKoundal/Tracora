@@ -36,7 +36,6 @@ export const registerCompanyController = async( req: Request, res:Response): Pro
 export const checkCompnayExists = async( req: Request, res:Response): Promise<any>  => {
     try{
         const { company_name, company_email, company_phone, password } = req.body;
-        
         const result = await companyExists({ company_name, company_email, company_phone, password});
         if(result.exists === false){
             const otp = sendOtp(company_email, company_phone);
@@ -51,4 +50,4 @@ export const checkCompnayExists = async( req: Request, res:Response): Promise<an
             message: error.message
         })
     }
-}
+} 

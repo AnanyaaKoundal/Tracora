@@ -14,7 +14,7 @@ const Router = express.Router();
 Router.route("/createRole").post(createRole);
 
 // Get all roles
-Router.route("/getRoles").get(getRoles);
+Router.route("/").get(getRoles);
 
 // Operations on a specific role by ID (get, update, delete)
 Router.route("/role/:role_id")

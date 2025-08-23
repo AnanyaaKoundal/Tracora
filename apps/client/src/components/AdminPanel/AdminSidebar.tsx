@@ -34,17 +34,14 @@ export default function AdminSidebar({
           <a href="/admin/dashboard" className="block hover:bg-primary/60 p-2 rounded pl-8">
             Admin Dashboard
           </a>
-          <a href="/admin/companies" className="block hover:bg-primary/60 p-2 rounded pl-8">
-            Manage Companies
-          </a>
-          <a href="/admin/users" className="block hover:bg-primary/60 p-2 rounded pl-8">
-            Manage Users
-          </a>
           <a href="/admin/roles" className="block hover:bg-primary/60 p-2 rounded pl-8">
             Manage Roles
           </a>
-          <a href="/admin/projects" className="block hover:bg-primary/60 p-2 rounded pl-8">
-            Manage Projects
+          <a href="/admin/users" className="block hover:bg-primary/60 p-2 rounded pl-8">
+            Manage Employees
+          </a>
+          <a href="/admin/companies" className="block hover:bg-primary/60 p-2 rounded pl-8">
+            Manage Company
           </a>
           <a href="/admin/settings" className="block hover:bg-primary/60 p-2 rounded pl-8">
             Settings

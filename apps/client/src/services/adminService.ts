@@ -18,3 +18,54 @@ export const registerCompanyService = async (values: z.Infer<typeof registerComp
   return res;
 };
 
+
+export const fetchRoles =  async () => {
+  const res = await fetch(`${URL}/roles`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch roles");
+  }
+
+  return res.json();
+}
+
+export const createRoleService = async (data: { role_name: string }) => {
+    const res = await fetch(`${URL}/roles/createRole`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+
+    if (!res.ok) throw new Error("Error creating role");
+
+    return res.json();
+};
+
+export const updateRoleService = async (id: string, data: { role_name: string }) => {
+  const res = await fetch(`${URL}/roles/role/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) throw new Error("Error updating role");
+
+  return res.json();
+};
+
+export const deleteRoleService = async (id: string) => {
+  const res = await fetch(`${URL}/roles/role/${id}`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  if (!res.ok) throw new Error("Error deleting role");
+
+  return res.json();
+};

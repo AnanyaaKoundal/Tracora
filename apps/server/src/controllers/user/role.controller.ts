@@ -13,7 +13,9 @@ export const createRole = asyncHandler(async (req: Request, res: Response) => {
 
 // Get all Roles
 export const getRoles = asyncHandler(async (_req: Request, res: Response) => {
+  console.log("Fetching \n");
   const roles = await roleService.getRoles();
+  console.log("role:" , roles);
   res.status(200).json(new ApiResponse(200, "Roles fetched successfully", roles));
 });
 

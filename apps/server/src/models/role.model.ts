@@ -8,8 +8,8 @@ const roleSchema = new mongoose.Schema({
     },
     role_name: {
         type: String,
-        enum: ["Admin", "Manager", "Developer", "Tester"],
         required: true,
+        unique: true,
     }
 },
     { timestamps: true}

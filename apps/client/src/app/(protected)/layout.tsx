@@ -1,15 +1,27 @@
 'use client';
 
 import { ReactNode, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import Sidebar from '@/components/ProtectedLayout/Sidebar';
+import AdminSidebar from '@/components/AdminPanel/AdminSidebar';
 
-export default function ProtectedLayout({ children }: { children: ReactNode }) {
+export default function ProtectedLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
   const [isOpen, setIsOpen] = useState(true);
-
+  const pathname = usePathname();
+  
+  const role = pathname.startsWith('/admin') ? 'admin' : 'user';
   return (
     <div className="flex h-screen overflow-hidden">
-      {/* Sidebar */}
-      <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} />
+      {/* Sidebar (switches based on role) */}
+      {role === 'admin' ? (
+        <AdminSidebar isOpen={isOpen} setIsOpen={setIsOpen} />
+      ) : (
+        <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} />
+      )}
 
       {/* Main content area */}
       <div
@@ -20,7 +32,6 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
       >
         {/* Navbar */}
         <header className="bg-white shadow p-4 flex justify-end items-center">
-          {/* <div className="text-xl font-semibold">Dashboard</div> */}
           <div className="flex items-center space-x-4">
             <div>🔔</div>
             <div>👤</div>

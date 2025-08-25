@@ -37,7 +37,7 @@ export default function AdminSidebar({
           <a href="/admin/roles" className="block hover:bg-primary/60 p-2 rounded pl-8">
             Manage Roles
           </a>
-          <a href="/admin/users" className="block hover:bg-primary/60 p-2 rounded pl-8">
+          <a href="/admin/employees" className="block hover:bg-primary/60 p-2 rounded pl-8">
             Manage Employees
           </a>
           <a href="/admin/companies" className="block hover:bg-primary/60 p-2 rounded pl-8">

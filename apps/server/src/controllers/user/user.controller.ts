@@ -12,6 +12,7 @@ export const createUser = asyncHandler(async (req: Request, res: Response) => {
 // Get all users
 export const getUsers = asyncHandler(async (_req: Request, res: Response) => {
   const result = await userService.getUsers();
+  console.log("Fetched users: ", result);
   res.status(200).json(new ApiResponse(200, "Users fetched", result));
 });
 

@@ -13,10 +13,11 @@ const Router = express.Router();
 Router.route("/createUser").post(createUser);
 
 //Get all users
-Router.route("/get-users").get(getUsers);
+Router.route("/").get(getUsers);
 
-Router.route("/user").get(getUsers);
-Router.route("edit-user").put(editUser)
-Router.route("/delete-user").delete(deleteUserById);
+Router.route("/user/:user_id")
+  .get(getUserById)
+  .put(editUser)
+  .delete(deleteUserById);
 
 export default Router;

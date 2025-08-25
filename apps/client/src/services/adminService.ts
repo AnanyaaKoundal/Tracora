@@ -69,3 +69,55 @@ export const deleteRoleService = async (id: string) => {
 
   return res.json();
 };
+
+
+export const fetchEmployees =  async () => {
+  const res = await fetch(`${URL}/users`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch employees");
+  }
+
+  return res.json();
+}
+
+export const createEmployeeService = async (data: { role_name: string }) => {
+    const res = await fetch(`${URL}/users/createUser`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+
+    if (!res.ok) throw new Error("Error creating role");
+
+    return res.json();
+};
+
+export const updateEmployeeService = async (id: string, data: { role_name: string }) => {
+  const res = await fetch(`${URL}/users/user/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+
+  if (!res.ok) throw new Error("Error updating role");
+
+  return res.json();
+};
+
+export const deleteEmployeeService = async (id: string) => {
+  const res = await fetch(`${URL}/users/user/role/${id}`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  if (!res.ok) throw new Error("Error deleting role");
+
+  return res.json();
+};

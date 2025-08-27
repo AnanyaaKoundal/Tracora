@@ -2,52 +2,83 @@ import { Request, Response } from "express";
 import { companyExists, createCompany } from "../../services/company.service";
 import { sendOtp } from "../../services/otp.service";
 
-export const registerCompanyController = async( req: Request, res:Response): Promise<any>  => {
-    try{
+export const registerCompanyController = async (req: Request, res: Response): Promise<any> => {
+    try {
         const { company_name, company_email, company_phone, password } = req.body;
-        console.log(company_name, company_email, company_phone, password);
-        if(!company_name || !company_email || !company_phone || !password){
-            console.log("Error");
+
+        if (!company_name || !company_email || !company_phone || !password) {
             return res.status(400).json({
                 success: false,
-                message: "All fields are requied"
-            })
+                message: "All fields are required",
+            });
         }
-        const company = await createCompany({ company_name, company_email, company_phone, password});
-        if(!company){
+
+        // ✅ Step 1: check duplicates
+        const check = await companyExists({ company_name, company_email, company_phone });
+        if (check.exists) {
             return res.status(400).json({
                 success: false,
-                message: "Error while creating the company",
-            })
+                message: check.reason,
+            });
         }
+        // ✅ Step 3: send OTP to email
+        await sendOtp(company_email, company_phone);
+
         return res.status(200).json({
             success: true,
-            message: "Company created successfully",
-            company
-        })
-    }catch(error: any){
-        return res.status(400).json({
-            success: false,
-            message: error.message
-        })
-    }
-}
+            message: "OTP sent successfully. Please verify to complete registration.",
+        });
 
-export const checkCompnayExists = async( req: Request, res:Response): Promise<any>  => {
-    try{
-        const { company_name, company_email, company_phone, password } = req.body;
-        const result = await companyExists({ company_name, company_email, company_phone, password});
-        if(result.exists === false){
-            const otp = sendOtp(company_email, company_phone);
-            return res.status(200).json({
-                success: true,
-                message: "OTP sent successfully",
-            })
-        }
-    }catch(error: any){
-        return res.status(400).json({
+    } catch (error: any) {
+        return res.status(500).json({
             success: false,
-            message: error.message
-        })
+            message: error.message || "Something went wrong",
+        });
     }
-} 
+};
+
+
+
+export const verifyOtpAndRegisterCompanyController = async (req: Request, res: Response): Promise<any> => {
+    try {
+      const { company_name, company_email, company_phone, password, otp } = req.body;
+  
+      if (!otp) {
+        return res.status(400).json({
+          success: false,
+          message: "OTP is required",
+        });
+      }
+  
+    //   const savedOtp = otpStore[c1ompany_email];
+    //   if (!savedOtp) {
+    //     return res.status(400).json({
+    //       success: false,
+    //       message: "No OTP request found for this email",
+    //     });
+    //   }
+  
+      // for now: allow fixed dummy OTP or savedOtp
+    //   if (otp !== savedOtp && otp !== "123456") {
+        if (otp !== "123456") {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid OTP",
+        });
+      }
+  
+      // 2. Create company
+      const company = await createCompany({ company_name, company_email, company_phone, password });
+      if (!company) {
+        return res.status(400).json({ success: false, message: "Error while creating company" });
+      }
+  
+      return res.status(200).json({
+        success: true,
+        message: "Company created successfully",
+        company,
+      });
+    } catch (error: any) {
+      return res.status(400).json({ success: false, message: error.message });
+    }
+  };

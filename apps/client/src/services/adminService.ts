@@ -18,6 +18,21 @@ export const registerCompanyService = async (values: z.Infer<typeof registerComp
   return res;
 };
 
+export const verifyOtpAndCreateCompanyService =  async (values: z.Infer<typeof registerCompanySchema>) => {
+  const response = await fetch(`${URL}/auth/company/verify`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "content-Type": "application/json",
+    },
+
+    body: JSON.stringify(values),
+  });
+
+  const res = await response.json();
+  return res;
+};
+
 
 export const fetchRoles =  async () => {
   const res = await fetch(`${URL}/roles`, {

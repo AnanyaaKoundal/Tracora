@@ -11,14 +11,17 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
-import { registerCompany } from "@/actions/registerCompany";
+import { registerCompany, verifyCompanyOtp } from "@/actions/registerCompany";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 export default function RegisterCompanyForm() {
     const [step, setStep] = useState<"details" | "otp">("details");
+    const [serverError, setServerError] = useState<string | null>(null);
     const [formData, setFormData] = useState<Partial<z.infer<typeof registerCompanySchema>>>({});
     const router = useRouter();
 
     const form = useForm<z.infer<typeof registerCompanySchema>>({
+        resolver: zodResolver(registerCompanySchema),
         defaultValues: {
             company_name: "",
             company_email: "",
@@ -31,21 +34,28 @@ export default function RegisterCompanyForm() {
 
     const onSubmit = async (data: any) => {
         if (step === "details") {
+            console.log("Calling....")
             const result = await registerCompany(data);
+            console.log("Result: ", result);
             if (result?.error) {
-                console.error(result.error);
+                setServerError(result.message || "Something went wrong");
                 return;
             }
             setFormData(data);
+            setServerError("");
             setStep("otp");
             return;
         }
 
         if (step === "otp") {
+            // if (!data.otp || data.otp.length !== 6) {
+            //     form.setError("otp", { message: "OTP must be 6 digits" });
+            //     return;
+            // }
             const payload = { ...formData, ...data };
-            const result = await verifyOtp(payload);
+            const result = await verifyCompanyOtp(payload);
             if (result?.error) {
-                console.error(result.error);
+                setServerError(result.message || "Something went wrong");
                 return;
             }
             router.push("/dashboard");
@@ -146,6 +156,9 @@ export default function RegisterCompanyForm() {
                             <Button type="submit" className="w-full">
                                 {step === "details" ? "Send OTP" : "Verify OTP"}
                             </Button>
+                            {serverError && (
+                                <p className="text-red-500 text-sm mt-2">{serverError}</p>
+                            )}
                         </form>
                     </CardContent>
                 </Card>

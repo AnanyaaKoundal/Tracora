@@ -28,19 +28,19 @@ export const createCompany = async(data: any) => {
  export const companyExists = async(data: any) => {
     const { company_name, company_email, company_phone, password} = data;
     
-    const name =  Company.findOne({ company_name });
-    if(name != null){
-        throw new Error("Company name already exists");
+    const name = await Company.findOne({ company_name });
+    if (name) {
+        return { exists: true, reason: "Company name already exists" };
     }
 
-    const email = Company.findOne({company_email});
-    if(email != null){
-        throw new Error("Company email already exists");
+    const email = await Company.findOne({ company_email });
+    if (email) {
+        return { exists: true, reason: "Company email already exists" };
     }
 
-    const phone = Company.findOne({company_phone});
-    if(phone!= null){
-        throw new Error("Company phone already exists");
+    const phone = await Company.findOne({ company_phone });
+    if (phone) {
+        return { exists: true, reason: "Company phone already exists" };
     }
 
     return {
@@ -48,3 +48,5 @@ export const createCompany = async(data: any) => {
         message: "Company does not exist",
     };
  }
+
+ 

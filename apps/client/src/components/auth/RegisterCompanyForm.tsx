@@ -72,7 +72,7 @@ export default function RegisterCompanyForm() {
                 <Card className="w-full max-w-md shadow-lg">
                     <CardHeader>
                         <CardTitle className="text-center">
-                            {step === "details" ? "Register your Company" : "Enter OTP"}
+                            {step === "details" ? "Register Your Company" : "Enter OTP"}
                         </CardTitle>
                     </CardHeader>
                     <CardContent>

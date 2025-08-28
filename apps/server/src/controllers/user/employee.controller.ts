@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import asyncHandler from "../../utils/asyncHandler";
-import * as userService from "../../services/user.service";
+import * as userService from "../../services/employee.service";
 import ApiResponse from "../../utils/ApiResponse";
 
 // Create user

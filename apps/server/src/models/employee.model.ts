@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const userSchema = new mongoose.Schema({
+const employeeSchema = new mongoose.Schema({
     company_id:{
         type: String,
         required: true,
@@ -36,6 +36,6 @@ const userSchema = new mongoose.Schema({
     { timestamps: true}
 )
 
-const User = mongoose.models.User || mongoose.model("User", userSchema);
+const Employee = mongoose.models.Employee || mongoose.model("Employee", employeeSchema);
 
-export default User;
+export default Employee;

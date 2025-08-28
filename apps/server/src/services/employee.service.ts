@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import User from "../models/user.model";
+import User from "../models/employee.model";
 import ApiError from "../utils/ApiError";
 
 // Create user

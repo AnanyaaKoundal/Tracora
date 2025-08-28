@@ -76,7 +76,7 @@ export const verifyOtpAndRegisterCompanyController = async (req: Request, res: R
       return res.status(200).json({
         success: true,
         message: "Company created successfully",
-        company,
+        company_id: company.company_id,
       });
     } catch (error: any) {
       return res.status(400).json({ success: false, message: error.message });

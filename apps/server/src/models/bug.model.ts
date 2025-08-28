@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import User from './user.model'
+import User from './employee.model'
 import Project from "./project.model";
 import Feature from "./feature.model";
 import Comment from "./comment.model";

@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import User from './user.model'
+import User from './employee.model'
 
 const projectSchema = new mongoose.Schema({
     project_id: {

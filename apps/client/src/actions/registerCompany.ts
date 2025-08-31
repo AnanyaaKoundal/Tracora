@@ -27,13 +27,9 @@ export const registerCompany = async (values : z.infer<typeof registerCompanySch
 };
 
 export const verifyCompanyOtp = async (values : z.infer<typeof registerCompanySchema>) => {
-  
-  console.log("In API regsiter1", values)
     
   const responseData = await verifyOtpAndCreateCompanyService(values);
-  console.log("Response",responseData)
   if (responseData?.success === false) {
-    // console.log("In API regsiter3", responseData.success)
     return { error: true, message: responseData.message };
   }
 

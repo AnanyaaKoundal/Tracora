@@ -10,6 +10,13 @@
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
+    "baseUrl": "src",       
+    "paths": {
+      "@/*": ["*"],      
+      "@services/*": ["services/*"],
+      "@controllers/*": ["controllers/*"]
+    }
+
   },
   "include": ["index.ts", "src/**/*"],
   "exclude": ["node_modules", "dist"]

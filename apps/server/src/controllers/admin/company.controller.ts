@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
-import { companyExists, createCompany } from "../../services/company.service";
-import { sendOtp } from "../../services/otp.service";
+import { companyExists, createCompany } from "@services/company.service";
+import { createEmployee } from "@services/employee.service";
+import { sendOtp } from "@services/otp.service";
+import {generateToken} from "@services/auth.service";
 
 export const registerCompanyController = async (req: Request, res: Response): Promise<any> => {
     try {
@@ -72,11 +74,36 @@ export const verifyOtpAndRegisterCompanyController = async (req: Request, res: R
       if (!company) {
         return res.status(400).json({ success: false, message: "Error while creating company" });
       }
+
+      // 3. Create admin employee corresponding to company
+      const adminEmployee = await createEmployee({
+        company_id : company.company_id,
+        user_name : "Admin",
+        email : company_email,
+        contact_number : company_phone
+      })
+
+      // 4. Create JWT
+    const token = generateToken({
+      company_id: company.company_id,
+      employee_id: adminEmployee.employee_id,
+      role: adminEmployee.role
+    });
+
+    // 5. Set cookie
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 24 * 60 * 60 * 1000 // 1 day
+    });
   
       return res.status(200).json({
         success: true,
         message: "Company created successfully",
         company_id: company.company_id,
+        employee_id: adminEmployee.employee_id,
+        role: "admin"
       });
     } catch (error: any) {
       return res.status(400).json({ success: false, message: error.message });

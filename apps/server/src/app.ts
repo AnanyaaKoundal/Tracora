@@ -4,7 +4,7 @@ import errorHandler from './middlewares/errorHandler.middleware';
 
 // Import routes
 import roleRoutes from "./routes/role.route";
-import userRoutes from "./routes/user.route";
+import userRoutes from "./routes/employee.route";
 import projectRoutes from "./routes/project.route";
 import authRoutes from "./routes/auth.route";
 import adminRoutes from "./routes/admin.route";

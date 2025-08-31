@@ -20,7 +20,7 @@ const employeeSchema = new mongoose.Schema({
         required: true,
         unique: true
     },
-    contact_no:{
+    contact_number:{
         type: String,
         required: true
     },

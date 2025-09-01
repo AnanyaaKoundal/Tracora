@@ -58,7 +58,7 @@ export default function RegisterCompanyForm() {
                 setServerError(result.message || "Something went wrong");
                 return;
             }
-            router.push("/dashboard");
+            router.push("/admin/dashboard");
         }
     };
 

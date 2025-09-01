@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { companyExists, createCompany } from "@services/company.service";
-import { createEmployee } from "@services/employee.service";
+import { createAdminEmployee } from "@services/employee.service";
 import { sendOtp } from "@services/otp.service";
 import {generateToken} from "@services/auth.service";
 
@@ -76,7 +76,7 @@ export const verifyOtpAndRegisterCompanyController = async (req: Request, res: R
       }
 
       // 3. Create admin employee corresponding to company
-      const adminEmployee = await createEmployee({
+      const adminEmployee = await createAdminEmployee({
         company_id : company.company_id,
         user_name : "Admin",
         email : company_email,
@@ -87,7 +87,7 @@ export const verifyOtpAndRegisterCompanyController = async (req: Request, res: R
     const token = generateToken({
       company_id: company.company_id,
       employee_id: adminEmployee.employee_id,
-      role: adminEmployee.role
+      role: "admin"
     });
 
     // 5. Set cookie

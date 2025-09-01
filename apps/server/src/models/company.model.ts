@@ -24,10 +24,6 @@ const companySchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    roleId: {
-        type: String,
-        ref: "Role"
-    },
 },
     { timestamps: true}
 )

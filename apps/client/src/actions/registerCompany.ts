@@ -34,6 +34,6 @@ export const verifyCompanyOtp = async (values : z.infer<typeof registerCompanySc
   }
 
   if (responseData?.success === true) {
-    return { success: true, message: responseData.message, otp: responseData.otp};
+    return { success: true, message: responseData.message};
   }
 };

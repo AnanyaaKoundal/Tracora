@@ -20,7 +20,7 @@ export const registerCompanyController = async (req: Request, res: Response): Pr
         if (check.exists) {
             return res.status(400).json({
                 success: false,
-                message: check.reason,
+                message: check.reason, 
             });
         }
         // ✅ Step 3: send OTP to email

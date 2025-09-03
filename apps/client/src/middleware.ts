@@ -1,28 +1,20 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-import jwt from 'jsonwebtoken';
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
 export function middleware(req: NextRequest) {
-  const { pathname } = req.nextUrl;
-  const token = req.cookies.get('token')?.value;
+  // Read cookie (set by backend login)
+  const token = req.cookies.get("accessToken")?.value;
 
-  if (pathname.startsWith('/auth') || pathname === '/') {
-    return NextResponse.next();
-  }
-
+  // If no token, redirect to login
   if (!token) {
-    return NextResponse.redirect(new URL('/', req.url));
-  }
-  console.log("Token: ", token);
-  if (req.nextUrl.pathname.startsWith("/admin")) {
-    if (!token) {
-      return NextResponse.redirect(new URL("/auth/login", req.url));
-    }
+    return NextResponse.redirect(new URL("/auth/login", req.url));
   }
 
+  // Otherwise, allow request
   return NextResponse.next();
 }
 
+// Apply middleware only to protected routes
 export const config = {
-  matcher: ['/protected/:path*', '/admin/:path*'],
+  matcher: ["/:path*", "/admin/:path*"], 
 };

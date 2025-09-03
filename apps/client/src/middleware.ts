@@ -3,8 +3,8 @@ import type { NextRequest } from "next/server";
 
 export function middleware(req: NextRequest) {
   // Read cookie (set by backend login)
-  const token = req.cookies.get("accessToken")?.value;
-
+  const token = req.cookies.get("token")?.value;
+  console.log("Frontend Middleware Token: ", token);
   // If no token, redirect to login
   if (!token) {
     return NextResponse.redirect(new URL("/auth/login", req.url));
@@ -16,5 +16,5 @@ export function middleware(req: NextRequest) {
 
 // Apply middleware only to protected routes
 export const config = {
-  matcher: ["/:path*", "/admin/:path*"], 
+  matcher: ["/dashboard/:path*", "/admin/:path*"], 
 };

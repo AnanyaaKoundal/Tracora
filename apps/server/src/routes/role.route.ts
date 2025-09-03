@@ -10,19 +10,12 @@ import {
 
 const Router = express.Router();
 
-// Create role
-Router.route("/createRole").post(createRole);
-
 // Get all roles
 Router.route("/").get(getRoles);
 
 // Operations on a specific role by ID (get, update, delete)
 Router.route("/role/:role_id")
   .get(getRoleById)
-  .put(editRole)
-  .delete(deleteRoleById);
 
-// Bulk delete roles by IDs
-Router.route("/deleteRoles").delete(deleteRolesByIds);
 
 export default Router;

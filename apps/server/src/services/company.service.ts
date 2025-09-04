@@ -49,4 +49,13 @@ export const createCompany = async(data: any) => {
     };
  }
 
+ export const getAllCompaniesIdAndName = async () => {
+   try {
+     // Fetch only company_id and company_name fields
+     const companies = await Company.find({}, { company_id: 1, company_name: 1, _id: 0 });
+     return companies; // e.g. [{ company_id: "C001", company_name: "Company A" }, ...]
+   } catch (error) {
+     throw new Error("Error fetching companies: " + (error as Error).message);
+   }
+ };
  

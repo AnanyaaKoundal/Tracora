@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { verifyUser, verifyOtp } from "@/actions/login";
+import { verifyUser, verifyOtp } from "@/actions/loginAction";
 import { z } from "zod";
 import { registerCompanySchema } from "@/schemas/register.schema";
 import { Input } from "@/components/ui/input";

@@ -6,7 +6,7 @@ import {
     editRole,
     deleteRoleById,
     deleteRolesByIds,
-} from "@/controllers/user/role.controller";
+} from "@/controllers/employee/role.controller";
 
 import {
     createEmployee,
@@ -14,7 +14,7 @@ import {
     getEmployeeById,
     editEmployee,
     deleteEmployeeById,
-  } from "@/controllers/user/employee.controller";
+  } from "@/controllers/employee/employee.controller";
   import { authenticate, authorizeRole } from "@/middlewares/auth.middleware";
 
 const Router = express.Router();

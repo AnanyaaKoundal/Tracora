@@ -1,8 +1,4 @@
 import mongoose from "mongoose";
-import User from './employee.model'
-import Project from "./project.model";
-import Feature from "./feature.model";
-import Comment from "./comment.model";
 
 const bugSchema = new mongoose.Schema({
     bug_id: {
@@ -14,13 +10,13 @@ const bugSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    description: {
+    bug_description: {
         type: String,
         required: true,
     },
-    status: {
+    bug_status: {
         type: String,
-        enum: ["Open", "Under Review", "Closed"],
+        enum: ["Open", "Under Review", "Closed", "Fixed"],
         default: "Open"
     },
     feature_id: {
@@ -28,19 +24,14 @@ const bugSchema = new mongoose.Schema({
         ref: "Feature",
         required: true
     },
-    project_id: {
-        type: String,
-        ref: "Project",
-        required: true
-    },
     reported_by: {
         type: String,
-        ref: 'User',
+        ref: 'Employee',
         required: true
     },
     assigned_to: {
         type: String,
-        ref: "User"
+        ref: "Employee"
     },
     comments: [{
         type: String,

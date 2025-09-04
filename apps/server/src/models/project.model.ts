@@ -12,29 +12,25 @@ const projectSchema = new mongoose.Schema({
         required: true,
         unique: true
     },
-    description: {
+    project_description: {
         type: String,
         required: true,
     },
-    start_date: {
+    project_start_date: {
         type: Date,
         required: true
     },
-    end_date: {
+    project_end_date: {
         type: Date
     },
-    status: {
+    project_status: {
         type: String,
         enum: ["Active", "Completed", "Inactive"],
         default: "Active"
     },
-    team_members: [{
-        type: String,
-        ref: "User"
-    }],
     created_by: {
         type: String,
-        ref: 'User',
+        ref: 'Employee',
         required: true
     }
 },

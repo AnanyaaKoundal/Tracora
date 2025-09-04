@@ -1,6 +1,4 @@
 import mongoose from "mongoose";
-import User from './employee.model'
-import Project from "./project.model";
 
 const featureSchema = new mongoose.Schema({
     feature_id: {
@@ -12,11 +10,11 @@ const featureSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    description: {
+    feature_description: {
         type: String,
         required: true,
     },
-    status: {
+    feature_status: {
         type: String,
         enum: ["Development", "Deployed", "On Hold", "Testing"],
         default: "Development"
@@ -28,17 +26,13 @@ const featureSchema = new mongoose.Schema({
     },
     created_by: {
         type: String,
-        ref: 'User',
+        ref: 'Employee',
         required: true
     },
-    developer: {
+    developer: [{
         type: String,
         ref: "User"
-    },
-    tester: {
-        type: String,
-        ref: "User"
-    }
+    }],
 },
     { timestamps: true}
 )

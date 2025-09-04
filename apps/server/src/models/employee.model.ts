@@ -6,21 +6,21 @@ const employeeSchema = new mongoose.Schema({
         required: true,
         ref: "Company"
     },
-    user_id: {
+    employee_id: {
         type: String,
         required: true,
         unique: true
     }, 
-    user_name: {
+    employee_name: {
         type: String,
         required: true
     },
-    email: {
+    employee_email: {
         type: String,
         required: true,
         unique: true
     },
-    contact_number:{
+    employee_contact_number:{
         type: String,
         required: true
     },

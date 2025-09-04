@@ -87,3 +87,20 @@ export const deleteEmployeeById = async (user_id: string) => {
 
   return user;
 };
+
+export const getRoleName = async (employee_id: string) => {
+  const emp = await Employee.findOne({ employee_id });
+  console.log("INNNN \n Employee: ", emp);
+  if (!emp) {
+    throw new ApiError(404, "Employee not found");
+  }
+
+  // since roleId is stored as an array of string IDs
+  const role = await Role.findOne({role_id: emp.roleId[0]});  
+  console.log("Role: ", role);
+  if (!role) {
+    throw new ApiError(404, "Role not found");
+  }
+
+  return role.role_name;
+};

@@ -1,24 +1,67 @@
 import { Request, Response } from "express";
-import { loginService } from "../../services/auth.service";
+import { generateToken, loginService, verifyLoginOtp } from "../../services/auth.service";
+import { getAllCompaniesIdAndName } from "@/services/company.service";
+import asyncHandler from "@/utils/asyncHandler";
+import ApiError from "@/utils/ApiError";
+import ApiResponse from "@/utils/ApiResponse";
+import { getRoleName } from "@/services/employee.service";
 
-export const loginController = async (req: Request, res: Response): Promise<any>  => {
+export const loginController = async (req: Request, res: Response): Promise<any> => {
   try {
-    console.log(req.body);
-    const { company, email, mobile } = req.body;
-    if (!company || !email || !mobile) {
+    const { company_id, email, mobile } = req.body;
+    if (!company_id || !email || !mobile) {
       return res.status(400).json({ message: "All fields are required" });
     }
-    const otp = await loginService(company, email, mobile);
-    if (!otp) {
+    const employee_id = await loginService(company_id, email, mobile);
+    if (!employee_id) {
       return res.status(400).json({ success: false, message: "Invalid Credentials" });
     }
-    res.status(200).json({
-      "success": "true",
-      "otp": otp,
-      message: "OTP sent successfully"
-    });
+    res.status(200).json(new ApiResponse(200, "OTP sent successfully", employee_id));
   } catch (error: any) {
     res.status(400).json({ success: false, message: error.message });
   }
 };
 
+export const getAllCompaniesController = asyncHandler(
+  async (req: Request, res: Response) => {
+    const companies = await getAllCompaniesIdAndName();
+    res.status(200).json({
+      success: true,
+      data: companies,
+    });
+  }
+);
+
+export const verifyLoginOtpController = asyncHandler(async (req: Request, res: Response): Promise<any> => {
+  console.log(req.body);
+  const { company_id, employee_id, otp } = req.body;
+  if (!otp) {
+    return res.status(400).json(new ApiError(400, "OTP is required"));
+  }
+  const isValid = await verifyLoginOtp(otp);
+  if (!isValid) {
+    return res.status(400).json(new ApiError(400, "Invalid OTP"));
+  }
+
+  const role = await getRoleName(employee_id);
+  console.log("Role: ", role);
+  const token = generateToken({
+    company_id: company_id,
+    employee_id: employee_id,
+    role: "admin"
+  });
+  res.cookie("token", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: 24 * 60 * 60 * 1000 // 1 day
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "Login successful",
+    employee_id,
+    company_id,
+    role_name: role,
+  })
+})

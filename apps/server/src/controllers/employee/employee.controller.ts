@@ -18,18 +18,18 @@ export const getEmployees = asyncHandler(async (_req: Request, res: Response) =>
 
 // Get user by ID
 export const getEmployeeById = asyncHandler(async (req: Request, res: Response) => {
-  const result = await userService.getEmployeeById(req.params.user_id);
+  const result = await userService.getEmployeeById(req.params.emp_id);
   res.status(200).json(new ApiResponse(200, "Employee fetched", result));
 });
 
 // Edit user
 export const editEmployee = asyncHandler(async (req: Request, res: Response) => {
-  const result = await userService.editEmployee(req.params.user_id, req.body);
+  const result = await userService.editEmployee(req.params.emp_id, req.body);
   res.status(200).json(new ApiResponse(200, "Employee updated", result));
 });
 
 // Delete user
 export const deleteEmployeeById = asyncHandler(async (req: Request, res: Response) => {
-  const result = await userService.deleteEmployeeById(req.params.user_id);
+  const result = await userService.deleteEmployeeById(req.params.emp_id);
   res.status(200).json(new ApiResponse(200, "Employee deleted", result));
 });

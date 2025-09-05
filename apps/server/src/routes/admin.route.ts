@@ -21,7 +21,7 @@ const Router = express.Router();
 Router.use(authenticate, authorizeRole(["admin"]));
 
 Router.route("/createRole").post(createRole);
-Router.route("/roles").get(getRoles);
+Router.route("/getRoles").get(getRoles);
 Router.route("/role/:role_id")
     .get(getRoleById)
     .put(editRole)
@@ -29,9 +29,9 @@ Router.route("/role/:role_id")
 
 Router.route("/deleteRoles").delete(deleteRolesByIds);
 
-Router.route("/createUser").post(createEmployee);
-Router.route("/").get(getEmployees);
-Router.route("/user/:user_id")
+Router.route("/createEmployee").post(createEmployee);
+Router.route("/getAllEmployees").get(getEmployees);
+Router.route("/employee/:emp_id")
     .get(getEmployeeById)
     .put(editEmployee)
     .delete(deleteEmployeeById);

@@ -34,10 +34,10 @@ export default function EmployeesPage() {
   );
 
   const columns: Column<Employee>[] = [
-    { key: "_id", header: "ID"},
-    { key: "user_name", header: "Name" },
-    { key: "email", header: "Email" },
-    { key: "contact_no", header: "Contact No" },
+    { key: "employee_id", header: "ID"},
+    { key: "employee_name", header: "Name" },
+    { key: "employee_email", header: "Email" },
+    { key: "employee_contact_number", header: "Contact No" },
     {
       key: "roleId",
       header: "Role",
@@ -137,10 +137,10 @@ export default function EmployeesPage() {
           onOpenChange={(open: boolean) => {
             if (!open) setDeletingEmployee(null);
           }}
-          employeeId={deletingEmployee._id}
-          employeeEmail={deletingEmployee.email}
+          employeeId={deletingEmployee.employee_id}
+          employeeEmail={deletingEmployee.employee_email}
           onConfirm={async () => {
-            const res = await deleteEmployee(deletingEmployee._id);
+            const res = await deleteEmployee(deletingEmployee.employee_id);
             if (res.success) {
               const fresh = await getEmployees();
               setEmployees(fresh);

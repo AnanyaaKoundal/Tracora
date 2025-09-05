@@ -46,7 +46,7 @@ export default function LoginForm() {
   });
 
   console.log("Errors", form.formState.errors);
-console.log("Values", form.getValues());
+  console.log("Values", form.getValues());
 
 
   // Fetch companies on mount
@@ -68,7 +68,7 @@ console.log("Values", form.getValues());
 
     if (step === "details") {
       const payload = { ...formData, ...data };
-    
+
       const result = await verifyUser(payload);
       console.log("Login Result:", result);
       if (!result?.success) {
@@ -83,7 +83,7 @@ console.log("Values", form.getValues());
       setStep("otp");
       return;
     }
-    
+
 
     if (step === "otp") {
       const payload = { ...formData, ...data };
@@ -94,11 +94,11 @@ console.log("Values", form.getValues());
         return;
       }
       const roleName = result?.role;
-      if(roleName === "admin"){
+      if (roleName === "admin") {
         router.push("/admin/dashboard");
         return;
       }
-    
+
       router.push("/dashboard");
     }
   };
@@ -162,72 +162,82 @@ console.log("Values", form.getValues());
                         </SelectContent>
                       </Select>
                     )}
+
                   />
                   {form.formState.errors.company_id && (
                     <p className="text-red-500 text-sm">
                       {form.formState.errors.company_id.message}
                     </p>
                   )}
+                  <p className="text-sm text-center mt-4">
+                    New to Tracora?{" "}
+                    <a
+                      href="/auth/register/company"
+                      className="text-primary hover:underline font-medium"
+                    >
+                      Register your company now!
+                    </a>
+                  </p>
                 </div>
               )}
 
-              {/* Step 2: User Details */}
-              {step === "details" && (
-                <>
-                  <div>
-                    <Label>Email</Label>
-                    <Input
-                      {...form.register("email")}
-                      placeholder="you@example.com"
-                    />
-                    {form.formState.errors.email && (
-                      <p className="text-red-500 text-sm">
-                        {form.formState.errors.email.message}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <Label>Mobile</Label>
-                    <Input
-                      {...form.register("mobile")}
-                      placeholder="9876543210"
-                    />
-                    {form.formState.errors.mobile && (
-                      <p className="text-red-500 text-sm">
-                        {form.formState.errors.mobile.message}
-                      </p>
-                    )}
-                  </div>
-                </>
-              )}
-
-              {/* Step 3: OTP */}
-              {step === "otp" && (
+            {/* Step 2: User Details */}
+            {step === "details" && (
+              <>
                 <div>
-                  <Label>OTP</Label>
+                  <Label>Email</Label>
                   <Input
-                    {...form.register("otp")}
-                    placeholder="Enter 6-digit OTP"
+                    {...form.register("email")}
+                    placeholder="you@example.com"
                   />
-                  {form.formState.errors.otp && (
+                  {form.formState.errors.email && (
                     <p className="text-red-500 text-sm">
-                      {form.formState.errors.otp.message}
+                      {form.formState.errors.email.message}
                     </p>
                   )}
                 </div>
-              )}
+                <div>
+                  <Label>Mobile</Label>
+                  <Input
+                    {...form.register("mobile")}
+                    placeholder="9876543210"
+                  />
+                  {form.formState.errors.mobile && (
+                    <p className="text-red-500 text-sm">
+                      {form.formState.errors.mobile.message}
+                    </p>
+                  )}
+                </div>
+              </>
+            )}
 
-              <Button type="submit" className="w-full">
-                {step === "company"
-                  ? "Next"
-                  : step === "details"
-                    ? "Send OTP"
-                    : "Verify OTP"}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
+            {/* Step 3: OTP */}
+            {step === "otp" && (
+              <div>
+                <Label>OTP</Label>
+                <Input
+                  {...form.register("otp")}
+                  placeholder="Enter 6-digit OTP"
+                />
+                {form.formState.errors.otp && (
+                  <p className="text-red-500 text-sm">
+                    {form.formState.errors.otp.message}
+                  </p>
+                )}
+              </div>
+            )}
+
+            <Button type="submit" className="w-full">
+              {step === "company"
+                ? "Next"
+                : step === "details"
+                  ? "Send OTP"
+                  : "Verify OTP"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
+    </div >
   );
 }

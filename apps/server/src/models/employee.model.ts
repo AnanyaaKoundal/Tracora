@@ -28,7 +28,7 @@ const employeeSchema = new mongoose.Schema({
         type: String,
         ref: "Role"
     }],      
-    project : {
+    projectId : {
         type: String,
         ref: "Project"
     }

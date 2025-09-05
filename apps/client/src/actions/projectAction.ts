@@ -1,9 +1,9 @@
 import { createRoleSchema, roleListSchema, roleSchema } from "@/schemas/admin.schema";
-import { fetchRoles, createRoleService, updateRoleService, deleteRoleService } from "@/services/adminService";
+import { fetchRolesforAdmin, createRoleService, updateRoleService, deleteRoleService } from "@/services/adminService";
 
 export async function getProjects() {
 
-  const data = await fetchRoles();
+  const data = await fetchRolesforAdmin();
   console.log("Data: ", data);
   // const parsed = roleListSchema.safeParse(data);
   if (!data.success) {

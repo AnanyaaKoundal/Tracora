@@ -14,20 +14,20 @@ export type Role = z.infer<typeof roleSchema>;
 export const roleListSchema = z.array(roleSchema);  
 
 export const createEmployeeSchema = z.object({
-  user_name: z.string().min(1, "Employee name is required"),
-  email: z.email("Invalid email"),
-  contact_no: z.string().min(10, "Contact number must be at least 10 digits"),
-  roleId: z.string().min(1, "Role is required"),   // 👈 single string
+  employee_name: z.string().min(1, "Employee name is required"),
+  employee_email: z.email("Invalid email"),
+  employee_contact_number: z.string().min(10, "Contact number must be at least 10 digits"),
+  roleId: z.array(z.string()).min(1, "At least one role is required"),
   projectId: z.string().min(1, "Project is required"),
 });
 
 export type CreateEmployeeInput = z.infer<typeof createEmployeeSchema>;
 
 export const employeeSchema = z.object({
-  _id: z.string(),
-  user_name: z.string().min(1, "User name is required"),
-  email: z.email("Invalid email address"),
-  contact_no: z
+  employee_id: z.string(),
+  employee_name: z.string().min(1, "User name is required"),
+  employee_email: z.email("Invalid email address"),
+  employee_contact_number: z
     .string()
     .min(7, "Contact number must be at least 7 digits")
     .max(15, "Contact number too long"),

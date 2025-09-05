@@ -34,9 +34,10 @@ export const verifyOtpAndCreateCompanyService =  async (values: z.Infer<typeof r
 };
 
 
-export const fetchRoles =  async () => {
-  const res = await fetch(`${URL}/admin/roles`, {
+export const fetchRolesforAdmin =  async () => {
+  const res = await fetch(`${URL}/admin/getRoles`, {
     method: "GET",
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
     },
@@ -53,6 +54,7 @@ export const fetchRoles =  async () => {
 export const createRoleService = async (data: { role_name: string }) => {
     const res = await fetch(`${URL}/admin/createRole`, {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
@@ -65,6 +67,7 @@ export const createRoleService = async (data: { role_name: string }) => {
 export const updateRoleService = async (id: string, data: { role_name: string }) => {
   const res = await fetch(`${URL}/admin/role/${id}`, {
     method: "PUT",
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
@@ -76,6 +79,7 @@ export const updateRoleService = async (id: string, data: { role_name: string })
 
 export const deleteRoleService = async (id: string) => {
   const res = await fetch(`${URL}/admin/role/${id}`, {
+    credentials: "include",
     method: "DELETE",
     headers: { "Content-Type": "application/json" },
   });
@@ -87,8 +91,9 @@ export const deleteRoleService = async (id: string) => {
 
 
 export const fetchEmployees =  async () => {
-  const res = await fetch(`${URL}/admin/employees`, {
+  const res = await fetch(`${URL}/admin/getAllEmployees`, {
     method: "GET",
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
     },
@@ -103,8 +108,9 @@ export const fetchEmployees =  async () => {
 }
 
 export const createEmployeeService = async (data: { role_name: string }) => {
-    const res = await fetch(`${URL}/admin/createUser`, {
+    const res = await fetch(`${URL}/admin/createEmployee`, {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
@@ -115,8 +121,9 @@ export const createEmployeeService = async (data: { role_name: string }) => {
 };
 
 export const updateEmployeeService = async (id: string, data: { role_name: string }) => {
-  const res = await fetch(`${URL}/admin/user/${id}`, {
+  const res = await fetch(`${URL}/admin/employee/${id}`, {
     method: "PUT",
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
@@ -127,8 +134,9 @@ export const updateEmployeeService = async (id: string, data: { role_name: strin
 };
 
 export const deleteEmployeeService = async (id: string) => {
-  const res = await fetch(`${URL}/admin/user/role/${id}`, {
+  const res = await fetch(`${URL}/admin/employee/role/${id}`, {
     method: "DELETE",
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
   });
 

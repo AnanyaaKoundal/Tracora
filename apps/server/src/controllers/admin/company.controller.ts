@@ -3,6 +3,8 @@ import { companyExists, createCompany } from "@services/company.service";
 import { createAdminEmployee } from "@services/employee.service";
 import { sendOtp } from "@services/otp.service";
 import {generateToken} from "@services/auth.service";
+import Company from "@/models/company.model";
+import ApiError from "@/utils/ApiError";
 
 export const registerCompanyController = async (req: Request, res: Response): Promise<any> => {
     try {
@@ -78,10 +80,15 @@ export const verifyOtpAndRegisterCompanyController = async (req: Request, res: R
       // 3. Create admin employee corresponding to company
       const adminEmployee = await createAdminEmployee({
         company_id : company.company_id,
-        user_name : "Admin",
-        email : company_email,
-        contact_number : company_phone
+        employee_name : "Admin",
+        employee_email : company_email,
+        employee_contact_number : company_phone
       })
+
+      if(!adminEmployee){
+        Company.deleteOne({company_id: company.company_id});
+        return res.status(400).json(new ApiError(400, "Error while creating admin employee"));
+      }
 
       // 4. Create JWT
     const token = generateToken({

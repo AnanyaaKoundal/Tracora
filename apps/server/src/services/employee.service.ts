@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from "uuid";
 import Employee from "../models/employee.model";
 import ApiError from "../utils/ApiError";
 import Role from "@/models/role.model";
+import { generateEmployeeId } from "./id.service";
 
 // Create user
 export const createEmployee = async (userData: any) => {
@@ -12,12 +13,12 @@ export const createEmployee = async (userData: any) => {
       throw new ApiError(400, "Employee already exists");
     }
   
-    // if (!Array.isArray(roleId)) {
-    //   throw new ApiError(400, "role_id must be an array of role IDs");
-    // }
-  
+    if (!Array.isArray(roleId)) {
+      throw new ApiError(400, "role_id must be an array of role IDs");
+    }
+    const employee_id = generateEmployeeId();
     const newEmployee = await Employee.create({
-      user_id: uuidv4(),
+      employee_id,
       ...userData,
     });
   
@@ -25,9 +26,9 @@ export const createEmployee = async (userData: any) => {
   };
   
   export const createAdminEmployee = async (userData: any) => {
-    const { email, roleId } = userData;
+    const { employee_email } = userData;
   
-    const existingEmployee = await Employee.findOne({ email });
+    const existingEmployee = await Employee.findOne({ employee_email });
     if (existingEmployee) {
       throw new ApiError(400, "Employee already exists");
     }
@@ -38,7 +39,7 @@ export const createEmployee = async (userData: any) => {
     }
   
     const newEmployee = await Employee.create({
-      user_id: uuidv4(),
+      employee_id: uuidv4(),
       roleId: [role.role_id],
       ...userData,
     });

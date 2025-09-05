@@ -20,12 +20,14 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
+
+import {Checkbox} from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -42,10 +44,10 @@ export function AddEmployeeDrawer({
   const form = useForm<CreateEmployeeInput>({
     resolver: zodResolver(createEmployeeSchema),
     defaultValues: {
-      user_name: "",
-      email: "",
-      contact_no: "",
-      roleId: "",
+      employee_name: "",
+      employee_email: "",
+      employee_contact_number: "",
+      roleId: [],
       projectId: "",
     },
   });
@@ -58,6 +60,7 @@ export function AddEmployeeDrawer({
           getProjects(),
         ]);
         setRoles(rolesRes);
+        console.log("Roles: ", rolesRes);
         setProjects(projectsRes);
       } catch (err) {
         toast.error("Failed to load roles or projects ❌");
@@ -99,12 +102,12 @@ export function AddEmployeeDrawer({
             <Label htmlFor="user_name">Employee Name</Label>
             <Input
               id="user_name"
-              {...form.register("user_name")}
+              {...form.register("employee_name")}
               placeholder="Enter employee name"
             />
-            {form.formState.errors.user_name && (
+            {form.formState.errors.employee_name && (
               <p className="text-red-500 text-sm">
-                {form.formState.errors.user_name.message}
+                {form.formState.errors.employee_name.message}
               </p>
             )}
           </div>
@@ -115,12 +118,12 @@ export function AddEmployeeDrawer({
             <Input
               id="email"
               type="email"
-              {...form.register("email")}
+              {...form.register("employee_email")}
               placeholder="Enter email"
             />
-            {form.formState.errors.email && (
+            {form.formState.errors.employee_email && (
               <p className="text-red-500 text-sm">
-                {form.formState.errors.email.message}
+                {form.formState.errors.employee_email.message}
               </p>
             )}
           </div>
@@ -130,40 +133,53 @@ export function AddEmployeeDrawer({
             <Label htmlFor="contact_no">Contact No</Label>
             <Input
               id="contact_no"
-              {...form.register("contact_no")}
+              {...form.register("employee_contact_number")}
               placeholder="Enter contact number"
             />
-            {form.formState.errors.contact_no && (
+            {form.formState.errors.employee_contact_number && (
               <p className="text-red-500 text-sm">
-                {form.formState.errors.contact_no.message}
+                {form.formState.errors.employee_contact_number.message}
               </p>
             )}
           </div>
 
           {/* Role Dropdown */}
+
           <div className="space-y-2">
-            <Label>Role</Label>
-            <Select
-              onValueChange={(value) => form.setValue("roleId", value)}
-              value={form.watch("roleId")}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select role" />
-              </SelectTrigger>
-              <SelectContent>
-                {roles.map((role) => (
-                  <SelectItem key={role.id} value={role.id}>
-                    {role.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label>Roles</Label>
+            <div className="space-y-2">
+              {roles.map((role) => {
+                const checked = form.watch("roleId")?.includes(role.id);
+                return (
+                  <div key={role.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`role-${role.id}`}
+                      checked={checked}
+                      onCheckedChange={(isChecked) => {
+                        const currentRoles = form.getValues("roleId") || [];
+                        if (isChecked) {
+                          form.setValue("roleId", [...currentRoles, role.id]);
+                        } else {
+                          form.setValue(
+                            "roleId",
+                            currentRoles.filter((r: string) => r !== role.id)
+                          );
+                        }
+                      }}
+                    />
+                    <Label htmlFor={`role-${role.id}`}>{role.name}</Label>
+                  </div>
+                );
+              })}
+            </div>
             {form.formState.errors.roleId && (
               <p className="text-red-500 text-sm">
                 {form.formState.errors.roleId.message}
               </p>
             )}
           </div>
+
+
 
           {/* Project Dropdown */}
           <div className="space-y-2">

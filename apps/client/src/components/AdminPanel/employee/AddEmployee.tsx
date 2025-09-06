@@ -8,7 +8,7 @@ import {
   createEmployeeSchema,
 } from "@/schemas/admin.schema";
 import { createEmployee } from "@/actions/employeeAction";
-import { getProjects } from "@/actions/projectAction";
+import { getAllProjects } from "@/actions/projectAction";
 import { getRoles } from "@/actions/rolesAction";
 
 import { toast } from "sonner";
@@ -26,8 +26,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import {
+  Command,
+  CommandGroup,
+  CommandItem,
+} from "@/components/ui/command"
+import { Check } from "lucide-react"
+import { cn } from "@/lib/utils"
 
-import {Checkbox} from "@/components/ui/checkbox";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -38,7 +50,7 @@ export function AddEmployeeDrawer({
   onEmployeeCreated: () => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [roles, setRoles] = useState<{ id: string; name: string }[]>([]);
+  const [roles, setRoles] = useState<{ role_id: string; role_name: string }[]>([]);
   const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
 
   const form = useForm<CreateEmployeeInput>({
@@ -57,7 +69,7 @@ export function AddEmployeeDrawer({
       try {
         const [rolesRes, projectsRes] = await Promise.all([
           getRoles(),
-          getProjects(),
+          getAllProjects(),
         ]);
         setRoles(rolesRes);
         console.log("Roles: ", rolesRes);
@@ -87,7 +99,12 @@ export function AddEmployeeDrawer({
   };
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
+    <Sheet open={open} onOpenChange={(isOpen) => {
+      setOpen(isOpen);
+      if (!isOpen) {
+        form.reset();
+      }
+    }}>
       <SheetTrigger asChild>
         <Button>+ Add Employee</Button>
       </SheetTrigger>
@@ -147,37 +164,57 @@ export function AddEmployeeDrawer({
 
           <div className="space-y-2">
             <Label>Roles</Label>
-            <div className="space-y-2">
-              {roles.map((role) => {
-                const checked = form.watch("roleId")?.includes(role.id);
-                return (
-                  <div key={role.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`role-${role.id}`}
-                      checked={checked}
-                      onCheckedChange={(isChecked) => {
-                        const currentRoles = form.getValues("roleId") || [];
-                        if (isChecked) {
-                          form.setValue("roleId", [...currentRoles, role.id]);
-                        } else {
-                          form.setValue(
-                            "roleId",
-                            currentRoles.filter((r: string) => r !== role.id)
-                          );
-                        }
-                      }}
-                    />
-                    <Label htmlFor={`role-${role.id}`}>{role.name}</Label>
-                  </div>
-                );
-              })}
-            </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  className="w-full justify-between"
+                >
+                  {form.watch("roleId")?.length > 0
+                    ? `${form.watch("roleId").length} role(s) selected`
+                    : "Select roles"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[250px] p-0">
+                <Command>
+                  <CommandGroup>
+                    {roles.map((role) => {
+                      const checked = form.watch("roleId")?.includes(role.role_id);
+                      return (
+                        <CommandItem
+                          key={role.role_id}
+                          onSelect={() => {
+                            const currentRoles = form.getValues("roleId") || [];
+                            if (checked) {
+                              form.setValue(
+                                "roleId",
+                                currentRoles.filter((r: string) => r !== role.role_id)
+                              );
+                            } else {
+                              form.setValue("roleId", [...currentRoles, role.role_id]);
+                            }
+                          }}
+                        >
+                          <div className="flex items-center space-x-2">
+                            <Checkbox checked={checked} />
+                            <span>{role.role_name}</span>
+                          </div>
+                          {checked && <Check className="ml-auto h-4 w-4" />}
+                        </CommandItem>
+                      );
+                    })}
+                  </CommandGroup>
+                </Command>
+              </PopoverContent>
+            </Popover>
             {form.formState.errors.roleId && (
               <p className="text-red-500 text-sm">
                 {form.formState.errors.roleId.message}
               </p>
             )}
           </div>
+
 
 
 

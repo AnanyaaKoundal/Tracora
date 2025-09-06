@@ -42,7 +42,12 @@ export function AddRoleDrawer({ onRoleCreated }: { onRoleCreated: () => void }) 
   };
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
+    <Sheet open={open} onOpenChange={(isOpen) => {
+      setOpen(isOpen);
+      if (!isOpen) {
+        form.reset();
+      }
+    }}>
       <SheetTrigger asChild>
         <Button>+ Add Role</Button>
       </SheetTrigger>

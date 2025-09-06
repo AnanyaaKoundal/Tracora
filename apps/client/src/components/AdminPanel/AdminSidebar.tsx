@@ -40,6 +40,9 @@ export default function AdminSidebar({
           <a href="/admin/employees" className="block hover:bg-primary/60 p-2 rounded pl-8">
             Manage Employees
           </a>
+          <a href="/admin/projects" className="block hover:bg-primary/60 p-2 rounded pl-8">
+            Manage Projects
+          </a>
           <a href="/admin/companies" className="block hover:bg-primary/60 p-2 rounded pl-8">
             Manage Company
           </a>

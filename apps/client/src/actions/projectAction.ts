@@ -1,11 +1,13 @@
+import z from "zod";
 import { createRoleSchema, roleListSchema, roleSchema } from "@/schemas/admin.schema";
+import { createProjectSchema } from "@/schemas/project.schema";
 import { fetchRolesforAdmin, createRoleService, updateRoleService, deleteRoleService } from "@/services/adminService";
+import { fetchAllProjectsService, createProjectService, updateProjectService, deleteProjectService } from "@/services/projectService";
 
-export async function getProjects() {
+export async function getAllProjects() {
 
-  const data = await fetchRolesforAdmin();
+  const data = await fetchAllProjectsService();
   console.log("Data: ", data);
-  // const parsed = roleListSchema.safeParse(data);
   if (!data.success) {
     console.error("Failed to fetch roles", data.error);
     return [];
@@ -15,29 +17,29 @@ export async function getProjects() {
 }
 
 
-export async function createEmployee(data: unknown) {
+export async function createProject(data: z.Infer<typeof createProjectSchema>) {
   const parsed = createRoleSchema.safeParse(data);
   if (!parsed.success) {
     return { success: false, message: "Invalid data" };
   }
 
   try {
-    const role = await createRoleService(parsed.data);
-    return { success: true, data: role };
+    const project = await createProjectService(data);
+    return { success: true, data: project };
   } catch (err: any) {
     return { success: false, message: err.message || "Failed to create role" };
   }
 }
 
 
-export async function updateRole(id: string, data: unknown) {
+export async function updateProject(id: string, data: unknown) {
   const parsed = createRoleSchema.safeParse(data); // reuse schema since same shape
   if (!parsed.success) {
     return { success: false, message: "Invalid data" };
   }
 
   try {
-    const updated = await updateRoleService(id, parsed.data);
+    const updated = await updateProjectService(id, parsed.data);
     return { success: true, data: updated };
   } catch (err: any) {
     return { success: false, message: err.message || "Failed to update role" };
@@ -45,9 +47,9 @@ export async function updateRole(id: string, data: unknown) {
 }
 
 // ✅ Delete role
-export async function deleteRole(id: string) {
+export async function deleteProject(id: string) {
   try {
-    await deleteRoleService(id);
+    await deleteProjectService(id);
     return { success: true };
   } catch (err: any) {
     return { success: false, message: err.message || "Failed to delete role" };

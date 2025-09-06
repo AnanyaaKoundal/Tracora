@@ -1,6 +1,6 @@
-import { v4 as uuidv4 } from "uuid";
 import Project from "../models/project.model";
 import ApiError from "../utils/ApiError";
+import { generateProjectId } from "./id.service";
 
 export const createProject = async (projectData: any) => {
   const { project_name } = projectData;
@@ -9,9 +9,9 @@ export const createProject = async (projectData: any) => {
   if (existingProject) {
     throw new ApiError(400, "Project already exists");
   }
-
+  const project_id = generateProjectId();
   const newProject = await Project.create({
-    project_id: uuidv4(),
+    project_id,
     ...projectData,
   });
 

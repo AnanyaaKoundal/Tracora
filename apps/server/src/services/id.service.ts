@@ -6,7 +6,10 @@ export const generateCompanyId = () => {
   return `CMP-${nanoid()}`;
 };
 
-
 export const generateEmployeeId = () => {
   return `EMP-${nanoid()}`;
+}
+
+export const generateProjectId = () => {
+  return `PRJ-${nanoid()}`;
 }

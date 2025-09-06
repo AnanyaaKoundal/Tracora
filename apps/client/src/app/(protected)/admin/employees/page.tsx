@@ -7,9 +7,9 @@ import {
   updateEmployee,
   deleteEmployee,
 } from "@/actions/employeeAction";
-import { AddEmployeeDrawer } from "@/components/AdminPanel/AddEmployee";
-import { EditEmployeeDrawer } from "@/components/AdminPanel/EditEmployee";
-import { DeleteEmployeeDialog } from "@/components/AdminPanel/DeleteEmployee";
+import { AddEmployeeDrawer } from "@/components/AdminPanel/employee/AddEmployee";
+import { EditEmployeeDrawer } from "@/components/AdminPanel/employee/EditEmployee";
+import { DeleteEmployeeDialog } from "@/components/AdminPanel/employee/DeleteEmployee";
 import { MoreHorizontal } from "lucide-react";
 import {
   DropdownMenu,

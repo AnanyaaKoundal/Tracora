@@ -3,12 +3,12 @@
 import { useState, useEffect } from "react";
 import { DataTable, Column } from "@/components/Table/DataTable";
 import { getRoles } from "@/actions/rolesAction";
-import { AddRoleDrawer } from "@/components/AdminPanel/AddRole";
+import { AddRoleDrawer } from "@/components/AdminPanel/roles/AddRole";
 import { MoreHorizontal } from "lucide-react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { DeleteRoleDialog } from "@/components/AdminPanel/DeleteRole";
-import { EditRoleDrawer } from "@/components/AdminPanel/EditRole";
+import { DeleteRoleDialog } from "@/components/AdminPanel/roles/DeleteRole";
+import { EditRoleDrawer } from "@/components/AdminPanel/roles/EditRole";
 import { updateRole, deleteRole } from "@/actions/rolesAction";
 
 type Role = {

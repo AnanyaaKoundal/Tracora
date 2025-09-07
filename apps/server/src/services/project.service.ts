@@ -2,9 +2,8 @@ import Project from "../models/project.model";
 import ApiError from "../utils/ApiError";
 import { generateProjectId } from "./id.service";
 
-export const createProject = async (projectData: any) => {
+export const createProject = async (projectData: any, user: any) => {
   const { project_name } = projectData;
-
   const existingProject = await Project.findOne({ project_name });
   if (existingProject) {
     throw new ApiError(400, "Project already exists");
@@ -12,6 +11,7 @@ export const createProject = async (projectData: any) => {
   const project_id = generateProjectId();
   const newProject = await Project.create({
     project_id,
+    created_by: user.employee_id,
     ...projectData,
   });
 

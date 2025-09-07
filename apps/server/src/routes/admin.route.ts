@@ -16,6 +16,12 @@ import {
     deleteEmployeeById,
   } from "@/controllers/employee/employee.controller";
   import { authenticate, authorizeRole } from "@/middlewares/auth.middleware";
+import { 
+    createProject ,
+    editProject,
+    deleteProjectById,
+    deleteProjectsByIds
+} from "@/controllers/project/project.controller";
 
 const Router = express.Router();
 Router.use(authenticate, authorizeRole(["admin"]));
@@ -35,5 +41,11 @@ Router.route("/employee/:emp_id")
     .get(getEmployeeById)
     .put(editEmployee)
     .delete(deleteEmployeeById);
+
+Router.route("/createProject").post(createProject);
+Router.route("/project/:p_id")
+    .put(editProject)
+    .delete(deleteProjectById);
+    // .post(deleteProjectsByIds);
 
 export default Router;

@@ -87,7 +87,7 @@ export default function RolesPage() {
               setRoles(fresh);
               setEditingRole(null);
             }
-            return res; // ✅ must return the promise result
+            return res; 
           }}
         />
       )}
@@ -105,7 +105,7 @@ export default function RolesPage() {
               setRoles(fresh);
               setDeletingRole(null);
             }
-            return res; // ✅ must return the promise result
+            return res;
           }}
         />
       )}

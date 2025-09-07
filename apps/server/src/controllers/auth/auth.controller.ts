@@ -33,7 +33,6 @@ export const getAllCompaniesController = asyncHandler(
 );
 
 export const verifyLoginOtpController = asyncHandler(async (req: Request, res: Response): Promise<any> => {
-  console.log(req.body);
   const { company_id, employee_id, otp } = req.body;
   if (!otp) {
     return res.status(400).json(new ApiError(400, "OTP is required"));
@@ -44,7 +43,6 @@ export const verifyLoginOtpController = asyncHandler(async (req: Request, res: R
   }
 
   const role = await getRoleName(employee_id);
-  console.log("Role: ", role);
   const token = generateToken({
     company_id: company_id,
     employee_id: employee_id,

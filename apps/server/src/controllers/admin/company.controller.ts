@@ -16,8 +16,6 @@ export const registerCompanyController = async (req: Request, res: Response): Pr
                 message: "All fields are required",
             });
         }
-
-        // ✅ Step 1: check duplicates
         const check = await companyExists({ company_name, company_email, company_phone });
         if (check.exists) {
             return res.status(400).json({
@@ -25,7 +23,6 @@ export const registerCompanyController = async (req: Request, res: Response): Pr
                 message: check.reason, 
             });
         }
-        // ✅ Step 3: send OTP to email
         await sendOtp(company_email, company_phone);
 
         return res.status(200).json({

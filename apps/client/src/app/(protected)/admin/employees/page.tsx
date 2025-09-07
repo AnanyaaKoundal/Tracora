@@ -18,11 +18,11 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Employee, Role, Project } from "@/schemas/admin.schema"; // ✅ make sure Role, Project are exported
+import { Employee, Role, Project } from "@/schemas/admin.schema";
 
 // ⬇️ You’ll need APIs to fetch roles & projects too
 import { getRoles } from "@/actions/rolesAction";
-import { getProjects } from "@/actions/projectAction";
+import { getAllProjects } from "@/actions/projectAction";
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -39,17 +39,17 @@ export default function EmployeesPage() {
     { key: "employee_email", header: "Email" },
     { key: "employee_contact_number", header: "Contact No" },
     {
-      key: "roleId",
-      header: "Role",
-      render: (row) => row.roleId?.role_name || "-",
-    },
+      key: "role_names",
+      header: "Roles",
+      render: (row) => row.role_names?.join(", ") || "-"
+    },    
     {
-      key: "projectId",
+      key: "project_name",
       header: "Project",
-      render: (row) => row.projectId?.project_name || "-",
+      render: (row) => row.project_name || "-",
     },
     { key: "createdAt", header: "Created At" },
-    { key: "modifiedAt", header: "Modified At" },
+    { key: "updatedAt", header: "Modified At" },
     {
       key: "actions",
       header: <div className="text-right">Actions</div>,
@@ -80,7 +80,7 @@ export default function EmployeesPage() {
       const [employeesData, rolesData, projectsData] = await Promise.all([
         getEmployees(),
         getRoles(),
-        getProjects(),
+        getAllProjects(),
       ]);
       setEmployees(employeesData);
       setRoles(rolesData);

@@ -4,9 +4,7 @@ import asyncHandler from "../../utils/asyncHandler";
 import ApiResponse from "../../utils/ApiResponse";
 import { request } from "http";
 
-// Creates a new role with unique role_name. Throws error if role exists.
 export const createRole = asyncHandler(async (req: Request, res: Response) => {
-    console.log(req.body);
   const newRole = await roleService.createRole(req.body);
   res.status(201).json(new ApiResponse(201, "Role created successfully", newRole));
 });

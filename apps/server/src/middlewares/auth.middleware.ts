@@ -4,7 +4,6 @@ import Employee from "../models/employee.model";
 
 const JWT_SECRET = process.env.JWT_SECRET || "supersecret";
 
-// ✅ Step 1: Authenticate user
 export const authenticate: RequestHandler = async (req, res, next) => {
   try {
     const token =
@@ -21,14 +20,12 @@ export const authenticate: RequestHandler = async (req, res, next) => {
       role: string;
     };
 
-    // You no longer query with ObjectId (_id), since employee_id is your custom string
     const user = await Employee.findOne({ employee_id: decoded.employee_id });
     if (!user) {
       res.status(401).json({ message: "Unauthorized: Invalid token" });
       return;
     }
 
-    // If you still want fresh role lookup:
     let roleDoc = null;
     if (user.roleId?.length > 0) {
       roleDoc = await Employee.findOne({ role_id: user.roleId[0] });
@@ -46,11 +43,9 @@ export const authenticate: RequestHandler = async (req, res, next) => {
   }
 };
 
-// ✅ Step 2: Authorize by role
 export const authorizeRole = (allowedRoles: string[]): RequestHandler => {
   return (req, res, next) => {
     const user = (req as any).user;
-    console.log("User in authorizeRole:", user);
 
     if (!user || !allowedRoles.includes(user.role)) {
       res.status(403).json({ message: "Forbidden: Insufficient role" });

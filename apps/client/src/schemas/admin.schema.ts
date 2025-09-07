@@ -1,17 +1,17 @@
 import { z } from "zod";
 
 export const createRoleSchema = z.object({
-    role_name: z.string().min(2, "Role name must be at least 2 characters"),
-  });
+  role_name: z.string().min(2, "Role name must be at least 2 characters"),
+});
 export type CreateRoleInput = z.infer<typeof createRoleSchema>;
 
 export const roleSchema = z.object({
-    role_id: z.string(),
-    role_name: z.string(),
-    createdAt: z.string(),
+  role_id: z.string(),
+  role_name: z.string(),
+  createdAt: z.string(),
 });
 export type Role = z.infer<typeof roleSchema>;
-export const roleListSchema = z.array(roleSchema);  
+export const roleListSchema = z.array(roleSchema);
 
 export const createEmployeeSchema = z.object({
   employee_name: z.string().min(1, "Employee name is required"),
@@ -31,16 +31,12 @@ export const employeeSchema = z.object({
     .string()
     .min(7, "Contact number must be at least 7 digits")
     .max(15, "Contact number too long"),
-    roleId: z.object({
-      _id: z.string(),
-      role_name: z.string(),
-    }),
-    projectId: z.object({
-      _id: z.string(),
-      project_name: z.string(),
-    }),
+  roleId: z.array(z.string()).nonempty("At least one role is required"),
+  projectId: z.string().nullable(),
+  role_names: z.array(z.string()).default([]),
+  project_name: z.string().min(1, "Project name is required"),
   createdAt: z.string(),
-  modifiedAt: z.string()
+  updatedAt: z.string()
 });
 export type Employee = z.infer<typeof employeeSchema>;
 export const employeeListSchema = z.array(employeeSchema);

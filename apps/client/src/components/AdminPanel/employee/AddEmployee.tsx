@@ -51,7 +51,7 @@ export function AddEmployeeDrawer({
 }) {
   const [open, setOpen] = useState(false);
   const [roles, setRoles] = useState<{ role_id: string; role_name: string }[]>([]);
-  const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
+  const [projects, setProjects] = useState<{ project_id: string; project_name: string }[]>([]);
 
   const form = useForm<CreateEmployeeInput>({
     resolver: zodResolver(createEmployeeSchema),
@@ -72,8 +72,8 @@ export function AddEmployeeDrawer({
           getAllProjects(),
         ]);
         setRoles(rolesRes);
-        console.log("Roles: ", rolesRes);
         setProjects(projectsRes);
+        console.log("Roles: ", projectsRes);
       } catch (err) {
         toast.error("Failed to load roles or projects ❌");
       }
@@ -230,8 +230,8 @@ export function AddEmployeeDrawer({
               </SelectTrigger>
               <SelectContent>
                 {projects.map((project) => (
-                  <SelectItem key={project.id} value={project.id}>
-                    {project.name}
+                  <SelectItem key={project.project_id} value={project.project_id}>
+                    {project.project_name}
                   </SelectItem>
                 ))}
               </SelectContent>

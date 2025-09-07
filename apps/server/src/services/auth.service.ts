@@ -13,8 +13,8 @@ export const verifyToken = (token: string): any => {
   return jwt.verify(token, JWT_SECRET);
 };
 
-export const loginService = async (company_id:string, email: string, mobile: string) => {
-  const emp = await User.findOne({ company_id, email });
+export const loginService = async (company_id:string, employee_email: string, mobile: string) => {
+  const emp = await User.findOne({ company_id, employee_email });
   if (!emp) {
     throw new Error("Invalid credentials");
   }

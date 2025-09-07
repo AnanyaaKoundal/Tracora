@@ -37,7 +37,7 @@ export default function ProjectsPage() {
     },
     { key: "project_status", header: "Status" },
     { key: "createdAt", header: "Created At" },
-    { key: "modifiedAt", header: "Updated At" },
+    { key: "updatedAt", header: "Updated At" },
     {
       key: "actions",
       header: <div className="text-right">Actions</div>,
@@ -63,7 +63,6 @@ export default function ProjectsPage() {
     },
   ];
 
-  // ✅ Fetch all projects on mount
   useEffect(() => {
     async function fetchData() {
       const projectData = await getAllProjects();

@@ -43,7 +43,6 @@ export async function updateRole(id: string, data: unknown) {
   }
 }
 
-// ✅ Delete role
 export async function deleteRole(id: string) {
   try {
     await deleteRoleService(id);

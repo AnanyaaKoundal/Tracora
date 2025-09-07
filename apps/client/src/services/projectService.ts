@@ -1,10 +1,10 @@
 import z from "zod";
-import { createProjectSchema } from "@/schemas/project.schema";
+import { createProjectSchema, projectSchema } from "@/schemas/project.schema";
 
 let URL = "http://localhost:5000";
 
 export const createProjectService = async (data: z.Infer<typeof createProjectSchema>) => {
-    const res = await fetch(`${URL}/projects/createProject`, {
+    const res = await fetch(`${URL}/admin/createProject`, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -33,8 +33,8 @@ export const fetchAllProjectsService = async () => {
       return res.json();
 }
 
-export const updateProjectService = async (id: string, data: { role_name: string }) => {
-  const res = await fetch(`${URL}/admin/employee/${id}`, {
+export const updateProjectService = async (id: string, data: z.Infer<typeof projectSchema>) => {
+  const res = await fetch(`${URL}/admin/project/${id}`, {
     method: "PUT",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
@@ -47,7 +47,7 @@ export const updateProjectService = async (id: string, data: { role_name: string
 };
 
 export const deleteProjectService = async (id: string) => {
-  const res = await fetch(`${URL}/admin/employee/role/${id}`, {
+  const res = await fetch(`${URL}/admin/project/${id}`, {
     method: "DELETE",
     credentials: "include",
     headers: { "Content-Type": "application/json" },

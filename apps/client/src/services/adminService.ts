@@ -1,5 +1,6 @@
 let URL = "http://localhost:5000";
 
+import { createEmployeeSchema, employeeSchema } from "@/schemas/admin.schema";
 import { registerCompanySchema } from "@/schemas/register.schema";
 import z from "zod";
   
@@ -107,7 +108,7 @@ export const fetchEmployees =  async () => {
   return res.json();
 }
 
-export const createEmployeeService = async (data: { role_name: string }) => {
+export const createEmployeeService = async (data: z.Infer<typeof createEmployeeSchema>) => {
     const res = await fetch(`${URL}/admin/createEmployee`, {
       method: "POST",
       credentials: "include",
@@ -120,21 +121,21 @@ export const createEmployeeService = async (data: { role_name: string }) => {
     return res.json();
 };
 
-export const updateEmployeeService = async (id: string, data: { role_name: string }) => {
+export const updateEmployeeService = async (id: string, data: z.Infer<typeof employeeSchema>) => {
   const res = await fetch(`${URL}/admin/employee/${id}`, {
     method: "PUT",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-
-  if (!res.ok) throw new Error("Error updating role");
+  console.log("Res: ", res);
+  if (!res.ok) throw new Error("Error updating employee");
 
   return res.json();
 };
 
 export const deleteEmployeeService = async (id: string) => {
-  const res = await fetch(`${URL}/admin/employee/role/${id}`, {
+  const res = await fetch(`${URL}/admin/employee/${id}`, {
     method: "DELETE",
     credentials: "include",
     headers: { "Content-Type": "application/json" },

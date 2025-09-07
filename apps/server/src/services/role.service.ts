@@ -19,9 +19,7 @@ export const createRole = async (userData: any) => {
 };
 
 export const getRoles = async () => {
-  console.log("Fetching roles");
   const roles = await Role.find();
-  console.log("Role: ",roles);
   return roles;
 };
 

@@ -1,5 +1,6 @@
-import { createRoleSchema, roleListSchema, roleSchema } from "@/schemas/admin.schema";
+import { createEmployeeSchema, createRoleSchema, employeeSchema, roleListSchema, roleSchema } from "@/schemas/admin.schema";
 import { fetchEmployees, createEmployeeService, updateEmployeeService, deleteEmployeeService } from "@/services/adminService";
+import z from "zod";
 
 export async function getEmployees() {
 
@@ -15,14 +16,10 @@ export async function getEmployees() {
 }
 
 
-export async function createEmployee(data: unknown) {
-  const parsed = createRoleSchema.safeParse(data);
-  if (!parsed.success) {
-    return { success: false, message: "Invalid data" };
-  }
+export async function createEmployee(data: z.Infer<typeof createEmployeeSchema>) {
 
   try {
-    const role = await createEmployeeService(parsed.data);
+    const role = await createEmployeeService(data);
     return { success: true, data: role };
   } catch (err: any) {
     return { success: false, message: err.message || "Failed to create role" };
@@ -30,21 +27,15 @@ export async function createEmployee(data: unknown) {
 }
 
 
-export async function updateEmployee(id: string, data: unknown) {
-  const parsed = createRoleSchema.safeParse(data); // reuse schema since same shape
-  if (!parsed.success) {
-    return { success: false, message: "Invalid data" };
-  }
-
+export async function updateEmployee(id: string, data: z.Infer<typeof employeeSchema>) {
   try {
-    const updated = await updateEmployeeService(id, parsed.data);
+    const updated = await updateEmployeeService(id, data);
     return { success: true, data: updated };
   } catch (err: any) {
     return { success: false, message: err.message || "Failed to update role" };
   }
 }
 
-// ✅ Delete role
 export async function deleteEmployee(id: string) {
   try {
     await deleteEmployeeService(id);

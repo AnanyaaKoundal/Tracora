@@ -5,14 +5,17 @@ import ApiResponse from "@/utils/ApiResponse";
 
 // Create user
 export const createEmployee = asyncHandler(async (req: Request, res: Response) => {
-  const result = await userService.createEmployee(req.body);
+  const result = await userService.createEmployee({
+    ...req.body,
+    company_id: (req as any).user.company_id, 
+  });
+
   res.status(201).json(new ApiResponse(201, "Employee created", result));
 });
 
 // Get all users
 export const getEmployees = asyncHandler(async (_req: Request, res: Response) => {
   const result = await userService.getEmployees();
-  console.log("Fetched users: ", result);
   res.status(200).json(new ApiResponse(200, "Employees fetched", result));
 });
 

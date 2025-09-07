@@ -38,10 +38,19 @@ export function EditProjectDrawer({
     },
   });
 
-  // ✅ Reset form values when project changes
   useEffect(() => {
     if (!open) return;
-    if (project) reset(project);
+    if (project) {
+      reset({
+        ...project,
+        project_start_date: project.project_start_date
+          ? new Date(project.project_start_date).toISOString().split("T")[0]
+          : "",
+        project_end_date: project.project_end_date
+          ? new Date(project.project_end_date).toISOString().split("T")[0]
+          : "",
+      });
+    }
   }, [open, project, reset]);
 
   const onSubmit = async (data: Project) => {

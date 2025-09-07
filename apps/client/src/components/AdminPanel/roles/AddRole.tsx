@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createRoleSchema, CreateRoleInput } from "@/schemas/admin.schema";
 import { createRole } from "@/actions/rolesAction"; 
-import { toast } from "sonner"; // ✅ replacement for old shadcn toast
+import { toast } from "sonner"; 
 import {
   Sheet,
   SheetContent,
@@ -31,8 +31,8 @@ export function AddRoleDrawer({ onRoleCreated }: { onRoleCreated: () => void }) 
       if (res.success) {
         toast.success("Role created successfully ✅");
         form.reset();
-        setOpen(false); // ✅ close drawer
-        onRoleCreated(); // ✅ tell parent to refresh
+        setOpen(false); 
+        onRoleCreated(); 
       } else {
         toast.error(res.message || "Failed to create role ❌");
       }

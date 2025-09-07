@@ -84,7 +84,7 @@ export const deleteRoleService = async (id: string) => {
     method: "DELETE",
     headers: { "Content-Type": "application/json" },
   });
-
+  console.log(res);
   if (!res.ok) throw new Error("Error deleting role");
 
   return res.json();

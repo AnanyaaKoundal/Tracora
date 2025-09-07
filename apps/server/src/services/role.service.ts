@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 import Role from "../models/role.model";
 import ApiError from "../utils/ApiError";
+import Employee from "@/models/employee.model";
 
 export const createRole = async (userData: any) => {
   const { role_name } = userData;
@@ -48,6 +49,11 @@ export const editRole = async (role_id: string, updateData: any) => {
 };
 
 export const deleteRoleById = async (role_id: string) => {
+  const assignedEmployee = await Employee.findOne({ roleId: role_id });
+  if (assignedEmployee) {
+    throw new ApiError(400, "Cannot delete role. Employees are assigned to it.");
+  }
+
   const role = await Role.findOneAndDelete({ role_id });
 
   if (!role) {

@@ -1,3 +1,4 @@
+import Employee from "@/models/employee.model";
 import Project from "../models/project.model";
 import ApiError from "../utils/ApiError";
 import { generateProjectId } from "./id.service";
@@ -48,6 +49,11 @@ export const editProject = async (project_id: string, updateData: any) => {
 };
 
 export const deleteProjectById = async (project_id: string) => {
+  const assignedEmployees = await Employee.findOne({ projectId: project_id });
+  if (assignedEmployees) {
+    throw new ApiError(400, "Cannot delete project. Employees are assigned to it.");
+  }
+
   const project = await Project.findOneAndDelete({ project_id });
 
   if (!project) {

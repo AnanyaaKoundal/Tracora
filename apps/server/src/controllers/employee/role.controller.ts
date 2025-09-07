@@ -3,6 +3,7 @@ import * as roleService from "../../services/role.service";
 import asyncHandler from "../../utils/asyncHandler";
 import ApiResponse from "../../utils/ApiResponse";
 import { request } from "http";
+import ApiError from "@/utils/ApiError";
 
 export const createRole = asyncHandler(async (req: Request, res: Response) => {
   const newRole = await roleService.createRole(req.body);
@@ -29,8 +30,12 @@ export const editRole = asyncHandler(async (req: Request, res: Response) => {
 
 // Delete Role by ID
 export const deleteRoleById = asyncHandler(async (req: Request, res: Response) => {
+  try{
   const deletedRole = await roleService.deleteRoleById(req.params.role_id);
   res.status(200).json(new ApiResponse(200, "Role deleted successfully", deletedRole));
+  }catch(error: Error | any){
+    res.status(400).json(new ApiError(400, error.message) );
+  }
 });
 
 // Delete multiple Roles by IDs (expects array of role_ids in req.body.roleIds)

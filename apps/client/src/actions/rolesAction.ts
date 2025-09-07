@@ -44,10 +44,9 @@ export async function updateRole(id: string, data: unknown) {
 }
 
 export async function deleteRole(id: string) {
-  try {
-    await deleteRoleService(id);
-    return { success: true };
-  } catch (err: any) {
-    return { success: false, message: err.message || "Failed to delete role" };
-  }
+    const res = await deleteRoleService(id);
+    if(!res.success){
+      return { success: false, message: res.error || "Failed to delete role"};
+    }
+    return { success: true, data: res.data};
 }

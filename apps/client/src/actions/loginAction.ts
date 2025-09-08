@@ -1,5 +1,5 @@
 import { loginSchema } from "@/schemas/login.schema";
-import { fetchCompaniesService, loginUser, verifyLoginOtpService } from "@/services/authService"
+import { fetchCompaniesService, loginUser, logoutService, verifyLoginOtpService } from "@/services/authService"
 import { z } from "zod";
 
 
@@ -43,5 +43,21 @@ export const fetchCompanies = async () => {
   } catch (error) {
     console.error("Error fetching companies:", error);
     return [];
+  }
+};
+
+export const logout = async () => {
+  try {
+    const res = await logoutService();
+
+    if (res.success) {
+      localStorage.clear();
+      sessionStorage.clear();
+    }
+
+    return res;
+  } catch (err: any) {
+    console.error("Logout failed", err);
+    return { success: false, message: "Logout failed" };
   }
 };

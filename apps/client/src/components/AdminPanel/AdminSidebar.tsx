@@ -1,6 +1,8 @@
 'use client';
 
+import { logout } from '@/actions/loginAction';
 import { Menu } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function AdminSidebar({
   isOpen,
@@ -9,6 +11,17 @@ export default function AdminSidebar({
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
 }) {
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    const res = await logout();
+    if (res.success) {
+      router.push("/"); // redirect to homepage/login
+    } else {
+      console.error(res.message);
+    }
+  };
+
   return (
     <div className="flex">
       {/* Hamburger button - always visible */}
@@ -49,9 +62,12 @@ export default function AdminSidebar({
           <a href="/admin/settings" className="block hover:bg-primary/60 p-2 rounded pl-8">
             Settings
           </a>
-          <a href="/" className="block hover:bg-red-500/60 p-2 rounded pl-8">
+          <button
+            onClick={handleLogout}
+            className="block w-full text-left hover:bg-primary/60 p-2 rounded pl-8"
+          >
             Logout
-          </a>
+          </button>
         </nav>
       </aside>
     </div>

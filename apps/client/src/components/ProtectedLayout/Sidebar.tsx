@@ -2,9 +2,19 @@
 
 import { useState } from 'react';
 import { Menu, X } from 'lucide-react';
+import { logout } from '@/actions/loginAction';
+import { useRouter } from 'next/navigation';
 
 export default function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean; setIsOpen: (open: boolean) => void; }) {
-
+  const router = useRouter();
+  const handleLogout = async () => {
+    const res = await logout();
+    if (res.success) {
+      router.push("/"); // redirect to homepage/login
+    } else {
+      console.error(res.message);
+    }
+  };
   return (
     <div className='flex'>
       {/* Hamburger button - always visible */}
@@ -37,9 +47,12 @@ export default function Sidebar({ isOpen, setIsOpen }: { isOpen: boolean; setIsO
           <a href="/bugs" className="block hover:bg-primary/60 p-2 rounded pl-8">
             Bugs
           </a>
-          <a href="/" className="block hover:bg-primary/60 p-2 rounded pl-8">
+          <button
+            onClick={handleLogout}
+            className="block w-full text-left hover:bg-primary/60 p-2 rounded pl-8"
+          >
             Logout
-          </a>
+          </button>
         </nav>
       </aside>
     </div>

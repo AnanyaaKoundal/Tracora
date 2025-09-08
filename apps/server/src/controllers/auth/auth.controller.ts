@@ -63,3 +63,14 @@ export const verifyLoginOtpController = asyncHandler(async (req: Request, res: R
     role_name: role,
   })
 })
+
+export const logout = asyncHandler(async (req: Request, res: Response): Promise<any> => {
+
+  // Clear cookie(s) – adjust names to match how you set them
+  res.clearCookie("token", { httpOnly: true, sameSite: "strict" });
+  res.clearCookie("refreshToken", { httpOnly: true, sameSite: "strict" });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "Logged out successfully", {}));
+});

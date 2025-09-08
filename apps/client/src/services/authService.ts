@@ -45,3 +45,19 @@ export const verifyLoginOtpService = async (values: z.Infer<typeof loginSchema>)
   const res = await response.json();
   return res;
 };
+
+export const logoutService = async () => {
+  const res = await fetch(`${URL}/auth/logout`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error("Logout failed");
+  }
+
+  return await res.json();
+};

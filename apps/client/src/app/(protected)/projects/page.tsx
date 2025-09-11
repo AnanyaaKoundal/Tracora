@@ -7,6 +7,7 @@ import {
   createProject,
   updateProject,
   deleteProject,
+  getProjects,
 } from "@/actions/projectAction";
 import { AddProjectDrawer } from "@/components/AdminPanel/projects/AddProject";
 import { EditProjectDrawer } from "@/components/AdminPanel/projects/EditProject";
@@ -65,7 +66,7 @@ export default function ProjectsPage() {
 
   useEffect(() => {
     async function fetchData() {
-      const projectData = await getAllProjects();
+      const projectData = await getProjects();
       setProjects(projectData);
     }
     fetchData();

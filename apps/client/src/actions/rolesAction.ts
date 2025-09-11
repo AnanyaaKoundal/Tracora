@@ -5,6 +5,10 @@ export async function getRoles() {
 
   const data = await fetchRolesforAdmin();
   console.log("Data: ", data);
+  if (data.status === 403) {
+      window.location.href = "/forbidden"; 
+    return;
+  }
   if (!data.success) {
     console.error("Failed to fetch roles", data.error);
     return [];

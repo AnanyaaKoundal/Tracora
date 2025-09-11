@@ -12,8 +12,8 @@ export const createProject = asyncHandler(async (req: Request, res: Response) =>
   });
 });
 
-export const getProjects = asyncHandler(async (_req: Request, res: Response) => {
-  const projects = await projectService.getProjects();
+export const getAllProjects = asyncHandler(async (_req: Request, res: Response) => {
+  const projects = await projectService.getAllProjects();
   res.status(200).json({
     success: true,
     message: "Projects fetched successfully",
@@ -57,4 +57,13 @@ export const deleteProjectsByIds = asyncHandler(async (req: Request, res: Respon
     data: result,
   });
 });
- 
+
+export const getProjectsByRole = asyncHandler(async (req: Request, res: Response) => {
+  const user = (req as any).user;
+  const projects = await projectService.getProjects(user);
+  res.status(200).json({
+    success: true,
+    message: "Projects fetched successfully",
+    data: projects,
+  });
+});

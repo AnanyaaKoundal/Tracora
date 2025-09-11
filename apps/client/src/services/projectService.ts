@@ -17,7 +17,7 @@ export const createProjectService = async (data: z.Infer<typeof createProjectSch
 };
 
 export const fetchAllProjectsService = async () => {
-    const res = await fetch(`${URL}/projects/get-projects`, {
+    const res = await fetch(`${URL}/admin/get-projects`, {
         method: "GET",
         credentials: "include",
         headers: {
@@ -25,6 +25,10 @@ export const fetchAllProjectsService = async () => {
         },
         cache: "no-store",
       });
+
+      if(res.status === 403){
+        return { error: "Forbidden", status: 403, success: false};
+      }
     
       if (!res.ok) {
         throw new Error("Failed to fetch employees");
@@ -57,3 +61,24 @@ export const deleteProjectService = async (id: string) => {
 
   return res.json();
 };
+
+export const fetchProjectsService = async () => {
+  const res = await fetch(`${URL}/projects/get-projects`, {
+      method: "GET",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      cache: "no-store",
+    });
+
+    if(res.status === 403){
+      return { error: "Forbidden", status: 403, success: false};
+    }
+  
+    if (!res.ok) {
+      throw new Error("Failed to fetch employees");
+    }
+  
+    return res.json();
+}

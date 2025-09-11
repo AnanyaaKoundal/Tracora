@@ -45,7 +45,11 @@ export const fetchRolesforAdmin =  async () => {
     cache: "no-store",
   });
 
-  if (!res.ok) {
+  if(res.status === 403){
+    return { error: "Forbidden", status: 403, success: false};
+  }
+
+  if(!res.ok){
     throw new Error("Failed to fetch roles");
   }
 

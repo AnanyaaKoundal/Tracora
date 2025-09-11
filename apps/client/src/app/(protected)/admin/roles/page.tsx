@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { DeleteRoleDialog } from "@/components/AdminPanel/roles/DeleteRole";
 import { EditRoleDrawer } from "@/components/AdminPanel/roles/EditRole";
 import { updateRole, deleteRole } from "@/actions/rolesAction";
+import { useRouter } from "next/navigation";
 
 type Role = {
   role_id: string;
@@ -18,6 +19,7 @@ type Role = {
 };
 
 export default function RolesPage() {
+  const router = useRouter();
   const [roles, setRoles] = useState<Role[]>([]);
   const [editingRole, setEditingRole] = useState<Role | null>(null);
   const [deletingRole, setDeletingRole] = useState<Role | null>(null);

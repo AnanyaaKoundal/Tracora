@@ -3,10 +3,11 @@
 import { useState, useEffect } from "react";
 import { DataTable, Column } from "@/components/Table/DataTable";
 import {
-  getAllProjects,
+  getProjects,
   createProject,
   updateProject,
   deleteProject,
+  getAllProjects,
 } from "@/actions/projectAction";
 import { AddProjectDrawer } from "@/components/AdminPanel/projects/AddProject";
 import { EditProjectDrawer } from "@/components/AdminPanel/projects/EditProject";
@@ -77,7 +78,7 @@ export default function ProjectsPage() {
         <h1 className="text-xl font-semibold">Manage Projects</h1>
         <AddProjectDrawer
           onProjectCreated={async () => {
-            const fresh = await getAllProjects();
+            const fresh = await getProjects();
             setProjects(fresh);
           }}
         />
@@ -97,7 +98,7 @@ export default function ProjectsPage() {
             try {
               const res = await updateProject(id, data);
               if (res.success) {
-                const fresh = await getAllProjects();
+                const fresh = await getProjects();
                 setProjects(fresh);
                 setEditingProject(null);
               }
@@ -122,7 +123,7 @@ export default function ProjectsPage() {
           onConfirm={async () => {
             const res = await deleteProject(deletingProject.project_id);
             if (res.success) {
-              const fresh = await getAllProjects();
+              const fresh = await getProjects();
               setProjects(fresh);
               setDeletingProject(null);
             }

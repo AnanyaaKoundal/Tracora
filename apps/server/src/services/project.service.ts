@@ -19,7 +19,7 @@ export const createProject = async (projectData: any, user: any) => {
   return newProject;
 };
 
-export const getProjects = async () => {
+export const getAllProjects = async () => {
   const projects = await Project.find();
   return projects;
 };
@@ -75,4 +75,18 @@ export const deleteProjectsByIds = async (projectIds: string[]) => {
   }
 
   return { deletedCount: result.deletedCount };
+};
+
+
+export const getProjects = async (user: any) => {
+  console.log("User; ", user);
+  if (!user || !user.projectId) {
+    return []; // No projects assigned
+  }
+
+  const projects = await Project.find({
+    project_id: { $in: user.projectId }
+  });
+  console.log("Projects: ", projects);
+  return projects;
 };

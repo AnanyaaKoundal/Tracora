@@ -20,7 +20,9 @@ import {
     createProject ,
     editProject,
     deleteProjectById,
-    deleteProjectsByIds
+    deleteProjectsByIds,
+    getAllProjects,
+    getProjectById
 } from "@/controllers/project/project.controller";
 
 const Router = express.Router();
@@ -42,10 +44,11 @@ Router.route("/employee/:emp_id")
     .put(editEmployee)
     .delete(deleteEmployeeById);
 
+Router.route("/get-projects").get(authenticate, authorizeRole(["developer", "manager", "tester"]), getAllProjects);
 Router.route("/createProject").post(createProject);
 Router.route("/project/:p_id")
+.get(getProjectById)
     .put(editProject)
     .delete(deleteProjectById);
-    // .post(deleteProjectsByIds);
 
 export default Router;

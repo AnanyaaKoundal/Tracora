@@ -46,7 +46,7 @@ export const verifyLoginOtpController = asyncHandler(async (req: Request, res: R
   const token = generateToken({
     company_id: company_id,
     employee_id: employee_id,
-    role: "admin"
+    role: role.role_name,
   });
   res.cookie("token", token, {
     httpOnly: true,

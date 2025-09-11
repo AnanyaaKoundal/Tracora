@@ -19,11 +19,11 @@ const bugSchema = new mongoose.Schema({
         enum: ["Open", "Under Review", "Closed", "Fixed"],
         default: "Open"
     },
-    feature_id: {
-        type: String,
-        ref: "Feature",
-        required: true
-    },
+    // feature_id: {
+    //     type: String,
+    //     ref: "Feature",
+    //     required: true
+    // },
     reported_by: {
         type: String,
         ref: 'Employee',

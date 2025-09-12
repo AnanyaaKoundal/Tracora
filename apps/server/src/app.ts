@@ -1,14 +1,15 @@
 import express from 'express';
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import errorHandler from './middlewares/errorHandler.middleware';
+import errorHandler from '@/middlewares/errorHandler.middleware';
 
 // Import routes
-import roleRoutes from "./routes/role.route";
-import userRoutes from "./routes/employee.route";
-import projectRoutes from "./routes/project.route";
-import authRoutes from "./routes/auth.route";
-import adminRoutes from "./routes/admin.route";
+import roleRoutes from "@/routes/role.route";
+import userRoutes from "@/routes/employee.route";
+import projectRoutes from "@/routes/project.route";
+import authRoutes from "@/routes/auth.route";
+import adminRoutes from "@/routes/admin.route";
+import bugRoutes from "@/routes/bug.route"
 
 const app = express();
 
@@ -32,6 +33,7 @@ app.use("/users", userRoutes);
 app.use("/projects", projectRoutes);
 app.use("/auth", authRoutes);
 app.use("/admin", adminRoutes);
+app.use("/bug", bugRoutes);
 
 app.use(errorHandler);
 

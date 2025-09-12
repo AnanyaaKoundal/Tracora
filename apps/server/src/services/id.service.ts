@@ -13,3 +13,7 @@ export const generateEmployeeId = () => {
 export const generateProjectId = () => {
   return `PRJ-${nanoid()}`;
 }
+
+export const generateBugId = () => {
+  return `B-${nanoid()}`;
+}

@@ -51,14 +51,81 @@
 git clone https://github.com/AnanyaaKoundal/Tracora.git
 cd Tracora
 ```
-### Install Dependencies
+### 2️⃣ Install Dependencies
 
 Using Yarn:
-```yarn
+```bash
 yarn install
 ```
 
 Or using npm:
-```npm
+```bash
 npm install
 ```
+
+### 3️⃣ Configure Environment Variables
+
+Create a .env file in the root and add:
+```bash
+# Server
+PORT=5000
+MONGO_URI=mongodb+srv://<user>:<password>@cluster0.mongodb.net/tracora
+JWT_SECRET=super_secret_key
+JWT_EXPIRES_IN=7d
+
+# Frontend
+NEXT_PUBLIC_API_URL=http://localhost:5000
+NEXTAUTH_URL=http://localhost:3000
+```
+
+### 4️⃣ Run the App Locally
+
+Start backend:
+```bash
+yarn dev:server
+# or
+npm run dev:server
+```
+
+Start frontend:
+```bash
+yarn dev
+# or
+npm run dev
+```
+
+Visit http://localhost:3000
+
+
+## 📈 Roadmap
+
+- [x] Core bug tracking (CRUD)
+- [x] RBAC (Developer / Tester / Manager)
+- [x] Authentication & secure cookies
+- [ ] Real-time notifications via WebSockets
+- [ ] AI-based duplicate detection
+- [ ] Analytics dashboard & export support
+- [ ] Multi-tenant / SaaS improvements
+
+# 🤝 Contributing
+
+Thanks for wanting to contribute! Please:
+
+Fork the repo
+
+1. Create branch: git checkout -b feature/your-feature
+
+2. Commit your changes: git commit -m "feat: add ..."
+
+3. Push: git push origin feature/your-feature
+
+4. Open a Pull Request describing the change
+
+5. Please follow the existing code style and run linters/tests before submitting.
+
+
+### ❤️ Made with love
+
+Made with ❤️ by Your Name
+.
+If you find Tracora useful, please ⭐ the repo and share feedback.

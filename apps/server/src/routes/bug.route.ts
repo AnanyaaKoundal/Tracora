@@ -4,10 +4,10 @@ import {
     deleteBugById, 
     editBug, 
     getAllBugs, 
-    getBugsById 
+    getBugsById,
+    getbugById
 } from "@/controllers/bug/bug.controller"; 
 import { authenticate, authorizeRole } from "@/middlewares/auth.middleware";
-import { getBugById } from "@/services/bug.service";
 
 const Router = express.Router();
 Router.use(authenticate, authorizeRole(["developer", "manager", "tester"]));
@@ -15,7 +15,7 @@ Router.use(authenticate, authorizeRole(["developer", "manager", "tester"]));
 Router.route("/create-bug").post(createBug);
 Router.route("/getAllbugs").get(getAllBugs);
 Router.route("/:bug_id")
-    .get(getBugById)
+    .get(getbugById)
     .put(editBug)
 Router.route("/delete/:bug_id")
     .delete(deleteBugById);

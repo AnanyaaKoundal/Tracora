@@ -1,6 +1,6 @@
 import z from "zod";
-import { createBugSchema, bugSchema, CreateBugInput } from "@/schemas/bug.schema";
-import { fetchAllBugsService, createBugService, deleteBugService} from "@/services/bugService";
+import { createBugSchema, bugSchema, CreateBugInput, Bug } from "@/schemas/bug.schema";
+import { fetchAllBugsService, createBugService, deleteBugService, fetchBugByIdService, updateBugService} from "@/services/bugService";
 
 export async function getAllBugs() {
 
@@ -32,6 +32,24 @@ export async function deleteBug(id: string) {
     await deleteBugService(id);
     return { success: true };
   } catch (err: any) {
-    return { success: false, message: err.message || "Failed to delete role" };
+    return { success: false, message: err.message || "Failed to delete bug" };
+  }
+}
+
+export async function getBugById(id: string){
+  try {
+    const bug = await fetchBugByIdService(id);
+    return { success: true, data: bug.data };
+  } catch (err: any) {
+    return { success: false, message: err.message || "Failed to fetch bug" };
+  }
+}
+
+export async function updateBug(data : Bug) {
+  try {
+    await updateBugService(data);
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, message: err.message || "Failed to update bug" };
   }
 }

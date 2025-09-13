@@ -1,5 +1,5 @@
 import z from "zod";
-import { CreateBugInput, createBugSchema } from "@/schemas/bug.schema";
+import { Bug, CreateBugInput, createBugSchema } from "@/schemas/bug.schema";
 
 let URL = "http://localhost:5000";
 
@@ -45,6 +45,31 @@ export const deleteBugService = async (id: string) => {
   });
 
   if (!res.ok) throw new Error("Error deleting role");
+
+  return res.json();
+};
+
+export const fetchBugByIdService = async (id: string) => {
+  const res = await fetch(`${URL}/bug/${id}`, {
+    method: "GET",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  if (!res.ok) throw new Error("Error fetching bug");
+
+  return res.json();
+};
+
+export const updateBugService = async (bug: Bug) => {
+  const res = await fetch(`${URL}/bug/${bug.bug_id}`, {
+    method: "PUT",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(bug),
+  });
+
+  if (!res.ok) throw new Error("Error updating the bug");
 
   return res.json();
 };

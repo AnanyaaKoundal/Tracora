@@ -107,7 +107,7 @@ Visit http://localhost:3000
 - [ ] Analytics dashboard & export support
 - [ ] Multi-tenant / SaaS improvements
 
-# 🤝 Contributing
+### 🤝 Contributing
 
 Thanks for wanting to contribute! Please:
 
@@ -126,6 +126,6 @@ Fork the repo
 
 ### ❤️ Made with love
 
-Made with ❤️ by Your Name
+Made with ❤️ by Ananyaa
 .
 If you find Tracora useful, please ⭐ the repo and share feedback.

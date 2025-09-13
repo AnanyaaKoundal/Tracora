@@ -1,10 +1,11 @@
 import { Request, Response } from "express";
-import { companyExists, createCompany } from "@services/company.service";
+import { companyExists, createCompany, getCompanyById } from "@services/company.service";
 import { createAdminEmployee } from "@services/employee.service";
 import { sendOtp } from "@services/otp.service";
 import {generateToken} from "@services/auth.service";
 import Company from "@/models/company.model";
 import ApiError from "@/utils/ApiError";
+import asyncHandler from "@/utils/asyncHandler";
 
 export const registerCompanyController = async (req: Request, res: Response): Promise<any> => {
     try {
@@ -113,3 +114,13 @@ export const verifyOtpAndRegisterCompanyController = async (req: Request, res: R
       return res.status(400).json({ success: false, message: error.message });
     }
   };
+
+export const getCompanyController = asyncHandler(async (req: Request, res: Response) => {
+  const id = (req as any).user.company_id;
+  const company = await getCompanyById(id);
+  res.status(200).json({
+      success: true,
+      message: "Bug fetched successfully",
+      company: company,
+  });
+});

@@ -34,6 +34,26 @@ export const verifyOtpAndCreateCompanyService =  async (values: z.Infer<typeof r
   return res;
 };
 
+export const getCompanyDetails = async () => {
+  const res = await fetch(`${URL}/admin/getCompany`, {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+  });
+
+  if(res.status === 403){
+    return { error: "Forbidden", status: 403, success: false};
+  }
+
+  if(!res.ok){
+    throw new Error("Failed to fetch company details");
+  }
+
+  return res.json();
+}
 
 export const fetchRolesforAdmin =  async () => {
   const res = await fetch(`${URL}/admin/getRoles`, {

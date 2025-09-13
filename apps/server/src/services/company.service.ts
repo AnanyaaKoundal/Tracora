@@ -59,3 +59,15 @@ export const createCompany = async(data: any) => {
    }
  };
  
+
+ export const getCompanyById = async(company_id: string) => {
+  try{
+    const company = await Company.findOne({ company_id: company_id});
+    if(!company){
+        throw new Error("Company not found");
+    }
+    return company;
+  }catch(error){
+    throw new Error("Error fetching company: "+(error as Error).message);
+  }
+ }

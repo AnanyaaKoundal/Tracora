@@ -66,3 +66,14 @@ export const projectSchema = z.object({
 });
 export type Project = z.infer<typeof projectSchema>;
 export const projectListSchema = z.array(projectSchema);
+
+export const companySchema = z.object({
+  company_id: z.string(),
+  company_name: z.string(),
+  company_email: z.string().email(),
+  company_phone: z.string(),
+  createdAt: z.string().or(z.date()).optional(),
+  updatedAt: z.string().or(z.date()).optional(),
+});
+
+export type Company = z.infer<typeof companySchema>;

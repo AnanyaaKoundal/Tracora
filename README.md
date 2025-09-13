@@ -48,5 +48,15 @@
 
 ### 1️⃣ Clone the Repository
 ```bash
-git clone https://github.com/your-username/Tracora.git
+git clone https://github.com/AnanyaaKoundal/Tracora.git
 cd Tracora
+
+### Install Dependencies
+
+Using Yarn:
+```yarn
+yarn install
+
+Or using npm:
+```npm
+npm install

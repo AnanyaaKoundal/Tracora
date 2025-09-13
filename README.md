@@ -50,13 +50,15 @@
 ```bash
 git clone https://github.com/AnanyaaKoundal/Tracora.git
 cd Tracora
-
+```
 ### Install Dependencies
 
 Using Yarn:
 ```yarn
 yarn install
+```
 
 Or using npm:
 ```npm
 npm install
+```

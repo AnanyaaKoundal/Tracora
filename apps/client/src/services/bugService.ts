@@ -1,9 +1,9 @@
 import z from "zod";
-import { createBugSchema } from "@/schemas/bug.schema";
+import { CreateBugInput, createBugSchema } from "@/schemas/bug.schema";
 
 let URL = "http://localhost:5000";
 
-export const createBugService = async (data: z.Infer<typeof createBugSchema>) => {
+export const createBugService = async (data: CreateBugInput) => {
     const res = await fetch(`${URL}/bug/create-bug`, {
       method: "POST",
       credentials: "include",
@@ -36,3 +36,15 @@ export const fetchAllBugsService = async () => {
     
       return res.json();
 }
+
+export const deleteBugService = async (id: string) => {
+  const res = await fetch(`${URL}/bug/delete/${id}`, {
+    method: "DELETE",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  if (!res.ok) throw new Error("Error deleting role");
+
+  return res.json();
+};

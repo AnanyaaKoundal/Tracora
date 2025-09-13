@@ -5,7 +5,7 @@ import {
     editBug, 
     getAllBugs, 
     getBugsById 
-} from "@/controllers/bug/bug.controller";
+} from "@/controllers/bug/bug.controller"; 
 import { authenticate, authorizeRole } from "@/middlewares/auth.middleware";
 import { getBugById } from "@/services/bug.service";
 
@@ -14,9 +14,10 @@ Router.use(authenticate, authorizeRole(["developer", "manager", "tester"]));
 
 Router.route("/create-bug").post(createBug);
 Router.route("/getAllbugs").get(getAllBugs);
-Router.route("/get-project/:bug_id")
+Router.route("/:bug_id")
     .get(getBugById)
     .put(editBug)
+Router.route("/delete/:bug_id")
     .delete(deleteBugById);
 
 export default Router;

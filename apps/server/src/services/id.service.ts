@@ -1,6 +1,7 @@
 import { customAlphabet } from "nanoid";
 
 const nanoid = customAlphabet("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", 10);
+const bugid = customAlphabet("0123456789", 10);
 
 export const generateCompanyId = () => {
   return `CMP-${nanoid()}`;
@@ -15,5 +16,5 @@ export const generateProjectId = () => {
 }
 
 export const generateBugId = () => {
-  return `B-${nanoid()}`;
+  return `B-${bugid()}`;
 }

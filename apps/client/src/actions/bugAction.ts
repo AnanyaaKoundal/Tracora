@@ -1,6 +1,6 @@
 import z from "zod";
-import { createBugSchema, bugSchema } from "@/schemas/bug.schema";
-import { fetchAllBugsService, createBugService} from "@/services/bugService";
+import { createBugSchema, bugSchema, CreateBugInput } from "@/schemas/bug.schema";
+import { fetchAllBugsService, createBugService, deleteBugService} from "@/services/bugService";
 
 export async function getAllBugs() {
 
@@ -16,4 +16,22 @@ export async function getAllBugs() {
   }
 
   return data.data;
+}
+
+export async function createBug(data: CreateBugInput){
+  try {
+      const bug = await createBugService(data);
+      return { success: true, data: bug };
+    } catch (err: any) {
+      return { success: false, message: err.message || "Failed to create bug" };
+    }
+}
+
+export async function deleteBug(id: string) {
+  try {
+    await deleteBugService(id);
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, message: err.message || "Failed to delete role" };
+  }
 }

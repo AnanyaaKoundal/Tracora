@@ -1,32 +1,19 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { DataTable, Column } from "@/components/Table/DataTable";
-import {
-  getAllProjects,
-  createProject,
-  updateProject,
-  deleteProject,
-  getProjects,
-} from "@/actions/projectAction";
-import { AddProjectDrawer } from "@/components/AdminPanel/projects/AddProject";
-import { EditProjectDrawer } from "@/components/AdminPanel/projects/EditProject";
-import { DeleteProjectDialog } from "@/components/AdminPanel/projects/DeleteProject";
-import { MoreHorizontal } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
+import { getAllBugs, deleteBug } from "@/actions/bugAction";
+import { AddBugDrawer } from "@/components/Bug/AddBug";
 import { Bug } from "@/schemas/bug.schema";
-import { getAllBugs } from "@/actions/bugAction";
+import { Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { DeleteProjectDialog } from "@/components/AdminPanel/projects/DeleteProject";
 
-export default function ProjectsPage() {
-  const [projects, setProjects] = useState<Bug[]>([]);
-  const [editingProject, setEditingProject] = useState<Bug | null>(null);
-  const [deletingProject, setDeletingProject] = useState<Bug | null>(null);
+export default function BugsPage() {
+  const [bugs, setBugs] = useState<Bug[]>([]);
+  const [deletingBug, setDeletingBug] = useState<Bug | null>(null);
+  const router = useRouter();
 
   const columns: Column<Bug>[] = [
     { key: "bug_id", header: "ID" },
@@ -44,21 +31,16 @@ export default function ProjectsPage() {
       header: <div className="text-right">Actions</div>,
       render: (row: Bug) => (
         <div className="flex justify-end">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setEditingProject(row)}>
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setDeletingProject(row)}>
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={(e) => {
+              e.stopPropagation(); // prevents row click
+              setDeletingBug(row);
+            }}
+          >
+            <Trash2 className="h-4 w-4 text-red-500" />
+          </Button>
         </div>
       ),
     },
@@ -67,7 +49,7 @@ export default function ProjectsPage() {
   useEffect(() => {
     async function fetchData() {
       const bugData = await getAllBugs();
-      setProjects(bugData);
+      setBugs(bugData);
     }
     fetchData();
   }, []);
@@ -76,61 +58,40 @@ export default function ProjectsPage() {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h1 className="text-xl font-semibold">Manage Bugs</h1>
-        <AddProjectDrawer
-          onProjectCreated={async () => {
-            const fresh = await getAllProjects();
-            setProjects(fresh);
+        <AddBugDrawer
+          onBugCreated={async () => {
+            const fresh = await getAllBugs();
+            setBugs(fresh);
           }}
         />
       </div>
 
-      <DataTable<Bug> columns={columns} data={projects} />
+      <DataTable<Bug>
+        columns={columns}
+        data={bugs}
+        onRowClick={(row) => router.push(`/bugs/${row.bug_id}`)}
+      />
 
-      {/* Edit Drawer */}
-      {/* {editingProject && (
-        <EditProjectDrawer
-          open={!!editingProject}
-          onOpenChange={(open: boolean) => {
-            if (!open) setEditingProject(null);
-          }}
-          project={editingProject}
-          onSave={async (id, data) => {
-            try {
-              const res = await updateProject(id, data);
-              if (res.success) {
-                const fresh = await getAllProjects();
-                setProjects(fresh);
-                setEditingProject(null);
-              }
-              return res;
-            } catch (error) {
-              console.error("Error updating project:", error);
-              return { success: false, message: "Update failed" };
-            }
-          }}
-        />
-      )} */}
-
-      {/* Delete Dialog */}
-      {/* {deletingProject && (
+      {/* Delete Confirmation Dialog */}
+      {deletingBug && (
         <DeleteProjectDialog
-          open={!!deletingProject}
+          open={!!deletingBug}
           onOpenChange={(open: boolean) => {
-            if (!open) setDeletingProject(null);
+            if (!open) setDeletingBug(null);
           }}
-          projectId={deletingProject.project_id}
-          projectName={deletingProject.project_name || null} 
+          projectId={deletingBug.bug_id}
+          projectName={deletingBug.bug_name || null}
           onConfirm={async () => {
-            const res = await deleteProject(deletingProject.project_id);
+            const res = await deleteBug(deletingBug.bug_id);
             if (res.success) {
-              const fresh = await getAllProjects();
-              setProjects(fresh);
-              setDeletingProject(null);
+              const fresh = await getAllBugs();
+              setBugs(fresh);
+              setDeletingBug(null);
             }
             return res;
           }}
         />
-      )} */}
+      )}
     </div>
   );
 }

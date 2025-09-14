@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { companyExists, createCompany, getCompanyById } from "@services/company.service";
+import { companyExists, createCompany, editCompanyPhoneService, getCompanyById } from "@services/company.service";
 import { createAdminEmployee } from "@services/employee.service";
 import { sendOtp } from "@services/otp.service";
 import {generateToken} from "@services/auth.service";
@@ -120,7 +120,18 @@ export const getCompanyController = asyncHandler(async (req: Request, res: Respo
   const company = await getCompanyById(id);
   res.status(200).json({
       success: true,
-      message: "Bug fetched successfully",
+      message: "Company fetched successfully",
       company: company,
   });
 });
+
+export const editCompanyPhone = asyncHandler(async(req: Request, res: Response) => {
+  const id = (req as any).user.company_id;
+  const { phone } =req.body;
+  const company = await editCompanyPhoneService(id, phone);
+  res.status(200).json({
+      success: true,
+      message: "Company phone number updated successfully",
+      company: company,
+  });
+})

@@ -169,3 +169,14 @@ export const deleteEmployeeService = async (id: string) => {
 
   return res.json();
 };
+
+export const editCompanyPhoneService = async(phone: string) => {
+  const res = await fetch(`${URL}/admin/company/editPhone`, {
+    method: "PUT",
+    credentials: "include",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify(phone)
+  });
+  if(!res.ok) throw new Error("Error updating the phone number");
+  return res.json();
+}

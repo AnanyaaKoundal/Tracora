@@ -24,14 +24,6 @@
 
 ---
 
-## 📸 Screenshots
-
-| Dashboard | Bug List | Bug Details |
-|----------|----------|-------------|
-| ![Dashboard Screenshot](docs/screenshots/dashboard.png) | ![Bug List Screenshot](docs/screenshots/bugs.png) | ![Bug Details Screenshot](docs/screenshots/bug-details.png) |
-
----
-
 ## 🏗️ Tech Stack
 
 | Layer | Technology |
@@ -40,7 +32,6 @@
 | **Backend** | Node.js, Express.js |
 | **Database** | MongoDB with Mongoose ODM |
 | **Auth** | JWT + HTTP-Only Cookies |
-| **Deployment** | Vercel (Frontend), Render/Atlas (Backend & DB) |
 
 ---
 
@@ -106,22 +97,6 @@ Visit http://localhost:3000
 - [ ] AI-based duplicate detection
 - [ ] Analytics dashboard & export support
 - [ ] Multi-tenant / SaaS improvements
-
-### 🤝 Contributing
-
-Thanks for wanting to contribute! Please:
-
-Fork the repo
-
-1. Create branch: git checkout -b feature/your-feature
-
-2. Commit your changes: git commit -m "feat: add ..."
-
-3. Push: git push origin feature/your-feature
-
-4. Open a Pull Request describing the change
-
-5. Please follow the existing code style and run linters/tests before submitting.
 
 
 ### ❤️ Made with love

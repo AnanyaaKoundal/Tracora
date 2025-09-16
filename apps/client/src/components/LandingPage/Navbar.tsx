@@ -14,7 +14,11 @@ export default function Navbar() {
           <a href="#features" className="hover:text-primary">Features</a>
           <a href="#about" className="hover:text-primary">About</a>
           <a href="#contact" className="hover:text-primary">Contact</a>
-          <Button variant="default">Login</Button>
+          <Link href="/auth/login" passHref>
+          <Button variant="default" className="ml-4">
+            Login
+          </Button>
+        </Link>
         </nav>
       </header>
   );

@@ -70,8 +70,9 @@ export const projectListSchema = z.array(projectSchema);
 export const companySchema = z.object({
   company_id: z.string(),
   company_name: z.string(),
-  company_email: z.string().email(),
+  company_email: z.email(),
   company_phone: z.string(),
+  password: z.string(),
   createdAt: z.string().or(z.date()).optional(),
   updatedAt: z.string().or(z.date()).optional(),
 });

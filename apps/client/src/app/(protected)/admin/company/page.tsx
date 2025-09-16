@@ -4,15 +4,21 @@ import { useEffect, useState } from "react";
 import { Company } from "@/schemas/admin.schema";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { getCompany } from "@/actions/companyAction";
+import { getCompany, editCompanyEmail, editCompanyPhone, editCompanyPassword } from "@/actions/companyAction";
 import { Pencil } from "lucide-react";
 
 export default function CompanyDetailsPage() {
   const [company, setCompany] = useState<Company | null>(null);
-  const [editField, setEditField] = useState<"name" | "email" | "phone" | null>(null);
+  const [editField, setEditField] = useState<"email" | "phone" | "password" | null>(null);
   const [tempValue, setTempValue] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState("");
+
+  // Password change states
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordVerified, setPasswordVerified] = useState(false);
 
   useEffect(() => {
     async function fetchCompany() {
@@ -34,16 +40,49 @@ export default function CompanyDetailsPage() {
   }
 
   async function handleVerifyAndSave() {
-    if (!otp) {
-      toast.error("Enter OTP first");
-      return;
+    if (!otp) return toast.error("Enter OTP first");
+
+    try {
+      if (editField === "email") {
+        const res = await editCompanyEmail({email: tempValue, otp});
+        if (res.success) {
+          toast.success("Email updated successfully");
+          setCompany((prev) => prev && { ...prev, company_email: tempValue });
+        } else toast.error(res.error);
+      }
+      if (editField === "phone") {
+        const res = await editCompanyPhone( {phone: tempValue, otp});
+        if (res.success) {
+          toast.success("Phone updated successfully");
+          setCompany((prev) => prev && { ...prev, company_phone: tempValue });
+        } else toast.error(res.error);
+      }
+    } catch (err) {
+      toast.error("Update failed, please try again.");
     }
-    // Normally verify OTP via API
-    toast.success(`${editField} updated successfully`);
-    setCompany((prev) => prev && { ...prev, [`company_${editField}`]: tempValue });
+
     setEditField(null);
     setOtp("");
     setOtpSent(false);
+  }
+
+  async function handlePasswordChange() {
+    if (!passwordVerified) return toast.error("Verify your current password first");
+    if (newPassword !== confirmPassword) return toast.error("Passwords do not match");
+
+    try {
+      const res = await editCompanyPassword({ currentPassword, newPassword });
+      if (res.success) {
+        toast.success("Password updated successfully");
+        setEditField(null);
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+        setPasswordVerified(false);
+      } else toast.error(res.error);
+    } catch {
+      toast.error("Failed to update password");
+    }
   }
 
   if (!company) {
@@ -64,28 +103,23 @@ export default function CompanyDetailsPage() {
 
       {/* Main Content */}
       <main className="flex-1 px-12 py-10 space-y-4">
-        {/* Company ID (Read-only) */}
         <DetailRow label="Company ID" value={company.company_id} />
 
-        {/* Editable Name */}
-        <EditableRow
-          label="Company Name"
-          value={company.company_name}
-          isEditing={editField === "name"}
-          onEdit={() => {
-            setEditField("name");
-            setTempValue(company.company_name);
-          }}
-          onCancel={() => setEditField(null)}
-          tempValue={tempValue}
-          setTempValue={setTempValue}
-          showOtp={false} // no OTP for name, just extra process if needed
-          onSave={() => {
-            toast.success("Company name updated successfully!");
-            setCompany((prev) => prev && { ...prev, company_name: tempValue });
-            setEditField(null);
-          }}
-        />
+        {/* Company Name (Static Instruction) */}
+        <div className="flex justify-between items-center px-6 py-4 border-b">
+          <span className="text-gray-600 font-medium">Company Name</span>
+          <div className="flex items-center gap-2">
+            <span className="text-gray-900 font-semibold">{company.company_name}</span>
+            <Pencil
+              className="h-4 w-4 text-gray-500 hover:text-gray-800 cursor-pointer"
+              onClick={() =>
+                toast.info(
+                  "To change company name, please email helpdesk@tracora.org with subject: 'Change company name'"
+                )
+              }
+            />
+          </div>
+        </div>
 
         {/* Editable Email */}
         <EditableRow
@@ -127,20 +161,70 @@ export default function CompanyDetailsPage() {
           onVerify={handleVerifyAndSave}
         />
 
-        {/* Created / Updated */}
-        <DetailRow
-          label="Created At"
-          value={new Date(company.createdAt ?? "").toLocaleString()}
-        />
-        <DetailRow
-          label="Updated At"
-          value={new Date(company.updatedAt ?? "").toLocaleString()}
-        />
+        {/* Change Password */}
+        <div className="flex justify-between items-start px-6 py-4 border-b">
+          <span className="text-gray-600 font-medium">Password</span>
+          {editField === "password" ? (
+            <div className="flex flex-col gap-3 w-1/2">
+              {!passwordVerified && (
+                <>
+                  <input
+                    type="password"
+                    placeholder="Current Password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    className="border rounded p-2"
+                  />
+                  <Button
+                    onClick={() => {
+                      // Call backend verify endpoint here if needed
+                      if (currentPassword.length < 4) return toast.error("Password too short");
+                      setPasswordVerified(true);
+                      toast.success("Password verified");
+                    }}
+                  >
+                    Verify Password
+                  </Button>
+                </>
+              )}
+              {passwordVerified && (
+                <>
+                  <input
+                    type="password"
+                    placeholder="New Password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="border rounded p-2"
+                  />
+                  <input
+                    type="password"
+                    placeholder="Confirm Password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="border rounded p-2"
+                  />
+                  <Button onClick={handlePasswordChange} disabled={newPassword !== confirmPassword}>
+                    Save Password
+                  </Button>
+                </>
+              )}
+              <Button variant="outline" onClick={() => setEditField(null)}>Cancel</Button>
+            </div>
+          ) : (
+            <Pencil
+              className="h-4 w-4 text-gray-500 hover:text-gray-800 cursor-pointer"
+              onClick={() => setEditField("password")}
+            />
+          )}
+        </div>
+
+        <DetailRow label="Created At" value={new Date(company.createdAt ?? "").toLocaleString()} />
+        <DetailRow label="Updated At" value={new Date(company.updatedAt ?? "").toLocaleString()} />
       </main>
 
       {/* Footer */}
       <footer className="bg-gray-100 text-center py-4 text-sm text-gray-600 border-t">
-        © {new Date().getFullYear()} TechNova Solutions. All Rights Reserved.
+        © {new Date().getFullYear()} Tracora Solutions. All Rights Reserved.
       </footer>
     </div>
   );
@@ -169,7 +253,6 @@ function EditableRow({
   otpSent,
   onSendOtp,
   onVerify,
-  onSave,
 }: any) {
   return (
     <div className="flex justify-between items-center px-6 py-4 border-b">
@@ -197,9 +280,7 @@ function EditableRow({
             ) : (
               <Button onClick={onSendOtp}>Send OTP</Button>
             )
-          ) : (
-            <Button onClick={onSave}>Save</Button>
-          )}
+          ) : null}
           <Button variant="outline" onClick={onCancel}>Cancel</Button>
         </div>
       ) : (

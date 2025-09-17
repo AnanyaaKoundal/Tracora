@@ -24,13 +24,14 @@ import {
     getAllProjects,
     getProjectById
 } from "@/controllers/project/project.controller";
-import { editCompanyPhone, getCompanyController } from "@/controllers/admin/company.controller";
+import { editCompanyEmail, editCompanyPhone, getCompanyController } from "@/controllers/admin/company.controller";
 
 const Router = express.Router();
 Router.use(authenticate, authorizeRole(["admin"]));
 
 Router.route("/getCompany").get(getCompanyController);
 Router.route("/company/editPhone").put(editCompanyPhone);
+Router.route("/company/editEmail").put(editCompanyEmail);
 
 Router.route("/createRole").post(createRole);
 Router.route("/getRoles").get(getRoles);

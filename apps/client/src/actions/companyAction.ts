@@ -1,6 +1,6 @@
 import z from "zod";
 import { companySchema } from "@/schemas/admin.schema";
-import { editCompanyPhoneService, getCompanyDetails } from "@/services/adminService";
+import { editCompanyEmailService, editCompanyPhoneService, getCompanyDetails } from "@/services/adminService";
 
 export const getCompany = async () => {
     const res = await getCompanyDetails();
@@ -18,7 +18,7 @@ export const getCompany = async () => {
   
 
 export const editCompanyEmail = async (data: any)=> {
-  const res = await editCompanyPhoneService(data);
+  const res = await editCompanyEmailService(data);
   if (res.status === 403) {
     return { error: "Forbidden", status: 403, success: false };
   }

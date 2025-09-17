@@ -180,3 +180,14 @@ export const editCompanyPhoneService = async(phone: string) => {
   if(!res.ok) throw new Error("Error updating the phone number");
   return res.json();
 }
+
+export const editCompanyEmailService = async(email: string) => {
+  const res = await fetch(`${URL}/admin/company/editEmail`, {
+    method: "PUT",
+    credentials: "include",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify(email)
+  });
+  if(!res.ok) throw new Error("Error updating the email");
+  return res.json();
+}

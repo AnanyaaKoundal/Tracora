@@ -86,3 +86,18 @@ export const editCompanyPhoneService = async(company_id: string, newPhone: strin
     throw new Error("Error updating company phone: "+(err as Error).message);
   }
 }
+
+export const editCompanyEmailService = async(company_id: string, newEmail: string) => {
+  try {
+    const company = await Company.findOneAndUpdate({
+      company_id},
+      { company_email: newEmail
+    });
+    if(!company){
+      throw new Error("Company not found");
+    }
+    return company;
+  }catch(err){
+    throw new Error("Error updating company email: "+(err as Error).message);
+  }
+}

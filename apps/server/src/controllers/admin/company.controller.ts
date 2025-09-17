@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import { companyExists, createCompany, editCompanyEmailService, editCompanyPhoneService, getCompanyById } from "@services/company.service";
+import { companyExists, createCompany, editCompanyEmailService, editCompanyPasswordService, editCompanyPhoneService, getCompanyById, validateCompanyPassword } from "@services/company.service";
 import { createAdminEmployee } from "@services/employee.service";
-import { sendOtp } from "@services/otp.service";
+import { sendOtp, verifyOtp } from "@services/otp.service";
 import {generateToken} from "@services/auth.service";
 import Company from "@/models/company.model";
 import ApiError from "@/utils/ApiError";
@@ -125,9 +125,13 @@ export const getCompanyController = asyncHandler(async (req: Request, res: Respo
   });
 });
 
-export const editCompanyPhone = asyncHandler(async(req: Request, res: Response) => {
+export const editCompanyPhone = asyncHandler(async(req: Request, res: Response): Promise<any> => {
   const id = (req as any).user.company_id;
-  const { phone } =req.body;
+  const { phone, otp } =req.body;
+  const validate = await verifyOtp({otp: otp});
+  if(!validate){
+    return res.json(new ApiError(401, "Invalid OTP"));
+  }
   const company = await editCompanyPhoneService(id, phone);
   res.status(200).json({
       success: true,
@@ -136,15 +140,38 @@ export const editCompanyPhone = asyncHandler(async(req: Request, res: Response) 
   });
 })
 
-export const editCompanyEmail = asyncHandler(async(req: Request, res: Response) => {
+export const editCompanyEmail = asyncHandler(async(req: Request, res: Response): Promise<any> => {
   const id = (req as any).user.company_id;
-  const { email } =req.body;
-  console.log("Email:", email);
+  const { email, otp } =req.body;
+  const validate = await verifyOtp({otp: otp});
+  console.log(req.body);
+  if(!validate){
+    return res.json(new ApiError(401, "Invalid OTP"));
+  }
   const company = await editCompanyEmailService(id, email);
-  console.log("Company: ", company);
   res.status(200).json({
       success: true,
       message: "Company phone number updated successfully",
       company: company,
+  });
+})
+
+export const editCompanyPassowrd = asyncHandler(async(req: Request, res: Response): Promise<any> => {
+  const id = (req as any).user.company_id;
+  const { currentPassword, newPassword } =req.body;
+  const company = await getCompanyById(id);
+  const validate = await validateCompanyPassword( currentPassword,  company.password);
+  console.log("Validate: ", validate);
+  if(!validate){
+    return res.json(new ApiError(401, "Invalid current password"));
+  }
+  const updatedcompany = await editCompanyPasswordService(id, newPassword);
+  if(!updatedcompany){
+    return res.json(new ApiError(500, "Error updating company password"))
+  }
+  res.status(200).json({
+      success: true,
+      message: "Company password updated successfully",
+      company: updatedcompany,
   });
 })

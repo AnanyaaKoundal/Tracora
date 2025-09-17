@@ -177,7 +177,6 @@ export const editCompanyPhoneService = async(phone: string) => {
     headers: {"Content-Type":"application/json"},
     body: JSON.stringify(phone)
   });
-  if(!res.ok) throw new Error("Error updating the phone number");
   return res.json();
 }
 
@@ -188,6 +187,18 @@ export const editCompanyEmailService = async(email: string) => {
     headers: {"Content-Type":"application/json"},
     body: JSON.stringify(email)
   });
-  if(!res.ok) throw new Error("Error updating the email");
+  console.log(res);
+  return res.json();
+}
+
+export const editCompanyPasswordService = async(data: any) => {
+  const res = await fetch(`${URL}/admin/company/updatePassword`, {
+    method: "PUT",
+    credentials: "include",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify(data)
+  });
+  console.log(res);
+  // if(!res.ok) throw new Error("Error updating the email");
   return res.json();
 }

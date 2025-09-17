@@ -13,6 +13,8 @@ export default function CompanyDetailsPage() {
   const [tempValue, setTempValue] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState("");
+  const [fieldError, setFieldError] = useState<string | null>(null);
+
 
   // Password change states
   const [currentPassword, setCurrentPassword] = useState("");
@@ -20,18 +22,20 @@ export default function CompanyDetailsPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordVerified, setPasswordVerified] = useState(false);
 
-  useEffect(() => {
-    async function fetchCompany() {
-      const data = await getCompany();
-      if (data.success) {
-        setCompany(data.company);
-      } else if (data.status === 403) {
-        window.location.href = "/forbidden";
-      } else {
-        toast.error(data.error);
-      }
+  // 🔄 Centralized function to refresh data
+  async function refreshCompany() {
+    const data = await getCompany();
+    if (data.success) {
+      setCompany(data.company);
+    } else if (data.status === 403) {
+      window.location.href = "/forbidden";
+    } else {
+      toast.error(data.error);
     }
-    fetchCompany();
+  }
+
+  useEffect(() => {
+    refreshCompany();
   }, []);
 
   async function handleSendOtp() {
@@ -43,27 +47,38 @@ export default function CompanyDetailsPage() {
     if (!otp) return toast.error("Enter OTP first");
 
     try {
-      if (editField === "email") {
-        const res = await editCompanyEmail({email: tempValue, otp});
-        if (res.success) {
-          toast.success("Email updated successfully");
-          setCompany((prev) => prev && { ...prev, company_email: tempValue });
-        } else toast.error(res.error);
+      let res;
+      switch (editField) {
+        case "email":
+          res = await editCompanyEmail({ email: tempValue, otp });
+          break;
+        case "phone":
+          res = await editCompanyPhone({ phone: tempValue, otp });
+          break;
+        case "password":
+          res = await editCompanyPassword({ newPassword: tempValue, otp });
+          break;
+        // ✅ Future-proof: add more cases like "name" here
+        default:
+          return toast.error("Invalid field selected");
       }
-      if (editField === "phone") {
-        const res = await editCompanyPhone( {phone: tempValue, otp});
-        if (res.success) {
-          toast.success("Phone updated successfully");
-          setCompany((prev) => prev && { ...prev, company_phone: tempValue });
-        } else toast.error(res.error);
+
+      if (res.success) {
+        toast.success(`${editField} updated successfully`);
+        await refreshCompany();
+        setFieldError(null);
+      } else {
+        setFieldError(res.error || "Unknown error");
+        toast.error(res.error || "Update failed");
       }
-    } catch (err) {
+    } catch (err: any) {
+      setFieldError("Something went wrong");
       toast.error("Update failed, please try again.");
     }
 
-    setEditField(null);
     setOtp("");
     setOtpSent(false);
+    setEditField(null);
   }
 
   async function handlePasswordChange() {
@@ -81,6 +96,7 @@ export default function CompanyDetailsPage() {
         setPasswordVerified(false);
       } else toast.error(res.error);
     } catch {
+      setEditField(null);
       toast.error("Failed to update password");
     }
   }
@@ -129,8 +145,12 @@ export default function CompanyDetailsPage() {
           onEdit={() => {
             setEditField("email");
             setTempValue(company.company_email);
+            setFieldError(null);
           }}
-          onCancel={() => setEditField(null)}
+          onCancel={() => {
+            setEditField(null);
+            setFieldError(null);
+          }}
           tempValue={tempValue}
           setTempValue={setTempValue}
           showOtp
@@ -139,6 +159,7 @@ export default function CompanyDetailsPage() {
           otpSent={otpSent}
           onSendOtp={handleSendOtp}
           onVerify={handleVerifyAndSave}
+          error={fieldError}
         />
 
         {/* Editable Phone */}
@@ -149,8 +170,12 @@ export default function CompanyDetailsPage() {
           onEdit={() => {
             setEditField("phone");
             setTempValue(company.company_phone);
+            setFieldError(null);
           }}
-          onCancel={() => setEditField(null)}
+          onCancel={() => {
+            setEditField(null),
+              setFieldError(null);
+          }}
           tempValue={tempValue}
           setTempValue={setTempValue}
           showOtp
@@ -159,8 +184,10 @@ export default function CompanyDetailsPage() {
           otpSent={otpSent}
           onSendOtp={handleSendOtp}
           onVerify={handleVerifyAndSave}
+          error={fieldError}
         />
 
+        {/* Change Password */}
         {/* Change Password */}
         <div className="flex justify-between items-start px-6 py-4 border-b">
           <span className="text-gray-600 font-medium">Password</span>
@@ -177,13 +204,11 @@ export default function CompanyDetailsPage() {
                   />
                   <Button
                     onClick={() => {
-                      // Call backend verify endpoint here if needed
                       if (currentPassword.length < 4) return toast.error("Password too short");
                       setPasswordVerified(true);
-                      toast.success("Password verified");
                     }}
                   >
-                    Verify Password
+                    Next
                   </Button>
                 </>
               )}
@@ -208,18 +233,35 @@ export default function CompanyDetailsPage() {
                   </Button>
                 </>
               )}
-              <Button variant="outline" onClick={() => setEditField(null)}>Cancel</Button>
+              <Button variant="outline" onClick={() => {
+                setEditField(null);
+                setPasswordVerified(false);
+              }
+              }>Cancel</Button>
             </div>
           ) : (
-            <Pencil
-              className="h-4 w-4 text-gray-500 hover:text-gray-800 cursor-pointer"
-              onClick={() => setEditField("password")}
-            />
+            <div className="flex items-center gap-2">
+              {/* 👇 Show masked password text here */}
+              <span className="text-gray-900 font-semibold tracking-widest">
+                ********
+              </span>
+              <Pencil
+                className="h-4 w-4 text-gray-500 hover:text-gray-800 cursor-pointer"
+                onClick={() => {
+                  setEditField("password");
+                  setCurrentPassword(""); 
+                  setNewPassword("");    
+                  setConfirmPassword("");
+                  setPasswordVerified(false);
+                  setFieldError(null);
+                }}
+              />
+            </div>
           )}
         </div>
 
+
         <DetailRow label="Created At" value={new Date(company.createdAt ?? "").toLocaleString()} />
-        <DetailRow label="Updated At" value={new Date(company.updatedAt ?? "").toLocaleString()} />
       </main>
 
       {/* Footer */}
@@ -253,43 +295,53 @@ function EditableRow({
   otpSent,
   onSendOtp,
   onVerify,
+  error,
 }: any) {
   return (
-    <div className="flex justify-between items-center px-6 py-4 border-b">
-      <span className="text-gray-600 font-medium">{label}</span>
-      {isEditing ? (
-        <div className="flex flex-col gap-2 w-1/2">
+    <div className="flex flex-col px-6 py-4 border-b">
+      <div className="flex justify-between items-center">
+        <span className="text-gray-600 font-medium">{label}</span>
+        {!isEditing && (
+          <div className="flex items-center gap-2">
+            <span className="text-gray-900 font-semibold">{value}</span>
+            <Pencil
+              className="h-4 w-4 text-gray-500 hover:text-gray-800 cursor-pointer"
+              onClick={onEdit}
+            />
+          </div>
+        )}
+      </div>
+
+      {isEditing && (
+        <div className="flex flex-col gap-2 w-1/2 mt-2">
           <input
             type="text"
             value={tempValue}
             onChange={(e) => setTempValue(e.target.value)}
             className="border rounded p-2"
           />
-          {showOtp ? (
-            otpSent ? (
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Enter OTP"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  className="border rounded p-2 flex-1"
-                />
-                <Button onClick={onVerify}>Verify & Save</Button>
-              </div>
-            ) : (
-              <Button onClick={onSendOtp}>Send OTP</Button>
-            )
-          ) : null}
+          {showOtp && otpSent && (
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Enter OTP"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                className="border rounded p-2 flex-1"
+              />
+              <Button onClick={onVerify}>Verify & Save</Button>
+            </div>
+          )}
+          {showOtp && !otpSent && <Button onClick={onSendOtp}>Send OTP</Button>}
+
+          {/* ✅ Show Inline Error */}
+          {error && (
+            <p className={`text-sm ${error.includes("Unauthorized") ? "text-red-600" : "text-orange-600"}`}>
+              {error}
+            </p>
+          )}
+
           <Button variant="outline" onClick={onCancel}>Cancel</Button>
-        </div>
-      ) : (
-        <div className="flex items-center gap-2">
-          <span className="text-gray-900 font-semibold">{value}</span>
-          <Pencil
-            className="h-4 w-4 text-gray-500 hover:text-gray-800 cursor-pointer"
-            onClick={onEdit}
-          />
         </div>
       )}
     </div>

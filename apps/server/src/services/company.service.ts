@@ -101,3 +101,30 @@ export const editCompanyEmailService = async(company_id: string, newEmail: strin
     throw new Error("Error updating company email: "+(err as Error).message);
   }
 }
+
+export const editCompanyPasswordService = async(company_id: string, newPassword: string) => {
+  try {
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const updatedCompany = await Company.findOneAndUpdate(
+      {company_id: company_id},
+      { password: hashedPassword },
+    );
+
+    return updatedCompany;
+  } catch (err) {
+    console.error("Error updating company password:", err);
+    return null;
+  }
+}
+
+export async function validateCompanyPassword(
+  plainPassword: string,
+  hashedPassword: string
+): Promise<boolean> {
+  try {
+    return await bcrypt.compare(plainPassword, hashedPassword);
+  } catch (err) {
+    console.error("Error validating password:", err);
+    return false;
+  }
+}

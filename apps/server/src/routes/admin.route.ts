@@ -50,7 +50,7 @@ Router.route("/employee/:emp_id")
     .put(editEmployee)
     .delete(deleteEmployeeById);
 
-Router.route("/get-projects").get(authenticate, authorizeRole(["developer", "manager", "tester"]), getAllProjects);
+Router.route("/get-projects").get(getAllProjects);
 Router.route("/createProject").post(createProject);
 Router.route("/project/:p_id")
 .get(getProjectById)

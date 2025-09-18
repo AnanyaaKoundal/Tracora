@@ -51,7 +51,7 @@ export async function deleteProject(id: string) {
 export async function getProjects() {
 
   const data = await fetchProjectsService();
-
+  console.log(data);
   if (!data.success) {
     console.error("Failed to fetch roles", data.error);
     return [];

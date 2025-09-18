@@ -1,12 +1,12 @@
 import { createEmployeeSchema, createRoleSchema, employeeSchema, roleListSchema, roleSchema } from "@/schemas/admin.schema";
 import { fetchEmployees, createEmployeeService, updateEmployeeService, deleteEmployeeService } from "@/services/adminService";
+import { fetchRoleService } from "@/services/authService";
 import z from "zod";
 
 export async function getEmployees() {
 
   const data = await fetchEmployees();
   console.log("Data: ", data);
-  // const parsed = roleListSchema.safeParse(data);
   if (!data.success) {
     console.error("Failed to fetch roles", data.error);
     return [];
@@ -42,5 +42,17 @@ export async function deleteEmployee(id: string) {
     return { success: true };
   } catch (err: any) {
     return { success: false, message: err.message || "Failed to delete role" };
+  }
+}
+
+export async function fetchRole() {
+  try{
+    const res = await fetchRoleService();
+    if(!res.success){
+      return {success: false, message: res.error || "Failed to fetch role"};
+    }
+    return {success: true, role: res.data?.role || null };
+  }catch(err: any){
+    return { success: false, message: err.message || "Failed to fetch role" };
   }
 }

@@ -10,7 +10,7 @@ import {
 import { authenticate, authorizeRole } from "@/middlewares/auth.middleware";
 
 const Router = express.Router();
-Router.use(authenticate, authorizeRole(["developer", "manager", "tester"]));
+Router.use(authenticate, authorizeRole(["developer", "manager", "tester", "admin"]));
 
 Router.route("/create-bug").post(createBug);
 Router.route("/getAllbugs").get(getAllBugs);

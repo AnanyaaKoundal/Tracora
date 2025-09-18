@@ -4,6 +4,8 @@ import { ReactNode, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Sidebar from '@/components/ProtectedLayout/Sidebar';
 import AdminSidebar from '@/components/AdminPanel/AdminSidebar';
+import Navbar from '@/components/LandingPage/Navbar';
+import ProtectedNavbar from '@/components/Navbar/ProtectedNavbar';
 
 export default function ProtectedLayout({
   children,
@@ -31,12 +33,7 @@ export default function ProtectedLayout({
         `}
       >
         {/* Navbar */}
-        <header className="bg-white shadow p-4 flex justify-end items-center">
-          <div className="flex items-center space-x-4">
-            <div>🔔</div>
-            <div>👤</div>
-          </div>
-        </header>
+        <ProtectedNavbar />
 
         {/* Page content */}
         <main className="p-6 overflow-auto">{children}</main>

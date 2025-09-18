@@ -5,6 +5,7 @@ import asyncHandler from "@/utils/asyncHandler";
 import ApiError from "@/utils/ApiError";
 import ApiResponse from "@/utils/ApiResponse";
 import { getRoleName } from "@/services/employee.service";
+import Company from "@/models/company.model";
 
 export const loginController = async (req: Request, res: Response): Promise<any> => {
   try {
@@ -74,3 +75,15 @@ export const logout = asyncHandler(async (req: Request, res: Response): Promise<
     .status(200)
     .json(new ApiResponse(200, "Logged out successfully", {}));
 });
+
+
+export const getCurrentUserRole = async (req: Request, res: Response):Promise<any> => {
+  try {
+    console.log("USer: ", (req as any).user);
+
+    return res.status(200).json(new ApiResponse(200, "Role fetched", { role: (req as any).user.role }));
+  } catch (error) {
+    console.error("Error fetching user role:", error);
+    return res.status(500).json({ error: "Failed to fetch role" });
+  }
+};

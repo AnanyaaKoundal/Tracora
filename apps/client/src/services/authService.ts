@@ -61,3 +61,14 @@ export const logoutService = async () => {
 
   return await res.json();
 };
+
+export const fetchRoleService = async() => {
+      const res = await fetch(`${URL}/auth/me`, {
+        method: "GET",
+          credentials: "include",
+      });
+      console.log("REs: ", res);
+      if (!res.ok) throw new Error("Failed to fetch user role");
+      return res.json();
+  
+}

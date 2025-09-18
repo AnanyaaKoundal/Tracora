@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getAllCompaniesController, loginController, logout, verifyLoginOtpController } from "../controllers/auth/auth.controller";
+import { getAllCompaniesController, getCurrentUserRole, loginController, logout, verifyLoginOtpController } from "../controllers/auth/auth.controller";
 import { registerCompanyController, verifyOtpAndRegisterCompanyController } from "../controllers/admin/company.controller";
 import { authenticate } from "@/middlewares/auth.middleware";
 
@@ -11,5 +11,6 @@ router.route("/company/verify").post(verifyOtpAndRegisterCompanyController);
 router.route("/getCompanies").get(getAllCompaniesController);
 router.route("/verifyOtp").post(verifyLoginOtpController);
 router.route("/logout").post(authenticate, logout);
+router.route("/me").get(authenticate, getCurrentUserRole);
 
 export default router;

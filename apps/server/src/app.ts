@@ -5,7 +5,7 @@ import errorHandler from '@/middlewares/errorHandler.middleware';
 
 // Import routes
 import roleRoutes from "@/routes/role.route";
-import userRoutes from "@/routes/employee.route";
+import empRoutes from "@/routes/employee.route";
 import projectRoutes from "@/routes/project.route";
 import authRoutes from "@/routes/auth.route";
 import adminRoutes from "@/routes/admin.route";
@@ -29,7 +29,7 @@ app.get("/", (_req, res) => {
 });
 
 app.use("/roles", roleRoutes);
-app.use("/users", userRoutes);
+app.use("/employee", empRoutes);
 app.use("/projects", projectRoutes);
 app.use("/auth", authRoutes);
 app.use("/admin", adminRoutes);

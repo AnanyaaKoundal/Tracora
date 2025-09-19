@@ -73,3 +73,24 @@ export const updateBugService = async (bug: Bug) => {
 
   return res.json();
 };
+
+export const fetchAllAssigneesService = async () => {
+  const res = await fetch(`${URL}/employee/getAssignees`, {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+  });
+
+  if (res.status === 403) {
+    return { error: "Forbidden", status: 403, success: false };
+  }
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch assignees");
+  }
+
+  return res.json();
+};

@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import asyncHandler from "@/utils/asyncHandler";
 import * as userService from "@services/employee.service";
 import ApiResponse from "@/utils/ApiResponse";
+import { getAllAssignees } from "@services/employee.service";
 
 // Create user
 export const createEmployee = asyncHandler(async (req: Request, res: Response) => {
@@ -35,4 +36,9 @@ export const editEmployee = asyncHandler(async (req: Request, res: Response) => 
 export const deleteEmployeeById = asyncHandler(async (req: Request, res: Response) => {
   const result = await userService.deleteEmployeeById(req.params.emp_id);
   res.status(200).json(new ApiResponse(200, "Employee deleted", result));
+});
+
+export const getAllAssigneesController = asyncHandler(async (req: Request, res: Response):Promise<any> => {
+  const assignees = await getAllAssignees(); // service we wrote earlier
+  return res.status(200).json(new ApiResponse(200, "Assignees fetched successfully", assignees));
 });

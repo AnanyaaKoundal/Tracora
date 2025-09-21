@@ -1,5 +1,14 @@
 import mongoose from "mongoose";
 
+export enum BugPriority {
+    Critical = 1,
+    High,
+    Medium,
+    Low,
+    Trivial,
+}
+
+
 const bugSchema = new mongoose.Schema({
     bug_id: {
         type: String,
@@ -19,11 +28,12 @@ const bugSchema = new mongoose.Schema({
         enum: ["Open", "Under Review", "Closed", "Fixed"],
         default: "Open"
     },
-    // feature_id: {
-    //     type: String,
-    //     ref: "Feature",
-    //     required: true
-    // },
+    bug_priority: {
+        type: Number,
+        enum: Object.values(BugPriority),
+        default: BugPriority.Medium,
+        required: true,
+    },
     reported_by: {
         type: String,
         ref: 'Employee',
@@ -38,7 +48,7 @@ const bugSchema = new mongoose.Schema({
         ref: "Comment"
     }]
 },
-    { timestamps: true}
+    { timestamps: true }
 )
 
 const Bug = mongoose.models.Bug || mongoose.model("Bug", bugSchema);

@@ -202,3 +202,20 @@ export const editCompanyPasswordService = async(data: any) => {
   // if(!res.ok) throw new Error("Error updating the email");
   return res.json();
 }
+
+export const fetchAdminStats =  async () => {
+  const res = await fetch(`${URL}/admin/stats`, {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch admin stats");
+  }
+
+  return res.json();
+}

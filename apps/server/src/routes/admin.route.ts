@@ -25,6 +25,7 @@ import {
     getProjectById
 } from "@/controllers/project/project.controller";
 import { editCompanyEmail, editCompanyPassowrd, editCompanyPhone, getCompanyController } from "@/controllers/admin/company.controller";
+import { getAdminStats } from "@/controllers/admin/stats.controller"
 
 const Router = express.Router();
 Router.use(authenticate, authorizeRole(["admin"]));
@@ -56,5 +57,7 @@ Router.route("/project/:p_id")
 .get(getProjectById)
     .put(editProject)
     .delete(deleteProjectById);
+
+Router.route("/stats").get(getAdminStats);
 
 export default Router;

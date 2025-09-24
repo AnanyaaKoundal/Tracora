@@ -29,7 +29,7 @@ export default function AdminDashboardPage() {
   return (
     <div className="flex flex-col gap-6 p-6 min-h-screen bg-gray-50">
 
-      <h2 className="text-5xl font-bold"> Hello ADMIN</h2>
+      <h2 className="text-5xl font-bold"> Hello Admin</h2>
 
       {data?.stats && <DashboardStatsRow stats={data.stats} />}
 

@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 // import { fetchEmployeesService } from "@/services/admin/employeeService"; // hypothetical service
 import { toast } from "sonner";
+import { getEmployees } from "@/actions/employeeAction";
+import { fetchEmpForDashboard } from "@/services/adminService";
 
 type Employee = {
   employee_id: string;
@@ -51,9 +53,10 @@ export default function EmployeesList() {
   useEffect(() => {
     async function loadEmployees() {
       try {
-        // const res = await fetchEmployeesService();
-        // if (res.success) setEmployees(res.data);
-        // else toast.error(res.message || "Failed to fetch employees");
+        const res = await fetchEmpForDashboard();
+        console.log("Emp:",res);
+        if (res.success) setEmployees(res.data);
+        else toast.error(res.message || "Failed to fetch employees");
       } catch {
         toast.warning("Using dummy data for employees");
       }

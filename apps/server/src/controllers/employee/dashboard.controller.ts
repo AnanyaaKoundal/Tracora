@@ -44,7 +44,6 @@ export const getDashboardData = async (req: Request, res: Response): Promise<any
         resolved: bugs.filter(b => b.status === "resolved").length,
       };
     }
-    console.log("DATA: ", data);
     return res.json({ success: true, data });
   } catch (error) {
     console.error(error);

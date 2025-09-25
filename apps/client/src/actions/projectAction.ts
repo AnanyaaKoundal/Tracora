@@ -5,7 +5,6 @@ import { fetchAllProjectsService, createProjectService, updateProjectService, de
 export async function getAllProjects() {
 
   const data = await fetchAllProjectsService();
-  console.log("Data: ", data);
   if (data.status === 403) {
     window.location.href = "/forbidden"; 
   return;

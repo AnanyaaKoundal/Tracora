@@ -4,7 +4,6 @@ import { fetchRolesforAdmin, createRoleService, updateRoleService, deleteRoleSer
 export async function getRoles() {
 
   const data = await fetchRolesforAdmin();
-  console.log("Data: ", data);
   if (data.status === 403) {
       window.location.href = "/forbidden"; 
     return;

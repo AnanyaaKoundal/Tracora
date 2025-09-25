@@ -219,3 +219,20 @@ export const fetchAdminStats =  async () => {
 
   return res.json();
 }
+
+export const fetchEmpForDashboard =  async () => {
+  const res = await fetch(`${URL}/admin/stats/employees`, {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch employees");
+  }
+
+  return res.json();
+}

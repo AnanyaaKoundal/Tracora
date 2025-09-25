@@ -21,7 +21,6 @@ export const createBug = async (bugData: any, user: any) => {
 
 export const getAllBugs = async () => {
   const bugs = await Bug.find();
-  console.log("Bugs: ", bugs);
   return bugs;
 };
 

@@ -31,7 +31,6 @@ export const authenticate: RequestHandler = async (req, res, next) => {
       if (user.roleId?.length > 0) {
         roleDoc = await Role.findOne({ role_id: user.roleId[0] });
       }
-      console.log("Tokennn: ", roleDoc);
 
     (req as any).user = {
       ...user.toObject(),

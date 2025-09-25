@@ -8,6 +8,7 @@ import BugTrendChart from "@/components/AdminPanel/Dashboard/BugTrendsLineChart"
 import DashboardStatsRow from "@/components/AdminPanel/Dashboard/StatsRow";
 import { useEffect, useState } from "react";
 import { getDashboardStats } from "@/actions/dsahboardAction";
+import { getEmployees } from "@/actions/employeeAction";
 
 export default function AdminDashboardPage() {
   const [data, setData] = useState<any>(null);

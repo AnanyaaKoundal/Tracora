@@ -44,9 +44,9 @@ export const getEmployeeForTable = async () => {
   .populate({
     path: "roleId",
     model: Role,
-    select: "role_name role_id", // role_name only
+    select: "role_name role_id", 
     localField: "roleId",
-    foreignField: "role_id" // because you're matching by role_id, not _id
+    foreignField: "role_id"
   })
   .limit(3)
   .exec();
@@ -55,7 +55,7 @@ export const getEmployeeForTable = async () => {
     employee_id: emp.employee_id.toString(),
     employee_name: emp.employee_name,
     employee_email: emp.employee_email,
-    role: (emp.roleId[0] as any)?.role_name || "", // safely get role_name
+    role: (emp.roleId[0] as any)?.role_name || "", 
   }));
 };
 

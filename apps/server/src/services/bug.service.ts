@@ -1,8 +1,10 @@
 import Bug from "../models/bug.model";
 import ApiError from "../utils/ApiError";
 import { generateBugId } from "./id.service";
+import { BugPriority } from "../models/bug.model";
 
 export const createBug = async (bugData: any, user: any) => {
+  console.log("BUGDATA: ", bugData);
   const { bug_name } = bugData;
   console.log("Bug: ", user);
   const existingbug = await Bug.findOne({ bug_name });
@@ -10,6 +12,7 @@ export const createBug = async (bugData: any, user: any) => {
     throw new ApiError(400, "Bug already exists");
   }
   const bug_id = generateBugId();
+
   const newbug = await Bug.create({
     bug_id,
     reported_by: user.employee_id,

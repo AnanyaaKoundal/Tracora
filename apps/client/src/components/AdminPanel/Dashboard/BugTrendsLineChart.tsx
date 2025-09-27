@@ -12,62 +12,26 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { fetchAllBugsService } from "@/services/bugService";
+import { fetchBugTrendsforDashboard } from "@/services/adminService"; // new service
 import { toast } from "sonner";
-import { success } from "zod";
 
-type Bug = {
-  bug_status: "Open" | "Closed" | "Under Review" | "Fixed";
-  createdAt: string;
-  closedAt?: string;
+type TrendData = {
+  date: string;
+  created: number;
+  closed: number;
 };
 
-const dummyTrendData = [
-  { date: "2025-09-08", created: 5, closed: 2 },
-  { date: "2025-09-09", created: 8, closed: 5 },
-  { date: "2025-09-10", created: 6, closed: 3 },
-  { date: "2025-09-11", created: 9, closed: 7 },
-  { date: "2025-09-12", created: 7, closed: 6 },
-];
-
 export default function BugTrendsLineChart() {
-  const [data, setData] = useState(dummyTrendData);
+  const [data, setData] = useState<TrendData[]>([]);
 
   useEffect(() => {
     async function loadTrendData() {
       try {
-        const res = {success: false, data:[], message: ""};
-        // const res = await fetchAllBugsService();
-        if (res.success && Array.isArray(res.data)) {
-          const bugList: Bug[] = res.data;
-          const counts: Record<string, { created: number; closed: number }> = {};
-
-          bugList.forEach((bug) => {
-            const createdDate = bug.createdAt.split("T")[0];
-            counts[createdDate] = counts[createdDate] || { created: 0, closed: 0 };
-            counts[createdDate].created++;
-
-            if (bug.bug_status === "Closed" && bug.closedAt) {
-              const closedDate = bug.closedAt.split("T")[0];
-              counts[closedDate] = counts[closedDate] || { created: 0, closed: 0 };
-              counts[closedDate].closed++;
-            }
-          });
-
-          const chartData = Object.entries(counts)
-            .sort(([a], [b]) => a.localeCompare(b)) // sort by date ascending
-            .map(([date, values]) => ({
-              date,
-              created: values.created,
-              closed: values.closed,
-            }));
-
-          setData(chartData);
-        } else {
-          toast.error(res.message || "Failed to fetch bug trends data");
-        }
+        const res = await fetchBugTrendsforDashboard();
+        if (res.success) setData(res.data);
+        else toast.error(res.message || "Failed to fetch bug trends data");
       } catch {
-        toast.warning("Using dummy bug trend data");
+        toast.error("Failed to fetch bug trends");
       }
     }
     loadTrendData();

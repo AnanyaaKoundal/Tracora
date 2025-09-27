@@ -2,92 +2,72 @@
 
 import { useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { fetchAllBugsService } from "@/services/bugService"; // your existing bug service
+import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from "recharts";
+import { fetchAllBugsService } from "@/services/bugService";
 import { toast } from "sonner";
 
 type Bug = {
-  bug_id: string;
-  bug_name: string;
-  bug_status: string;
-  createdAt: string;
+  bug_status: "Open" | "Closed" | "Under Review" | "Fixed";
 };
 
-const dummyBugs: Bug[] = [
-  {
-    bug_id: "B-101",
-    bug_name: "Login page not redirecting",
-    bug_status: "Open",
-    createdAt: "2025-09-10T12:30:00Z",
-  },
-  {
-    bug_id: "B-102",
-    bug_name: "Broken link in footer",
-    bug_status: "Closed",
-    createdAt: "2025-09-09T15:10:00Z",
-  },
-  {
-    bug_id: "B-103",
-    bug_name: "Slow response in dashboard",
-    bug_status: "Under Review",
-    createdAt: "2025-09-08T10:00:00Z",
-  },
-];
+const COLORS = ["#f87171", "#22c55e", "#facc15", "#3b82f6"]; // Red, Green, Yellow, Blue
 
-export default function RecentBugsList() {
-  const [bugs, setBugs] = useState<Bug[]>(dummyBugs);
+export default function BugStatusPieChart() {
+  const [data, setData] = useState<{ name: string; value: number }[]>([]);
 
   useEffect(() => {
-    async function loadBugs() {
+    async function loadStatusData() {
       try {
         const res = await fetchAllBugsService();
         if (res.success && Array.isArray(res.data)) {
-          const sortedBugs = res.data.sort(
-            (a: Bug, b: Bug) =>
-              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          );
-          setBugs(sortedBugs);
+          const counts: Record<string, number> = {};
+
+          res.data.forEach((bug: Bug) => {
+            counts[bug.bug_status] = (counts[bug.bug_status] || 0) + 1;
+          });
+
+          const chartData = Object.entries(counts).map(([name, value]) => ({
+            name,
+            value,
+          }));
+          setData(chartData);
         } else {
-          toast.error(res.message || "Failed to fetch bugs");
+          toast.error(res.message || "Failed to fetch bug status data");
         }
-      } catch {
-        toast.warning("Using dummy data for bugs");
+      } catch (err) {
+        console.error(err);
+        toast.warning("Failed to fetch bug status data");
       }
     }
-    loadBugs();
+
+    loadStatusData();
   }, []);
 
   return (
     <Card className="h-full shadow-md">
       <CardHeader>
-        <CardTitle className="text-lg font-semibold">Recent Bugs</CardTitle>
+        <CardTitle className="text-lg font-semibold">Bug Status Distribution</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          {bugs.slice(0, 5).map((bug) => (
-            <div
-              key={bug.bug_id}
-              className="flex justify-between items-center p-3 rounded-lg bg-gray-100 hover:bg-gray-200 transition"
+      <CardContent className="flex justify-center">
+        <ResponsiveContainer width="100%" height={300}>
+          <PieChart>
+            <Pie
+              data={data}
+              dataKey="value"
+              nameKey="name"
+              innerRadius={70}
+              outerRadius={120}
+              label={false} 
             >
-              <div>
-                <p className="font-medium">{bug.bug_name}</p>
-                <p className="text-xs text-gray-600">
-                  {new Date(bug.createdAt).toLocaleDateString()}
-                </p>
-              </div>
-              <span
-                className={`text-xs font-medium px-2 py-1 rounded ${
-                  bug.bug_status === "Open"
-                    ? "bg-red-100 text-red-700"
-                    : bug.bug_status === "Closed"
-                    ? "bg-green-100 text-green-700"
-                    : "bg-yellow-100 text-yellow-700"
-                }`}
-              >
-                {bug.bug_status}
-              </span>
-            </div>
-          ))}
-        </div>
+              {data.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+              ))}
+            </Pie>
+
+            <Tooltip />
+            <Legend />
+          </PieChart>
+        </ResponsiveContainer>
       </CardContent>
     </Card>
   );

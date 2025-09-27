@@ -3,7 +3,7 @@
 import ProjectsList from "@/components/AdminPanel/Dashboard/ProjectList";
 import EmployeesList from "@/components/AdminPanel/Dashboard/EmployeeList";
 import BugsList from "@/components/AdminPanel/Dashboard/RecentBugList";
-import StatusPieCharts from "@/components/AdminPanel/Dashboard/BugPriorityPieChart";
+import StatusPieCharts from "@/components/AdminPanel/Dashboard/BugStatusPieChart";
 import BugTrendChart from "@/components/AdminPanel/Dashboard/BugTrendsLineChart";
 import DashboardStatsRow from "@/components/AdminPanel/Dashboard/StatsRow";
 import { useEffect, useState } from "react";

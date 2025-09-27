@@ -30,10 +30,9 @@ const bugSchema = new mongoose.Schema({
     },
     bug_priority: {
         type: Number,
-        enum: Object.values(BugPriority),
+        enum: Object.values(BugPriority).filter(v => typeof v === "number"), // only 1,2,3,4,5
         default: BugPriority.Medium,
-        required: true,
-    },
+      },
     reported_by: {
         type: String,
         ref: 'Employee',

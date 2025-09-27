@@ -2,55 +2,28 @@
 
 import { useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { fetchAllBugsService } from "@/services/bugService"; // your existing bug service
+import { fetchBugsforDashboard } from "@/services/adminService"; // new service
 import { toast } from "sonner";
+import Link from "next/link";
 
 type Bug = {
   bug_id: string;
   bug_name: string;
-  bug_status: string;
+  bug_status: "Open" | "Closed" | "Under Review" | "Fixed";
   createdAt: string;
 };
 
-const dummyBugs: Bug[] = [
-  {
-    bug_id: "B-101",
-    bug_name: "Login page not redirecting",
-    bug_status: "Open",
-    createdAt: "2025-09-10T12:30:00Z",
-  },
-  {
-    bug_id: "B-102",
-    bug_name: "Broken link in footer",
-    bug_status: "Closed",
-    createdAt: "2025-09-09T15:10:00Z",
-  },
-  {
-    bug_id: "B-103",
-    bug_name: "Slow response in dashboard",
-    bug_status: "Under Review",
-    createdAt: "2025-09-08T10:00:00Z",
-  },
-];
-
 export default function RecentBugsList() {
-  const [bugs, setBugs] = useState<Bug[]>(dummyBugs);
+  const [bugs, setBugs] = useState<Bug[]>([]);
 
   useEffect(() => {
     async function loadBugs() {
       try {
-        const res = await fetchAllBugsService();
-        if (res.success && Array.isArray(res.data)) {
-          const sortedBugs = res.data.sort(
-            (a: Bug, b: Bug) =>
-              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          );
-          setBugs(sortedBugs);
-        } else {
-          toast.error(res.message || "Failed to fetch bugs");
-        }
+        const res = await fetchBugsforDashboard(); // fetch latest 5 bugs
+        if (res.success) setBugs(res.data);
+        else toast.error(res.message || "Failed to fetch bugs");
       } catch {
-        toast.warning("Using dummy data for bugs");
+        toast.error("Failed to fetch recent bugs");
       }
     }
     loadBugs();
@@ -58,12 +31,18 @@ export default function RecentBugsList() {
 
   return (
     <Card className="h-full shadow-md">
-      <CardHeader>
+      <CardHeader className="flex justify-between items-center">
         <CardTitle className="text-lg font-semibold">Recent Bugs</CardTitle>
+        <Link
+          href="/bugs" // replace with your actual employee page route
+          className="text-sm font-medium text-blue-600 hover:text-blue-800 transition"
+        >
+          View All
+        </Link>
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          {bugs.slice(0, 5).map((bug) => (
+          {bugs.map((bug) => (
             <div
               key={bug.bug_id}
               className="flex justify-between items-center p-3 rounded-lg bg-gray-100 hover:bg-gray-200 transition"

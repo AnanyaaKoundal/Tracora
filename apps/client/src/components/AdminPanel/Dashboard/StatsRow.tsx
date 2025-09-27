@@ -28,7 +28,7 @@ export default function DashboardStatsRow({ stats }: DashboardStatsRowProps) {
       <StatsCircle label="Total Projects" value={stats.projects.total} />
       <StatsCircle label="Active Projects" value={stats.projects.active} />
       <StatsCircle label="Total Bugs" value={stats.bugs.total} />
-      <StatsCircle label="Active Bugs" value={stats.bugs.open} />
+      <StatsCircle label="Open Bugs" value={stats.bugs.open} />
       <StatsCircle label="Total Employees" value={stats.employees.total} />
     </div>
   );

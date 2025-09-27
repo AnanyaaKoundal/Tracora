@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CreateBugInput, createBugSchema } from "@/schemas/bug.schema";
+import { CreateBugInput, createBugSchema, BugPriority } from "@/schemas/bug.schema";
 import { createBug } from "@/actions/bugAction";
+import { fetchEmpForDashboard } from "@/services/adminService";
 import { toast } from "sonner";
 
 import {
@@ -20,19 +21,40 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+type Employee = {
+  employee_id: string;
+  employee_name: string;
+};
+
 export function AddBugDrawer({ onBugCreated }: { onBugCreated: () => void }) {
   const [open, setOpen] = useState(false);
+  const [employees, setEmployees] = useState<Employee[]>([]);
 
   const form = useForm<CreateBugInput>({
-    resolver: zodResolver(createBugSchema),
     defaultValues: {
       bug_name: "",
       bug_description: "",
       bug_status: "Open",
       assigned_to: "",
       comments: [],
+      bug_priority: BugPriority.Medium, // numeric value
     },
   });
+
+  // Fetch employees for dropdown
+  useEffect(() => {
+    async function loadEmployees() {
+      try {
+        const res = await fetchEmpForDashboard();
+        if (res.success) setEmployees(res.data);
+        else toast.error(res.message || "Failed to load employees");
+      } catch (err) {
+        console.error(err);
+        toast.error("Error fetching employees");
+      }
+    }
+    loadEmployees();
+  }, []);
 
   const onSubmit = async (data: CreateBugInput) => {
     try {
@@ -77,9 +99,7 @@ export function AddBugDrawer({ onBugCreated }: { onBugCreated: () => void }) {
               placeholder="Enter bug title"
             />
             {form.formState.errors.bug_name && (
-              <p className="text-red-500 text-sm">
-                {form.formState.errors.bug_name.message}
-              </p>
+              <p className="text-red-500 text-sm">{form.formState.errors.bug_name.message}</p>
             )}
           </div>
 
@@ -92,13 +112,11 @@ export function AddBugDrawer({ onBugCreated }: { onBugCreated: () => void }) {
               placeholder="Describe the bug in detail"
             />
             {form.formState.errors.bug_description && (
-              <p className="text-red-500 text-sm">
-                {form.formState.errors.bug_description.message}
-              </p>
+              <p className="text-red-500 text-sm">{form.formState.errors.bug_description.message}</p>
             )}
           </div>
 
-          {/* Status Dropdown */}
+          {/* Status */}
           <div className="space-y-2">
             <Label>Status</Label>
             <Select
@@ -117,24 +135,50 @@ export function AddBugDrawer({ onBugCreated }: { onBugCreated: () => void }) {
                 <SelectItem value="Fixed">Fixed</SelectItem>
               </SelectContent>
             </Select>
-            {form.formState.errors.bug_status && (
-              <p className="text-red-500 text-sm">
-                {form.formState.errors.bug_status.message}
-              </p>
-            )}
+          </div>
+
+          {/* Priority */}
+          <div className="space-y-2">
+            <Label>Priority</Label>
+            <Select
+              onValueChange={(value) =>
+                form.setValue("bug_priority", parseInt(value) as CreateBugInput["bug_priority"])
+              }              
+              value={form.watch("bug_priority").toString()}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select priority" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={BugPriority.Critical.toString()}>Critical</SelectItem>
+                <SelectItem value={BugPriority.High.toString()}>High</SelectItem>
+                <SelectItem value={BugPriority.Medium.toString()}>Medium</SelectItem>
+                <SelectItem value={BugPriority.Low.toString()}>Low</SelectItem>
+                <SelectItem value={BugPriority.Trivial.toString()}>Trivial</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Assigned To */}
           <div className="space-y-2">
-            <Label htmlFor="assigned_to">Assign To</Label>
-            <Input
-              id="assigned_to"
-              {...form.register("assigned_to")}
-              placeholder="Enter assignee employee ID (optional)"
-            />
+            <Label>Assign To</Label>
+            <Select
+              onValueChange={(value) => form.setValue("assigned_to", value)}
+              value={form.watch("assigned_to")}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select employee" />
+              </SelectTrigger>
+              <SelectContent>
+                {employees.map((e) => (
+                  <SelectItem key={e.employee_id} value={e.employee_id}>
+                    {e.employee_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
-          {/* Submit */}
           <Button type="submit" className="w-full">
             Report Bug
           </Button>

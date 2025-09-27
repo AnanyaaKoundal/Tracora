@@ -25,7 +25,8 @@ import {
     getProjectById
 } from "@/controllers/project/project.controller";
 import { editCompanyEmail, editCompanyPassowrd, editCompanyPhone, getCompanyController } from "@/controllers/admin/company.controller";
-import { getAdminStats, getEmployeeList } from "@/controllers/admin/dashboard.controller"
+import { getAdminStats, getBugList, getBugTrendsController, getEmployeeList, getProjectList } from "@/controllers/admin/dashboard.controller"
+import { getBugsforDashboard } from "@/services/dashboard.service";
 
 const Router = express.Router();
 Router.use(authenticate, authorizeRole(["admin"]));
@@ -60,5 +61,8 @@ Router.route("/project/:p_id")
 
 Router.route("/stats").get(getAdminStats);
 Router.route("/stats/employees").get(getEmployeeList);
+Router.route("/stats/projects").get(getProjectList);
+Router.route("/stats/buglist").get(getBugList);
+Router.route("/stats/bugtrends").get(getBugTrendsController)
 
 export default Router;

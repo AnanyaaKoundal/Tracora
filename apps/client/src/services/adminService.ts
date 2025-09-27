@@ -236,3 +236,54 @@ export const fetchEmpForDashboard =  async () => {
 
   return res.json();
 }
+
+export const fetchProjectForDashboard =  async () => {
+  const res = await fetch(`${URL}/admin/stats/projects`, {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch projects");
+  }
+
+  return res.json();
+}
+
+export const fetchBugsforDashboard = async () => {
+  const res = await fetch(`${URL}/admin/stats/buglist`, {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch projects");
+  }
+
+  return res.json();
+}
+
+export const fetchBugTrendsforDashboard = async () => {
+  const res = await fetch(`${URL}/admin/stats/bugtrends`, {
+    method: "GET",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch bug trends");
+  }
+
+  return res.json();
+}

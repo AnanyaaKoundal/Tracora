@@ -34,7 +34,7 @@ export default function AdminDashboardPage() {
 
       {data?.stats && <DashboardStatsRow stats={data.stats} />}
 
-      {/* Row 1: Projects + Employees */}u
+      {/* Row 1: Projects + Employees */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
         <div className="md:col-span-2">
           <ProjectsList />

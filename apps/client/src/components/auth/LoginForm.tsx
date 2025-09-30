@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -32,6 +32,9 @@ export default function LoginForm() {
     {}
   );
   const [companies, setCompanies] = useState<{ company_id: string; company_name: string }[]>([]);
+
+  const otpRef = useRef<HTMLInputElement>(null);
+
   const router = useRouter();
 
   // React Hook Form with Zod
@@ -48,6 +51,11 @@ export default function LoginForm() {
   console.log("Errors", form.formState.errors);
   console.log("Values", form.getValues());
 
+  useEffect(() => {
+    if (step === "otp") {
+      otpRef.current?.focus();
+    }
+  }, [step]);
 
   // Fetch companies on mount
   useEffect(() => {
@@ -217,6 +225,7 @@ export default function LoginForm() {
                 <Label>OTP</Label>
                 <Input
                   {...form.register("otp")}
+                  ref={otpRef} 
                   placeholder="Enter 6-digit OTP"
                 />
                 {form.formState.errors.otp && (

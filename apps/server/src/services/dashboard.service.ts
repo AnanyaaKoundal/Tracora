@@ -8,6 +8,8 @@ import Project from "@/models/project.model";
 import { SortOrder } from "mongoose";
 import Bug from "@/models/bug.model";
 
+type RoleType = "manager" | "developer" | "tester";
+
 export const AdminStatsService = async () => {
   // Fetch all items using existing services
   const [projects, bugs, employees] = await Promise.all([
@@ -225,4 +227,94 @@ export const getBugPriorityStats = async () => {
   // });
 
   return Object.entries(stats).map(([name, value]) => ({ name, value }));
+};
+
+// Return dashboard data for a user
+export const getDashboardData = async (userId: string, role: RoleType) => {
+  let row1Data: any[] = [];
+  let row2Data: any[] = [];
+
+  // 🔹 Manager: top projects + bugs in those projects
+  if (role === "manager") {
+    row1Data = await Project.find()
+      .sort({ project_end_date: 1 } as Record<string, SortOrder>)
+      .limit(5)
+      .exec();
+
+    const projectIds = row1Data.map(p => p.project_id);
+
+    row2Data = await Bug.find();
+    
+  } else if (role === "developer") {
+    // 🔹 Developer: assigned bugs
+    row1Data = await Bug.find({ assigned_to: userId })
+    .sort({ updatedAt: -1 } as Record<string, SortOrder>)
+    .exec();
+    
+    row2Data = await Bug.find({ assigned_to: userId, bug_status: { $in: ["Closed", "Fixed"] } })
+    .sort({ updatedAt: -1 } as Record<string, SortOrder>)
+    .exec();
+    
+  } else if (role === "tester") {
+    // 🔹 Tester: reported bugs
+    row1Data = await Bug.find({ reported_by: userId })
+    .sort({ updatedAt: -1 } as Record<string, SortOrder>)
+    .exec();
+    console.log("Tester Row 2: ", row1Data);
+
+    row2Data = row1Data; // All reported bugs for second row
+  }
+
+  // 🔹 Bug priority stats (all relevant bugs)
+  const allBugs = await Bug.find(
+    role === "manager" ? { project_id: { $in: row1Data.map(p => p.project_id) } } :
+    role === "developer" ? { assigned_to: userId } :
+    { reported_by: userId }
+  ).exec();
+
+  const priorityCounts: Record<string, number> = {
+    Critical: 0,
+    High: 0,
+    Medium: 0,
+    Low: 0,
+    Trivial: 0,
+  };
+
+  allBugs.forEach(b => {
+    const pr = b.bug_priority;
+    if (pr && priorityCounts[pr] !== undefined) priorityCounts[pr]++;
+  });
+
+  const bugSummary = Object.entries(priorityCounts).map(([name, value]) => ({ name, value }));
+
+  // 🔹 Return structured dashboard data
+  return {
+    role,
+    projects: role === "manager" ? row1Data.map(p => ({
+      project_id: p.project_id,
+      project_name: p.project_name,
+      project_status: p.project_status,
+      project_end_date: p.project_end_date,
+      created_by: Array.isArray(p.created_by) ? (p.created_by[0] as any)?.employee_name || "" : (p.created_by as any)?.employee_name || "",
+    })) : [],
+    row1: role === "manager" ? [] : row1Data.map(b => ({
+      bug_id: b.bug_id,
+      bug_name: b.bug_name,
+      bug_status: b.bug_status,
+      priority: b.bug_priority,
+      updatedAt: b.updatedAt,
+      reported_by: (b.reported_by as any)?.employee_name || "",
+      assigned_to: (b.assigned_to as any)?.employee_name || "",
+    })),
+    row2: row2Data.map(b => ({
+      bug_id: b.bug_id,
+      bug_name: b.bug_name,
+      bug_status: b.bug_status,
+      priority: b.bug_priority,
+      updatedAt: b.updatedAt,
+      reported_by: (b.reported_by as any)?.employee_name || "",
+      assigned_to: (b.assigned_to as any)?.employee_name || "",
+    })),
+    bugSummary,
+  };
 };

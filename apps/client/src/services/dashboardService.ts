@@ -22,7 +22,7 @@ export const fetchDashboardData = async () => {
     }
 
     const data = await res.json(); // ✅ wait for the promise to resolve
-    console.log("RES: ", data);
+    console.log("RESSS: ", data);
 
     return data;
 }

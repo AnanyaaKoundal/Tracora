@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { DataTable, Column } from "@/components/Table/DataTable";
 import {
   getEmployees,
@@ -28,21 +28,27 @@ export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+
+  // Filters
+  const [search, setSearch] = useState("");
+  const [selectedRole, setSelectedRole] = useState<string>("");
+  const [selectedProject, setSelectedProject] = useState<string>("");
+
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [deletingEmployee, setDeletingEmployee] = useState<Employee | null>(
     null
   );
 
   const columns: Column<Employee>[] = [
-    { key: "employee_id", header: "ID"},
+    { key: "employee_id", header: "ID" },
     { key: "employee_name", header: "Name" },
     { key: "employee_email", header: "Email" },
     { key: "employee_contact_number", header: "Contact No" },
     {
       key: "role_names",
       header: "Roles",
-      render: (row) => row.role_names?.join(", ") || "-"
-    },    
+      render: (row) => row.role_names?.join(", ") || "-",
+    },
     {
       key: "project_name",
       header: "Project",
@@ -75,6 +81,7 @@ export default function EmployeesPage() {
     },
   ];
 
+  // Fetch data
   useEffect(() => {
     async function fetchData() {
       const [employeesData, rolesData, projectsData] = await Promise.all([
@@ -89,8 +96,28 @@ export default function EmployeesPage() {
     fetchData();
   }, []);
 
+  // Apply filters
+  const filteredEmployees = useMemo(() => {
+    return employees.filter((emp) => {
+      const matchesSearch =
+        emp.employee_name.toLowerCase().includes(search.toLowerCase()) ||
+        emp.employee_email.toLowerCase().includes(search.toLowerCase());
+
+      const matchesRole = selectedRole
+        ? emp.role_names?.includes(selectedRole)
+        : true;
+
+      const matchesProject = selectedProject
+        ? emp.project_name === selectedProject
+        : true;
+
+      return matchesSearch && matchesRole && matchesProject;
+    });
+  }, [employees, search, selectedRole, selectedProject]);
+
   return (
     <div className="space-y-4">
+      {/* Header */}
       <div className="flex justify-between items-center">
         <h1 className="text-xl font-semibold">Manage Employees</h1>
         <AddEmployeeDrawer
@@ -101,8 +128,47 @@ export default function EmployeesPage() {
         />
       </div>
 
-      <DataTable<Employee> columns={columns} data={employees} />
+      {/* Filters */}
+      <div className="flex gap-4 items-center">
 
+        <select
+          value={selectedRole}
+          onChange={(e) => setSelectedRole(e.target.value)}
+          className="border px-3 py-2 rounded-md"
+        >
+          <option value="">All Roles</option>
+          {roles.map((role) => (
+            <option key={role.role_id} value={role.role_name}>
+              {role.role_name}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={selectedProject}
+          onChange={(e) => setSelectedProject(e.target.value)}
+          className="border px-3 py-2 rounded-md"
+        >
+          <option value="">All Projects</option>
+          {projects.map((project) => (
+            <option key={project.project_id} value={project.project_name}>
+              {project.project_name}
+            </option>
+          ))}
+        </select>
+          <input
+            type="text"
+            placeholder="Search by name/email"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="border px-3 py-2 rounded-md"
+          />
+      </div>
+
+      {/* Table */}
+      <DataTable<Employee> columns={columns} data={filteredEmployees} />
+
+      {/* Edit Drawer */}
       {editingEmployee && (
         <EditEmployeeDrawer
           open={!!editingEmployee}
@@ -131,6 +197,7 @@ export default function EmployeesPage() {
         />
       )}
 
+      {/* Delete Dialog */}
       {deletingEmployee && (
         <DeleteEmployeeDialog
           open={!!deletingEmployee}
@@ -150,7 +217,6 @@ export default function EmployeesPage() {
           }}
         />
       )}
-
     </div>
   );
 }

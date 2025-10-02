@@ -7,7 +7,7 @@ import {
   deleteEmployeeById,
   getAllAssigneesController,
 } from "../controllers/employee/employee.controller";
-import { getDashboardData } from "@/controllers/employee/dashboard.controller";
+import { getDashboardStats } from "@/controllers/employee/dashboard.controller";
 import { authenticate } from "@/middlewares/auth.middleware";
 
 const Router = express.Router();
@@ -19,7 +19,7 @@ Router.route("/user/:user_id")
   .get(getEmployeeById)
   .put(editEmployee)
 
-Router.route("/dashboard").get(authenticate, getDashboardData);
+Router.route("/dashboard").get(authenticate, getDashboardStats);
 
 Router.route("/getAssignees").get(authenticate, getAllAssigneesController);
 

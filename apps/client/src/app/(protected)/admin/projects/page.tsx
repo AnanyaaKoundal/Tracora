@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { DataTable, Column } from "@/components/Table/DataTable";
 import {
   getProjects,
@@ -26,6 +26,11 @@ export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [deletingProject, setDeletingProject] = useState<Project | null>(null);
+
+  // Filters
+  const [search, setSearch] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("");
+  const [sortField, setSortField] = useState<"project_start_date" | "project_end_date" | "">("");
 
   const columns: Column<Project>[] = [
     { key: "project_id", header: "ID" },
@@ -72,8 +77,37 @@ export default function ProjectsPage() {
     fetchData();
   }, []);
 
+  // Apply filters and sorting
+  const filteredProjects = useMemo(() => {
+    let result = [...projects];
+
+    // 🔍 Search filter
+    if (search) {
+      result = result.filter((proj) =>
+        (proj.project_name ?? "").toLowerCase().includes(search.toLowerCase())
+      );
+    }
+
+    // 📌 Status filter
+    if (selectedStatus) {
+      result = result.filter((proj) => proj.project_status === selectedStatus);
+    }
+
+    // 📅 Sorting
+    if (sortField) {
+      result.sort((a, b) => {
+        const aVal = a[sortField] ? new Date(a[sortField] as string).getTime() : 0;
+        const bVal = b[sortField] ? new Date(b[sortField] as string).getTime() : 0;
+        return aVal - bVal;
+      });
+    }
+
+    return result;
+  }, [projects, search, selectedStatus, sortField]);
+
   return (
     <div className="space-y-4">
+      {/* Header */}
       <div className="flex justify-between items-center">
         <h1 className="text-xl font-semibold">Manage Projects</h1>
         <AddProjectDrawer
@@ -84,7 +118,45 @@ export default function ProjectsPage() {
         />
       </div>
 
-      <DataTable<Project> columns={columns} data={projects} />
+      {/* Filters */}
+      <div className="flex gap-4 items-center">
+
+        {/* Status Dropdown */}
+        <select
+          value={selectedStatus}
+          onChange={(e) => setSelectedStatus(e.target.value)}
+          className="border px-3 py-2 rounded-md"
+        >
+          <option value="">All Statuses</option>
+          <option value="Active">Active</option>
+          <option value="Completed">Completed</option>
+          <option value="On Hold">On Hold</option>
+        </select>
+
+        {/* Sort Dropdown */}
+        <select
+          value={sortField}
+          onChange={(e) => setSortField(e.target.value as any)}
+          className="border px-3 py-2 rounded-md"
+        >
+          <option value="">Sort By</option>
+          <option value="project_start_date">Start Date</option>
+          <option value="project_end_date">End Date</option>
+        </select>
+
+          {/* Search */}
+        <input
+          type="text"
+          placeholder="Search by name"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="border px-3 py-2 rounded-md"
+        />
+
+      </div>
+
+      {/* Table */}
+      <DataTable<Project> columns={columns} data={filteredProjects} />
 
       {/* Edit Drawer */}
       {editingProject && (
@@ -119,7 +191,7 @@ export default function ProjectsPage() {
             if (!open) setDeletingProject(null);
           }}
           projectId={deletingProject.project_id}
-          projectName={deletingProject.project_name || null} 
+          projectName={deletingProject.project_name || null}
           onConfirm={async () => {
             const res = await deleteProject(deletingProject.project_id);
             if (res.success) {

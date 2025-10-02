@@ -13,19 +13,21 @@ import { DeleteProjectDialog } from "@/components/AdminPanel/projects/DeleteProj
 export default function BugsPage() {
   const [bugs, setBugs] = useState<Bug[]>([]);
   const [deletingBug, setDeletingBug] = useState<Bug | null>(null);
+  const [statusFilter, setStatusFilter] = useState("");
+  const [reporterFilter, setReporterFilter] = useState("");
   const router = useRouter();
 
   const columns: Column<Bug>[] = [
-    { key: "bug_id", header: "ID" },
-    { key: "bug_name", header: "Name" },
-    { key: "bug_status", header: "Status" },
-    { key: "reported_by", header: "Reported By" },
+    { key: "bug_id", header: "ID", sortable: true },
+    { key: "bug_name", header: "Name", sortable: true },
+    { key: "bug_status", header: "Status", sortable: true },
+    { key: "reported_by", header: "Reported By", sortable: true },
     {
       key: "assigned_to",
       header: "Assignee",
       render: (row) => row.assigned_to || "-",
     },
-    { key: "updatedAt", header: "Updated At" },
+    { key: "updatedAt", header: "Updated At", sortable: true },
     {
       key: "actions",
       header: <div className="text-right">Actions</div>,
@@ -54,6 +56,14 @@ export default function BugsPage() {
     fetchData();
   }, []);
 
+  // Apply filters
+  const filteredBugs = bugs.filter((bug) => {
+    return (
+      (statusFilter === "" || bug.bug_status === statusFilter) &&
+      (reporterFilter === "" || bug.reported_by?.toLowerCase().includes(reporterFilter.toLowerCase()))
+    );
+  });
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -68,8 +78,33 @@ export default function BugsPage() {
 
       <DataTable<Bug>
         columns={columns}
-        data={bugs}
+        data={filteredBugs}
         onRowClick={(row) => router.push(`/bugs/${row.bug_id}`)}
+        filters={
+          <>
+            {/* Status Filter */}
+            <select
+              className="border px-2 py-1 rounded"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="">All</option>
+              <option value="Open">Open</option>
+              <option value="Under Review">Under Review</option>
+              <option value="Closed">Closed</option>
+              <option value="Fixed">Fixed</option>
+            </select>
+
+            {/* Reporter Filter */}
+            <input
+              type="text"
+              placeholder="Filter by Reporter"
+              className="border px-2 py-1 rounded"
+              value={reporterFilter}
+              onChange={(e) => setReporterFilter(e.target.value)}
+            />
+          </>
+        }
       />
 
       {/* Delete Confirmation Dialog */}

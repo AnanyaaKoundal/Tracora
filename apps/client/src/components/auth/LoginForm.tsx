@@ -57,7 +57,6 @@ export default function LoginForm() {
     }
   }, [step]);
 
-  // Fetch companies on mount
   useEffect(() => {
     const loadCompanies = async () => {
       const data = await fetchCompanies();
@@ -66,7 +65,6 @@ export default function LoginForm() {
     loadCompanies();
   }, []);
 
-  // Handle form submission
   const onSubmit = async (data: z.infer<typeof loginSchema>) => {
     if (step === "company") {
       setFormData(prev => ({ ...prev, ...data }));

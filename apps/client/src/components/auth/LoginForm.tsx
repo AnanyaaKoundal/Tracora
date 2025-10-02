@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
 
 import { verifyUser, verifyOtp, fetchCompanies } from "@/actions/loginAction";
 import { loginSchema } from "@/schemas/login.schema";
@@ -33,8 +32,6 @@ export default function LoginForm() {
   );
   const [companies, setCompanies] = useState<{ company_id: string; company_name: string }[]>([]);
 
-  const otpRef = useRef<HTMLInputElement>(null);
-
   const router = useRouter();
 
   // React Hook Form with Zod
@@ -53,9 +50,9 @@ export default function LoginForm() {
 
   useEffect(() => {
     if (step === "otp") {
-      otpRef.current?.focus();
+      form.setFocus("otp");
     }
-  }, [step]);
+  }, [step, form]);  
 
   useEffect(() => {
     const loadCompanies = async () => {
@@ -93,6 +90,7 @@ export default function LoginForm() {
 
     if (step === "otp") {
       const payload = { ...formData, ...data };
+      console.log("PAYLOAD", payload);
       const result = await verifyOtp(payload);
       console.log("OTP result: ", result);
       if (result?.error) {
@@ -187,64 +185,64 @@ export default function LoginForm() {
                 </div>
               )}
 
-            {/* Step 2: User Details */}
-            {step === "details" && (
-              <>
+              {/* Step 2: User Details */}
+              {step === "details" && (
+                <>
+                  <div>
+                    <Label>Email</Label>
+                    <Input
+                      {...form.register("email")}
+                      placeholder="you@example.com"
+                    />
+                    {form.formState.errors.email && (
+                      <p className="text-red-500 text-sm">
+                        {form.formState.errors.email.message}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <Label>Mobile</Label>
+                    <Input
+                      {...form.register("mobile")}
+                      placeholder="9876543210"
+                    />
+                    {form.formState.errors.mobile && (
+                      <p className="text-red-500 text-sm">
+                        {form.formState.errors.mobile.message}
+                      </p>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {/* Step 3: OTP */}
+              {step === "otp" && (
                 <div>
-                  <Label>Email</Label>
+                  <Label>OTP</Label>
                   <Input
-                    {...form.register("email")}
-                    placeholder="you@example.com"
+                    {...form.register("otp")}
+                    placeholder="Enter 6-digit OTP"
                   />
-                  {form.formState.errors.email && (
+
+                  {form.formState.errors.otp && (
                     <p className="text-red-500 text-sm">
-                      {form.formState.errors.email.message}
+                      {form.formState.errors.otp.message}
                     </p>
                   )}
                 </div>
-                <div>
-                  <Label>Mobile</Label>
-                  <Input
-                    {...form.register("mobile")}
-                    placeholder="9876543210"
-                  />
-                  {form.formState.errors.mobile && (
-                    <p className="text-red-500 text-sm">
-                      {form.formState.errors.mobile.message}
-                    </p>
-                  )}
-                </div>
-              </>
-            )}
+              )}
 
-            {/* Step 3: OTP */}
-            {step === "otp" && (
-              <div>
-                <Label>OTP</Label>
-                <Input
-                  {...form.register("otp")}
-                  ref={otpRef} 
-                  placeholder="Enter 6-digit OTP"
-                />
-                {form.formState.errors.otp && (
-                  <p className="text-red-500 text-sm">
-                    {form.formState.errors.otp.message}
-                  </p>
-                )}
-              </div>
-            )}
-
-            <Button type="submit" className="w-full">
-              {step === "company"
-                ? "Next"
-                : step === "details"
-                  ? "Send OTP"
-                  : "Verify OTP"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+              <Button type="submit" className="w-full">
+                {step === "company"
+                  ? "Next"
+                  : step === "details"
+                    ? "Send OTP"
+                    : "Verify OTP"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </div >
   );
 }

@@ -8,7 +8,7 @@ import { PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
 import { useRouter } from "next/navigation";
 
 type DashboardData = {
-  role: "manager" | "developer" | "tester";
+  role: "admin" | "manager" | "developer" | "tester";
   projects?: any[];
   bugs?: any[];
   bugsSecondRow?: any[]; // bugs for second row table
@@ -104,7 +104,7 @@ export default function DashboardPage() {
   ];
 
   const handleSeeAll = () => {
-    router.push(data.role === "manager" ? "/projects" : "/bugs");
+    router.push(data.role === "manager" || data.role === "admin" ? "/projects" : "/bugs");
   };
 
   return (
@@ -114,16 +114,16 @@ export default function DashboardPage() {
         <CardContent>
           <div className="flex justify-between">
             <h2 className="text-xl font-bold mb-4">
-              {data.role === "manager" ? "Projects" : "Assigned Bugs"}
+              {data.role === "manager" || data.role === "admin" ? "Projects" : "Assigned Bugs"}
             </h2>
             <button onClick={handleSeeAll} className="text-primary hover:underline">
               See all
             </button>
           </div>
-          {(data.role === "manager" ? topProjects : topBugs).length > 0 ? (
+          {(data.role === "manager" || data.role === "admin" ? topProjects : topBugs).length > 0 ? (
             <DataTable
-              columns={data.role === "manager" ? columnsProjects : columnsBugs}
-              data={data.role === "manager" ? topProjects : topBugs}
+              columns={data.role === "manager" || data.role === "admin" ? columnsProjects : columnsBugs}
+              data={data.role === "manager" || data.role === "admin" ? topProjects : topBugs}
             />
           ) : (
             <p className="text-center text-gray-500">No items found</p>
@@ -139,7 +139,7 @@ export default function DashboardPage() {
             <CardContent>
               <div className="flex justify-between">
                 <h2 className="text-xl font-bold mb-4">
-                  {data.role === "manager"
+                  {data.role === "manager" || data.role === "admin" 
                     ? "Top Bugs in Projects"
                     : data.role === "developer"
                     ? "Bugs Fixed by Me"

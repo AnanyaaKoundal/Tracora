@@ -80,10 +80,13 @@ export const deleteProjectsByIds = async (projectIds: string[]) => {
 
 export const getProjects = async (user: any) => {
   console.log("User; ", user);
+  if(user.role === 'admin'){
+    const projs = await Project.find();
+    return projs;
+  }
   if (!user || !user.projectId) {
     return []; // No projects assigned
   }
-
   const projects = await Project.find({
     project_id: { $in: user.projectId }
   });

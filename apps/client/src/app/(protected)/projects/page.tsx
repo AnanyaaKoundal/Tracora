@@ -67,6 +67,7 @@ export default function ProjectsPage() {
   useEffect(() => {
     async function fetchData() {
       const projectData = await getProjects();
+      console.log("PROJECTS: ", projectData);
       setProjects(projectData);
     }
     fetchData();

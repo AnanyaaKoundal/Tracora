@@ -8,7 +8,7 @@ import Project from "@/models/project.model";
 import { SortOrder } from "mongoose";
 import Bug from "@/models/bug.model";
 
-type RoleType = "manager" | "developer" | "tester";
+type RoleType = "admin" | "manager" | "developer" | "tester";
 
 export const AdminStatsService = async () => {
   // Fetch all items using existing services
@@ -235,7 +235,7 @@ export const getDashboardData = async (userId: string, role: RoleType) => {
   let row2Data: any[] = [];
 
   // 🔹 Manager: top projects + bugs in those projects
-  if (role === "manager") {
+  if (role === "manager" || role === "admin") {
     row1Data = await Project.find()
       .sort({ project_end_date: 1 } as Record<string, SortOrder>)
       .limit(5)
@@ -267,7 +267,7 @@ export const getDashboardData = async (userId: string, role: RoleType) => {
 
   // 🔹 Bug priority stats (all relevant bugs)
   const allBugs = await Bug.find(
-    role === "manager" ? { project_id: { $in: row1Data.map(p => p.project_id) } } :
+    (role === "manager" ||  role === "admin") ? { project_id: { $in: row1Data.map(p => p.project_id) } } :
     role === "developer" ? { assigned_to: userId } :
     { reported_by: userId }
   ).exec();
@@ -290,14 +290,14 @@ export const getDashboardData = async (userId: string, role: RoleType) => {
   // 🔹 Return structured dashboard data
   return {
     role,
-    projects: role === "manager" ? row1Data.map(p => ({
+    projects: role === "manager" || role === "admin" ? row1Data.map(p => ({
       project_id: p.project_id,
       project_name: p.project_name,
       project_status: p.project_status,
       project_end_date: p.project_end_date,
       created_by: Array.isArray(p.created_by) ? (p.created_by[0] as any)?.employee_name || "" : (p.created_by as any)?.employee_name || "",
     })) : [],
-    row1: role === "manager" ? [] : row1Data.map(b => ({
+    row1: role === "manager" || role === "admin" ? [] : row1Data.map(b => ({
       bug_id: b.bug_id,
       bug_name: b.bug_name,
       bug_status: b.bug_status,

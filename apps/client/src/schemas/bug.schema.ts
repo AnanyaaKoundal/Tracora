@@ -26,6 +26,7 @@ export const bugSchema = z.object({
   bug_status: z.enum(["Open", "Under Review", "Closed", "Fixed"]),
   reported_by: z.string(),
   assigned_to: z.string().optional(),
+  bug_priority: z.nativeEnum(BugPriority),
   comments: z.array(z.string()).optional(),
   createdAt: z.string(),
   updatedAt: z.string()

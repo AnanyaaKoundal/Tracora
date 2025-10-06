@@ -81,19 +81,19 @@ export default function ProjectsPage() {
   const filteredProjects = useMemo(() => {
     let result = [...projects];
 
-    // 🔍 Search filter
+    // Search filter
     if (search) {
       result = result.filter((proj) =>
         (proj.project_name ?? "").toLowerCase().includes(search.toLowerCase())
       );
     }
 
-    // 📌 Status filter
+    // Status filter
     if (selectedStatus) {
       result = result.filter((proj) => proj.project_status === selectedStatus);
     }
 
-    // 📅 Sorting
+    // Sorting
     if (sortField) {
       result.sort((a, b) => {
         const aVal = a[sortField] ? new Date(a[sortField] as string).getTime() : 0;

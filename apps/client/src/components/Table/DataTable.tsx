@@ -6,7 +6,7 @@ export type Column<T> = {
   key: keyof T | "actions";
   header: React.ReactNode;
   render?: (row: T) => React.ReactNode;
-  sortable?: boolean; // 👈 new
+  sortable?: boolean; // new
 };
 
 export function DataTable<T>({
@@ -18,7 +18,7 @@ export function DataTable<T>({
   columns: Column<T>[];
   data: T[];
   onRowClick?: (row: T) => void;
-  filters?: React.ReactNode; // 👈 new
+  filters?: React.ReactNode; // new
 }) {
   const [sortConfig, setSortConfig] = useState<{ key: keyof T; direction: "asc" | "desc" } | null>(null);
 

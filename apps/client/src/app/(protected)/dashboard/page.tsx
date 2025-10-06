@@ -42,8 +42,8 @@ export default function DashboardPage() {
         setData({
           role: stats.role,
           projects: stats.projects,
-          bugs: stats.row1,        // ✅ first row
-          bugsSecondRow: stats.row2, // ✅ second row
+          bugs: stats.row1,        
+          bugsSecondRow: stats.row2, 
           bugSummary: stats.bugSummary,
         });
       } catch (error) {
@@ -59,7 +59,7 @@ export default function DashboardPage() {
   if (loading) return <div className="text-center py-6">Loading...</div>;
   if (!data) return <div className="text-center py-6">No data available</div>;
 
-  // 🔹 Top projects (sorted by end date)
+  // Top projects (sorted by end date)
   const topProjects = Array.isArray(data.projects)
     ? [...data.projects]
         .sort((a, b) => {
@@ -70,13 +70,13 @@ export default function DashboardPage() {
         .slice(0, 5)
     : [];
 
-  // 🔹 Top bugs for first row (assigned / reported / project bugs)
+  // Top bugs for first row (assigned / reported / project bugs)
   const topBugs = Array.isArray(data.bugs) ? [...data.bugs] : [];
 
-  // 🔹 Bugs for second row (developer fixed / tester reported / manager project bugs)
+  // Bugs for second row (developer fixed / tester reported / manager project bugs)
   const secondRowBugs = Array.isArray(data.bugsSecondRow) ? [...data.bugsSecondRow] : [];
 
-  // 🔹 Pie chart data
+  // Pie chart data
   const pieData = Array.isArray(data.bugSummary) && data.bugSummary.length > 0
     ? data.bugSummary
     : [
@@ -87,7 +87,7 @@ export default function DashboardPage() {
         { name: "Trivial", value: 0 },
       ];
 
-  // 🔹 Columns
+  // Columns
   const columnsProjects: Column<any>[] = [
     { key: "project_id", header: "ID" },
     { key: "project_name", header: "Name" },

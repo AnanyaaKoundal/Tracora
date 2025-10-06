@@ -8,7 +8,7 @@ export enum BugPriority {
   Trivial,
 }
 
-// ✅ Schema for creating a new bug
+// Schema for creating a new bug
 export const createBugSchema = z.object({
   bug_name: z.string().min(1, "Bug name is required"),
   bug_description: z.string().min(1, "Bug description is required"),
@@ -18,7 +18,7 @@ export const createBugSchema = z.object({
   bug_priority: z.nativeEnum(BugPriority).default(BugPriority.Medium),
 });
 
-// ✅ General schema for a bug (used for type inference)
+// General schema for a bug (used for type inference)
 export const bugSchema = z.object({
   bug_id: z.string().min(1, "Bug ID is required"),
   bug_name: z.string(),
@@ -32,6 +32,6 @@ export const bugSchema = z.object({
   updatedAt: z.string()
 });
 
-// ✅ Type inference
+// Type inference
 export type CreateBugInput = z.infer<typeof createBugSchema>;
 export type Bug = z.infer<typeof bugSchema>;

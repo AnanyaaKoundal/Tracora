@@ -1,4 +1,3 @@
-// app/(auth)/login/page.tsx
 import RegisterCompanyForm from "@/components/auth/RegisterCompanyForm";
 
 export default function LoginPage() {

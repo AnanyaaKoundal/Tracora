@@ -20,7 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Employee, Role, Project } from "@/schemas/admin.schema";
 
-// ⬇️ You’ll need APIs to fetch roles & projects too
+// APIs to fetch roles & projects
 import { getRoles } from "@/actions/rolesAction";
 import { getAllProjects } from "@/actions/projectAction";
 

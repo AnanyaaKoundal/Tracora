@@ -22,7 +22,7 @@ export default function CompanyDetailsPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordVerified, setPasswordVerified] = useState(false);
 
-  // 🔄 Centralized function to refresh data
+  //  Centralized function to refresh data
   async function refreshCompany() {
     const data = await getCompany();
     if (data.success) {
@@ -58,7 +58,7 @@ export default function CompanyDetailsPage() {
         case "password":
           res = await editCompanyPassword({ newPassword: tempValue, otp });
           break;
-        // ✅ Future-proof: add more cases like "name" here
+        //  Future-proof: add more cases like "name" here
         default:
           return toast.error("Invalid field selected");
       }

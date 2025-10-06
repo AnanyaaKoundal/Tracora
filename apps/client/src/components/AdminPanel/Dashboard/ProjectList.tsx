@@ -37,7 +37,7 @@ export default function ProjectsList() {
       <CardHeader className="flex justify-between items-center">
         <CardTitle className="text-lg font-semibold">Top Projects</CardTitle>
         <Link
-          href="/admin/projects" // replace with your actual employee page route
+          href="/admin/projects" 
           className="text-sm font-medium text-blue-600 hover:text-blue-800 transition"
         >
           View All

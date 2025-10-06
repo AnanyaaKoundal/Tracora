@@ -34,7 +34,7 @@ export default function RecentBugsList() {
       <CardHeader className="flex justify-between items-center">
         <CardTitle className="text-lg font-semibold">Recent Bugs</CardTitle>
         <Link
-          href="/bugs" // replace with your actual employee page route
+          href="/bugs"
           className="text-sm font-medium text-blue-600 hover:text-blue-800 transition"
         >
           View All

@@ -21,7 +21,7 @@ export const fetchDashboardData = async () => {
         throw new Error("Failed to fetch data");
     }
 
-    const data = await res.json(); // ✅ wait for the promise to resolve
+    const data = await res.json(); // wait for the promise to resolve
     console.log("RESSS: ", data);
 
     return data;

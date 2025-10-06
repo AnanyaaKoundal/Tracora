@@ -36,7 +36,7 @@ export default function EmployeesList() {
       <CardHeader className="flex justify-between items-center">
         <CardTitle className="text-lg font-semibold">Employees</CardTitle>
         <Link
-          href="/admin/employees" // replace with your actual employee page route
+          href="/admin/employees"
           className="text-sm font-medium text-blue-600 hover:text-blue-800 transition"
         >
           View All

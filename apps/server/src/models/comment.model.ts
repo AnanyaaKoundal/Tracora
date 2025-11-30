@@ -1,23 +1,20 @@
 import mongoose from "mongoose";
-import User from "./employee.model";
-import Bug from "./bug.model";
 
 const commentSchema = new mongoose.Schema({
-    comment_id: {
-      type: String,
-      required: true,
-      unique: true
-    },
     bug_id: {
       type: String,
       ref: "Bug",
       required: true,
     },
-    sender: {
+    senderId: {
       type: String,
-      ref: "User",
+      ref: "Employee",
       required: true,
     },
+    receiverId: [{
+      type: String,
+      ref: "Employee",
+    }],
     message: {
       type: String,
       required: true,
@@ -29,6 +26,22 @@ const commentSchema = new mongoose.Schema({
         file_type: String,
       },
     ],
+    isDeleted:{
+      type: Boolean,
+      default: false,
+    },
+    isEdited:{
+      type: Boolean,
+      default: false,
+    },
+    taggedUsers: [{
+      type: String,
+      ref: "Employee",
+    }],
+    isReplyTo: {
+      type: String,
+      ref: "Comment"
+    }
   },
   { timestamps: true}
 )

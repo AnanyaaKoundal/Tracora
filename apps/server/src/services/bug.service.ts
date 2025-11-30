@@ -38,12 +38,13 @@ export const getBugById = async (bug_id: string) => {
 };
 
 export const editBug = async (bug_id: string, updateData: any) => {
+  console.log("UPDATE:", updateData);
   const bug = await Bug.findOneAndUpdate(
     { bug_id },
     { ...updateData, updated_at: Date.now() },
     { new: true }
   );
-
+  console.log("BUG UPDATE: ", bug);
   if (!bug) {
     throw new ApiError(404, "bug not found");
   }

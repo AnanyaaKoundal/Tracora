@@ -9,7 +9,8 @@ import empRoutes from "@/routes/employee.route";
 import projectRoutes from "@/routes/project.route";
 import authRoutes from "@/routes/auth.route";
 import adminRoutes from "@/routes/admin.route";
-import bugRoutes from "@/routes/bug.route"
+import bugRoutes from "@/routes/bug.route";
+import commentRoutes from "@/routes/comment.route"
 
 const app = express();
 
@@ -34,6 +35,7 @@ app.use("/projects", projectRoutes);
 app.use("/auth", authRoutes);
 app.use("/admin", adminRoutes);
 app.use("/bug", bugRoutes);
+app.use("/comment", commentRoutes);
 
 app.use(errorHandler);
 

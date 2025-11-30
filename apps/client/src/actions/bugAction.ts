@@ -45,11 +45,11 @@ export async function getBugById(id: string){
   }
 }
 
-export async function updateBug(data : Bug) {
+export async function updateBug(data: Partial<Bug>) {
   try {
     await updateBugService(data);
     return { success: true };
   } catch (err: any) {
-    return { success: false, message: err.message || "Failed to update bug" };
+    return { success: false, data: data, message: err.message || "Failed to update bug" };
   }
 }

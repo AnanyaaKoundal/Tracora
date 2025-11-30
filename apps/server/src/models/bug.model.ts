@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import Employee from "./employee.model";
 
 export enum BugPriority {
     Critical = 1,
@@ -42,6 +43,10 @@ const bugSchema = new mongoose.Schema({
         type: String,
         ref: "Employee"
     },
+    notify_users: [{
+        type: String,
+        ref: Employee
+    }],
     comments: [{
         type: String,
         ref: "Comment"

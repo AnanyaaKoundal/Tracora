@@ -61,7 +61,7 @@ export const fetchBugByIdService = async (id: string) => {
   return res.json();
 };
 
-export const updateBugService = async (bug: Bug) => {
+export const updateBugService = async (bug: Partial<Bug>) => {
   const res = await fetch(`${URL}/bug/${bug.bug_id}`, {
     method: "PUT",
     credentials: "include",

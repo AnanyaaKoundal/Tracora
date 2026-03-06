@@ -1,8 +1,8 @@
 import app from "./src/app"
-import Connect from "./src/config/db";
-import {initializeKafka} from "@/config/kafka_init";
+import Connect from "./src/config/kafka/db";
+import {initializeKafka} from "@/config/kafka/kafka_init";
 
-// initializeKafka();
+initializeKafka();
 
 const PORT = 5000;
 

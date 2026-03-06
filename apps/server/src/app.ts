@@ -11,6 +11,7 @@ import authRoutes from "@/routes/auth.route";
 import adminRoutes from "@/routes/admin.route";
 import bugRoutes from "@/routes/bug.route";
 import commentRoutes from "@/routes/comment.route"
+import sseRoutes from "@/routes/sse.route";
 
 const app = express();
 
@@ -36,6 +37,7 @@ app.use("/auth", authRoutes);
 app.use("/admin", adminRoutes);
 app.use("/bug", bugRoutes);
 app.use("/comment", commentRoutes);
+app.use("/sse", sseRoutes);
 
 app.use(errorHandler);
 

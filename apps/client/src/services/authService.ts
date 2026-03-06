@@ -1,5 +1,6 @@
 let URL = "http://localhost:5000";
 
+import { useAuthStore } from "@/schemas/authStore";
 import { loginSchema } from "@/schemas/login.schema";
 import z from "zod";
   
@@ -32,6 +33,7 @@ export const fetchCompaniesService = async () => {
 };
 
 export const verifyLoginOtpService = async (values: z.Infer<typeof loginSchema>) => {
+  console.log("INNN")
   const response = await fetch(`${URL}/auth/verifyOtp`, {
     method: "POST",
     credentials: "include",
@@ -43,6 +45,14 @@ export const verifyLoginOtpService = async (values: z.Infer<typeof loginSchema>)
   });
 
   const res = await response.json();
+  console.log("RESSS: ", res);
+  if (res.success) {
+    useAuthStore.getState().setAuth({
+      employeeId: res.employee_id,
+      companyId: res.company_id,
+      role: res.role_name,
+    });
+  }
   return res;
 };
 

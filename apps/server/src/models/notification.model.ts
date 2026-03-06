@@ -4,11 +4,14 @@ import mongoose from "mongoose";
 const notificationSchema = new mongoose.Schema({
     title:{
         type: String,
-        required: true
     },
     participants: {
         type: [String],
         ref: "Employee",
+        required: true
+    },
+    message:{
+        type: String,
         required: true
     },
     reference_id: {
@@ -17,7 +20,6 @@ const notificationSchema = new mongoose.Schema({
     },
     reference_name:{
         type: String,
-        required: true
     },
     readStatus: {
         type: Map,

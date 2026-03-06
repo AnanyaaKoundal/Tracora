@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { kafkaProducer } from '@/config/kafka_producer';
+import { kafkaProducer } from '@/config/kafka/kafka_producer';
 
 const router = Router();
 

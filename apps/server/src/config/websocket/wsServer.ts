@@ -1,85 +1,186 @@
-// import { WebSocket, WebSocketServer } from "ws";
+import { WebSocket, WebSocketServer, RawData } from "ws";
+import { Server } from "http";
 
-// const matchSubscriber = new Map();
+/*
+We extend the default WebSocket so we can store
+extra metadata per connected client.
+*/
+interface ExtendedWebSocket extends WebSocket {
+  subscriptions: Set<string>; // bug_id subscriptions
+  isAlive: boolean;
+}
 
-// function subscribe(){
-    
-// }
+/*
+Map that stores subscribers for each bug.
 
-// function unsubscribe(){
-    
-// }
+Example:
 
-// function cleanupSubscriptions(){
+bugSubscribers = {
+  BUG-101 → Set(socketA, socketB)
+  BUG-202 → Set(socketC)
+}
+*/
+const bugSubscribers: Map<string, Set<ExtendedWebSocket>> = new Map();
 
-// }
+/*
+Client subscribes to a bug
+when they open the bug page.
+*/
+function subscribeBug(bugId: string, socket: ExtendedWebSocket) {
+  if (!bugSubscribers.has(bugId)) {
+    bugSubscribers.set(bugId, new Set());
+  }
 
-// function sendJson(){
+  bugSubscribers.get(bugId)!.add(socket);
+}
 
-// }
+/*
+Remove subscription.
+*/
+function unsubscribeBug(bugId: string, socket: ExtendedWebSocket) {
+  const subs = bugSubscribers.get(bugId);
+  if (!subs) return;
 
-// function broadcastToAll(){
+  subs.delete(socket);
 
-// }
+  if (subs.size === 0) {
+    bugSubscribers.delete(bugId);
+  }
+}
 
-// function broadcastToMatch(){
+/*
+When client disconnects,
+remove them from all bug subscriptions.
+*/
+function cleanupSubscriptions(socket: ExtendedWebSocket) {
+  for (const bugId of socket.subscriptions) {
+    unsubscribeBug(bugId, socket);
+  }
+}
 
-// }
+/*
+Safe JSON sender
+*/
+function sendJson(socket: WebSocket, payload: unknown) {
+  if (socket.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify(payload));
+  }
+}
 
-// function handleMessage(){
+/*
+Broadcast message to everyone watching a bug
+*/
+function broadcastToBug(bugId: string, payload: unknown) {
+  const subs = bugSubscribers.get(bugId);
+  if (!subs) return;
 
-// }
+  const msg = JSON.stringify(payload);
 
-// export function attachWebSocketServer(server:any){
-//     const wss = new WebSocketServer({
-//         server,
-//         path: '/ws',
-//         maxPayload: 1024*1024
-//     })
+  for (const client of subs) {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(msg);
+    }
+  }
+}
 
-//     wss.on("connection", async(socket: WebSocket, req: Request) => {
+/*
+Handle messages sent by clients
+*/
+function handleMessage(socket: ExtendedWebSocket, data: RawData) {
+  let msg: any;
 
-//         socket.isAlive = true;
-//         socket.on("pong", ()=>{socket.isAlive = true}); 
+  try {
+    msg = JSON.parse(data.toString());
+  } catch {
+    sendJson(socket, { type: "error", message: "Invalid JSON" });
+    return;
+  }
 
-//         socket.subscriptions = new Set();
+  /*
+  Subscribe to bug
+  */
+  if (msg.type === "subscribe_bug") {
+    const bugId = msg.bugId;
 
-//         sendJson(socket, { type: "welcome"});
+    subscribeBug(bugId, socket);
+    socket.subscriptions.add(bugId);
 
-//         socket.on("message", (data) => {
-//             handleMessage(socket, data);
-//         })
+    sendJson(socket, {
+      type: "subscribed",
+      bugId,
+    });
+  }
 
-//         socket.on("error", ( ) => {
-//             socket.terminate();
-//         })
+  /*
+  Unsubscribe
+  */
+  if (msg.type === "unsubscribe_bug") {
+    const bugId = msg.bugId;
 
-//         socket.on("close", ()=>{
-//             cleanupSubscriptions(socket);
-//         })
+    unsubscribeBug(bugId, socket);
+    socket.subscriptions.delete(bugId);
 
-//         socket.on("error", (err) => console.error("WS Error:", err));
-//     })
+    sendJson(socket, {
+      type: "unsubscribed",
+      bugId,
+    });
+  }
+}
 
-//     const interval = setInterval(() => {
-//         wss.clients.forEach((ws)=>{
-//             if(ws.isAlive === false){
-//                 return ws.terminate();
-//             }
-//             ws.isAlive = false;
-//             ws.ping();
-//         })
-//     }, 3000);
+/*
+Attach WebSocket server to HTTP server
+*/
+export function attachWebSocketServer(server: Server) {
+  const wss = new WebSocketServer({
+    server,
+    path: "/ws",
+  });
 
-//     wss.on("close", ()=> clearInterval(interval)); 
+  wss.on("connection", (socket: WebSocket) => {
+    const ws = socket as ExtendedWebSocket;
 
-//     function broadcastMatchCreated(match){
-//         broadcastToAll(wss, {type: "match_created", payload: match});
-//     }
+    ws.subscriptions = new Set();
+    ws.isAlive = true;
 
-//     function broadcastCommentary(matchId, comment){
-//         broadcastToMatch(matchId,  {type: "commentary", data: comment});
-//     }
+    ws.on("pong", () => (ws.isAlive = true));
 
-//     return {broadcastMatchCreated, broadcastCommentary};
-// }
+    sendJson(ws, { type: "connected" });
+
+    ws.on("message", (data) => {
+      handleMessage(ws, data);
+    });
+
+    ws.on("close", () => {
+      cleanupSubscriptions(ws);
+    });
+  });
+
+  /*
+  Heartbeat check
+  */
+  const interval = setInterval(() => {
+    wss.clients.forEach((ws) => {
+      const socket = ws as ExtendedWebSocket;
+
+      if (!socket.isAlive) return socket.terminate();
+
+      socket.isAlive = false;
+      socket.ping();
+    });
+  }, 30000);
+
+  wss.on("close", () => clearInterval(interval));
+
+  /*
+  This function will be used by your comment API
+  */
+  function broadcastNewComment(bugId: string, comment: any) {
+    broadcastToBug(bugId, {
+      type: "new_comment",
+      bugId,
+      comment,
+    });
+  }
+
+  return { broadcastNewComment };
+}

@@ -6,10 +6,11 @@ import { useRouter } from "next/navigation";
 interface Notification {
   _id?: string;
   message: string;
-  reference_id?: string; // bug id
+  reference_id?: string;
   sender_name?: string;
   createdAt?: string;
   read?: boolean;
+  count?: number;
 }
 
 interface NotificationBellProps {
@@ -58,7 +59,40 @@ export default function NotificationBell({ employeeId }: NotificationBellProps) 
 
       if (data.type === "notification") {
         console.log("🔔 Notification received:", data.notification);
-        setNotifications((prev) => [data.notification, ...prev]);
+        setNotifications((prev) => {
+          const incoming = data.notification;
+
+          const existingIndex = prev.findIndex(
+            (n) => n.reference_id === incoming.reference_id
+          );
+
+          // If bug already has a notification
+          if (existingIndex !== -1) {
+            const updated = [...prev];
+          
+            const existing = updated[existingIndex];
+          
+            const updatedNotification = {
+              ...existing,
+              message: incoming.message,
+              sender_name: incoming.sender_name,
+              createdAt: incoming.createdAt,
+              count: (existing.count || 1) + 1,
+              read: false,
+            };
+          
+            // remove old position
+            updated.splice(existingIndex, 1);
+          
+            // move to top
+            return [updatedNotification, ...updated];
+          }
+          
+
+          // Otherwise create new notification
+          return [{ ...incoming, count: 1 }, ...prev];
+        });
+
       }
     };
 
@@ -69,7 +103,7 @@ export default function NotificationBell({ employeeId }: NotificationBellProps) 
     return () => {
       ws.close();
     };
-    
+
   }, [employeeId]);
 
   // -------------------------------
@@ -161,53 +195,62 @@ export default function NotificationBell({ employeeId }: NotificationBellProps) 
                 <div
                   key={n._id}
                   onClick={() => openBug(n)}
-                  className={`p-4 border-b hover:bg-gray-50 transition cursor-pointer ${
-                    !n.read ? "bg-blue-50" : ""
-                  }`}
+                  className={`p-4 border-b hover:bg-gray-50 transition cursor-pointer ${!n.read ? "bg-blue-50" : ""
+                    }`}
                 >
-                  <div className="flex justify-between items-start gap-4">
-              
-                    <div className="flex flex-col text-sm flex-1">
-              
-                        
-                        <span className="font-normal text-blue-600">
-                          New comment on{" "}
-                          {n.reference_id}
+                  <div className="flex justify-between gap-4">
+
+                    <div className="flex flex-col flex-1 gap-1">
+
+                      {/* Top line */}
+                      <div className="flex justify-between items-center">
+
+                        <span className="text-blue-600 font-medium">
+                          New comment on {n.reference_id}
                         </span>
-              
-                      {/* Action + Bug ID */}
-                      {/* {n.sender_name && ( */}
-                      <span className="text-xs text-gray-500">
-                      <span className="font-semibold text-gray-800">
-                        {n.sender_name || "User"} : 
+
+                        {n.count && n.count >= 1 && (
+                          <span className="bg-red-500 text-white text-[11px] px-2 py-[2px] rounded-full">
+                            {n.count}
+                          </span>
+                        )}
+
+                      </div>
+
+                      {/* Comment preview */}
+                      <div className="text-sm text-gray-600">
+                        <span className="font-semibold text-gray-800">
+                          {n.sender_name || "User"}:
+                        </span>{" "}
+                        {truncate(n.message)}
+                      </div>
+
+                      {/* Bottom row */}
+                      <div className="flex justify-between items-center text-xs text-gray-400">
+
+                        <span>
+                          {n.createdAt && new Date(n.createdAt).toLocaleString()}
                         </span>
-                        {truncate(n.message)} 
-                      </span>
-                      {/* )} */}
-              
-                      {/* Time */}
-                      {n.createdAt && (
-                        <span className="text-xs text-gray-400 mt-1">
-                          {new Date(n.createdAt).toLocaleString()}
-                        </span>
-                      )}
+
+                        {!n.read && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              markAsRead(n._id);
+                            }}
+                            className="text-blue-600 hover:underline"
+                          >
+                            Mark as read
+                          </button>
+                        )}
+
+                      </div>
+
                     </div>
-              
-                    {/* Mark read */}
-                    {!n.read && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          markAsRead(n._id);
-                        }}
-                        className="text-xs text-blue-600 hover:underline whitespace-nowrap"
-                      >
-                        Mark as read
-                      </button>
-                    )}
-              
+
                   </div>
                 </div>
+
               ))
             )}
 

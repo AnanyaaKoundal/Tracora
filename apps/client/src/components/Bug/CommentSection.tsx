@@ -140,7 +140,14 @@ export default function BugActivitySection({
           className="flex-1 border rounded p-2"
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !posting) {
+              e.preventDefault();
+              handleAddComment();
+            }
+          }}
         />
+
         <Button disabled={posting} onClick={handleAddComment}>
           {posting ? "Posting..." : "Post"}
         </Button>

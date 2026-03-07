@@ -20,11 +20,7 @@ export default function BugActivitySection({
   const [newComment, setNewComment] = useState("");
   const [posting, setPosting] = useState(false);
 
-  // -------------------------------
-  // WEBSOCKET REF
-  // -------------------------------
   const wsRef = useRef<WebSocket | null>(null);
-  const tempIdsRef = useRef<Set<string>>(new Set()); // Track optimistic IDs
 
   // -------------------------------
   // FETCH COMMENTS ON MOUNT
@@ -73,11 +69,10 @@ export default function BugActivitySection({
 
       if (data.type === "new_comment" && data.bugId === bugId) {
         setActivities((prev) => {
-          // Deduplicate by tempId or real _id
-          const exists = prev.some(
-            (c) => c.id === data.comment._id || tempIdsRef.current.has(c.id)
-          );
-          if (exists) return prev;
+          // prevent duplicates
+          if (prev.some((c) => c.id === data.comment._id)) {
+            return prev;
+          }
 
           return [
             {
@@ -90,16 +85,6 @@ export default function BugActivitySection({
             ...prev,
           ];
         });
-
-        // Remove tempId if the WS comment matches the message
-        tempIdsRef.current.forEach((id) => {
-          if (
-            activities.find((c) => c.id === id)?.message ===
-            data.comment.message
-          ) {
-            tempIdsRef.current.delete(id);
-          }
-        });
       }
     };
 
@@ -111,7 +96,7 @@ export default function BugActivitySection({
       }
       ws.close();
     };
-  }, [bugId, activities, setActivities]);
+  }, [bugId]);
 
   // -------------------------------
   // HANDLE ADD COMMENT
@@ -120,41 +105,24 @@ export default function BugActivitySection({
     if (!newComment.trim()) return;
 
     const message = newComment.trim();
-    const tempId = Date.now().toString();
-
-    // -------------------------------
-    // Optimistic update
-    // -------------------------------
-    tempIdsRef.current.add(tempId);
-    setActivities((prev) => [
-      {
-        id: tempId,
-        type: "comment",
-        message,
-        createdBy: "You",
-        createdAt: new Date().toLocaleString(),
-      },
-      ...prev,
-    ]);
     setNewComment("");
 
     try {
       setPosting(true);
-      const res = await postComment({ bug_id: bugId, message });
+
+      const res = await postComment({
+        bug_id: bugId,
+        message,
+      });
 
       if (!res.success) {
         toast.error("Failed to post comment");
-        // Remove optimistic comment on failure
-        setActivities((prev) => prev.filter((c) => c.id !== tempId));
-        tempIdsRef.current.delete(tempId);
       } else {
         toast.success("Comment added!");
-        // WS will deliver the real comment; tempId will be removed there
+        // WebSocket will add comment automatically
       }
     } catch (err) {
       toast.error("Error posting comment");
-      setActivities((prev) => prev.filter((c) => c.id !== tempId));
-      tempIdsRef.current.delete(tempId);
     } finally {
       setPosting(false);
     }

@@ -5,12 +5,10 @@ import Employee from "@/models/employee.model";
 
 export const createCommentService = async (data: any, user: any) => {
     console.log("Comment: ", data);
-    console.log("User: ", user);
 
     const {bug_id} = data;
 
     const existingbug = await Bug.findOne({bug_id});
-    console.log("Exist: ", existingbug);
     if (!existingbug) {
         throw new ApiError(400, "Bug not found");
     }

@@ -1,20 +1,15 @@
 import Notification from "@/models/notification.model";
 import ApiError from "../utils/ApiError";
+import Employee from "@/models/employee.model";
 
-/**
- * CREATE Notification
- */
 export const createNotification = async (notificationData: any) => {
-  const { title, reference_id } = notificationData;
+  const { sender_id } = notificationData;
 
-  // Optional: Prevent duplicate notifications for same reference_id + title
-  // const existingNotification = await Notification.findOne({ title, reference_id });
-  // if (existingNotification) {
-  //   throw new ApiError(400, "Notification already exists");
-  // }
+  const sender = await Employee.findOne({ employee_id: sender_id }).select("employee_name");
 
   const newNotification = await Notification.create({
     ...notificationData,
+    sender_name: sender.employee_name,
   });
 
   console.log("IN NOTIFICATION SERVICE: ", newNotification);
@@ -22,21 +17,11 @@ export const createNotification = async (notificationData: any) => {
   return newNotification;
 };
 
-// UI Design
-// bug id: title  ---                        count
-// latest msg
-
-/**
- * GET All Notifications
- */
 export const getAllNotifications = async () => {
   const notifications = await Notification.find();
   return notifications;
 };
 
-/**
- * GET Notification by ID
- */
 export const getNotificationById = async (notificationId: string) => {
   const notification = await Notification.findById(notificationId);
 
@@ -47,9 +32,6 @@ export const getNotificationById = async (notificationId: string) => {
   return notification;
 };
 
-/**
- * UPDATE Notification
- */
 export const editNotification = async (
   notificationId: string,
   updateData: any
@@ -67,9 +49,6 @@ export const editNotification = async (
   return notification;
 };
 
-/**
- * DELETE Notification
- */
 export const deleteNotificationById = async (notificationId: string) => {
   const notification = await Notification.findByIdAndDelete(notificationId);
 
@@ -80,9 +59,6 @@ export const deleteNotificationById = async (notificationId: string) => {
   return notification;
 };
 
-/**
- * DELETE Multiple Notifications
- */
 export const deleteNotificationsByIds = async (notificationIds: string[]) => {
   if (!Array.isArray(notificationIds) || notificationIds.length === 0) {
     throw new ApiError(400, "No notification IDs provided");
@@ -99,9 +75,6 @@ export const deleteNotificationsByIds = async (notificationIds: string[]) => {
   return { deletedCount: result.deletedCount };
 };
 
-/**
- * GET Notifications for a specific participant (User)
- */
 export const getNotificationsForUser = async (employee_id: string) => {
   const notifications = await Notification.find({
     participants: employee_id,

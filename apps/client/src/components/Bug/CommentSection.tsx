@@ -149,8 +149,8 @@ export default function BugActivitySection({
       {/* Activity List */}
       <div className="space-y-3">
         {activities.map((act) => (
-          <div key={act.id} className="border rounded p-3 text-sm bg-gray-50">
-            <p>{act.message}</p>
+          <div key={act.id} className="border w-[1162px] rounded p-3 text-sm bg-gray-50">
+            <p className="break-words whitespace-pre-wrap">{act.message}</p>
             <span className="text-gray-500 text-xs">
               by {act.createdBy} on {act.createdAt}
             </span>

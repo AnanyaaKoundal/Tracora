@@ -21,6 +21,14 @@ const notificationSchema = new mongoose.Schema({
     reference_name:{
         type: String,
     },
+    sender_id: {
+        type: String,
+        ref: "Employee",
+        required: true
+    },
+    sender_name: {
+        type: String,
+    },
     readStatus: {
         type: Map,
         of: Boolean,

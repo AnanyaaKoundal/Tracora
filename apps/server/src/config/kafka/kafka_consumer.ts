@@ -112,8 +112,8 @@ class NotificationConsumer {
     notification: NotificationMessage
   ): Promise<void> {
     try {
+      console.log("NNNNN", notification);
       for (const userId of notification.receiverId) {
-        console.log("NNNNN", userId);
   
         const notificationDoc = await createNotification({
           participants: [userId],
@@ -121,6 +121,7 @@ class NotificationConsumer {
             notification.message ||
             `${notification.senderId} commented on bug ${notification.bug_id}`,
           reference_id: notification.bug_id,
+          sender_id: notification.senderId
         });
   
         // 🔔 Send realtime websocket notification

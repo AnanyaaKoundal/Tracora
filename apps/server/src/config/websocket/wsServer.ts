@@ -109,12 +109,9 @@ function broadcastToBug(bugId: string, payload: unknown) {
 Send notification to a specific user
 */
 function sendNotificationToUser(userId: string, payload: unknown) {
-  console.log("SEnding notifyyyy");
-  console.log("REceiverr: ", userId);
-  console.log("All subscribers: ", userSubscribers); 
   const subs = userSubscribers.get(userId);
-  console.log("Subscriber: ", subs); 
   if (!subs) return;
+  
   const msg = JSON.stringify(payload);
   console.log(msg);
   for (const client of subs) {

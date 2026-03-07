@@ -79,8 +79,15 @@ export const logout = asyncHandler(async (req: Request, res: Response): Promise<
 
 export const getCurrentUserRole = async (req: Request, res: Response):Promise<any> => {
   try {
-
-    return res.status(200).json(new ApiResponse(200, "Role fetched", { role: (req as any).user.role }));
+      console.log("User info from token:", (req as any).user); // Debugging line to check user info
+    return res.status(200)
+    .json(new ApiResponse(
+      200, 
+      "Role fetched", 
+      { 
+        role: (req as any).user.role,
+        employee_id: (req as any).user.employee_id,
+  }));
   } catch (error) {
     console.error("Error fetching user role:", error);
     return res.status(500).json({ error: "Failed to fetch role" });

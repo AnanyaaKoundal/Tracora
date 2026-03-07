@@ -51,7 +51,7 @@ export async function fetchRole() {
     if(!res.success){
       return {success: false, message: res.error || "Failed to fetch role"};
     }
-    return {success: true, role: res.data?.role || null };
+    return {success: true, role: res.data?.role || null, employee_id: res.data?.employee_id || null};
   }catch(err: any){
     return { success: false, message: err.message || "Failed to fetch role" };
   }

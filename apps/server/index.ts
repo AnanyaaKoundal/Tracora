@@ -1,6 +1,6 @@
 import http from "http";
 import app from "./src/app";
-import Connect from "./src/config/kafka/db";
+import Connect from "./src/config/db";
 import { initializeKafka } from "@/config/kafka/kafka_init";
 import { attachWebSocketServer } from "@/config/websocket/wsServer";
 
@@ -16,7 +16,7 @@ const server = http.createServer(app);
 /*
 Attach WebSocket server
 */
-export const { broadcastNewComment } = attachWebSocketServer(server);
+export const { broadcastNewComment, broadcastNotification } = attachWebSocketServer(server);
 
 Connect().then(() => {
   server.listen(PORT, () => {

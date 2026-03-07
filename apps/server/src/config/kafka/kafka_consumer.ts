@@ -1,10 +1,12 @@
-import { Consumer, EachMessagePayload } from 'kafkajs';
-import kafka from '@/config/kafka/kafka';
-import { createNotification } from '@/services/notification.service';
+import { Consumer, EachMessagePayload } from "kafkajs";
+import kafka from "@/config/kafka/kafka";
+import { createNotification } from "@/services/notification.service";
+import { broadcastNotification } from "../../../index";
 
 interface NotificationMessage {
-  receiverId: string;
+  receiverId: string[];
   bug_id: string;
+  senderId?: string;
   message?: string;
   reference_name?: string;
   createdAt?: string;
@@ -12,19 +14,19 @@ interface NotificationMessage {
 
 class NotificationConsumer {
   private consumer: Consumer;
-  private topic: string = 'comment-topic';
-  private groupId: string = 'notification-consumer-group';
+  private topic: string = "comment-topic";
+  private groupId: string = "notification-consumer-group";
   private isConnected: boolean = false;
 
   constructor() {
-    this.consumer = kafka.consumer({ 
+    this.consumer = kafka.consumer({
       groupId: this.groupId,
       sessionTimeout: 30000,
       heartbeatInterval: 3000,
       retry: {
         initialRetryTime: 100,
-        retries: 8
-      }
+        retries: 8,
+      },
     });
   }
 
@@ -34,7 +36,7 @@ class NotificationConsumer {
       this.isConnected = true;
       console.log(`✅ Notification Consumer connected (Group: ${this.groupId})`);
     } catch (error) {
-      console.error('❌ Failed to connect Notification Consumer:', error);
+      console.error("❌ Failed to connect Notification Consumer:", error);
       throw error;
     }
   }
@@ -43,16 +45,17 @@ class NotificationConsumer {
     if (this.isConnected) {
       await this.consumer.disconnect();
       this.isConnected = false;
-      console.log('🔌 Notification Consumer disconnected');
+      console.log("🔌 Notification Consumer disconnected");
     }
   }
 
   async subscribe(): Promise<void> {
     try {
-      await this.consumer.subscribe({ 
-        topic: this.topic, 
-        fromBeginning: false
+      await this.consumer.subscribe({
+        topic: this.topic,
+        fromBeginning: false,
       });
+
       console.log(`📨 Subscribed to topic: ${this.topic}`);
     } catch (error) {
       console.error(`❌ Failed to subscribe to topic ${this.topic}:`, error);
@@ -65,11 +68,12 @@ class NotificationConsumer {
       await this.consumer.run({
         eachMessage: async (payload: EachMessagePayload) => {
           await this.handleMessage(payload);
-        }
+        },
       });
+
       console.log(`🚀 Notification Consumer started on topic: ${this.topic}`);
     } catch (error) {
-      console.error('❌ Error starting consumer:', error);
+      console.error("❌ Error starting consumer:", error);
       throw error;
     }
   }
@@ -79,93 +83,72 @@ class NotificationConsumer {
 
     try {
       const value = message.value?.toString();
-      
+
       if (!value) {
-        console.warn('⚠️ Received empty message');
+        console.warn("⚠️ Received empty message");
         return;
       }
 
-      const notification = JSON.parse(value);
-      
-      console.log('📬 Received Notification:', {
+      const parsedMessage = JSON.parse(value);
+
+      console.log("📬 Kafka Message Received:", {
         topic,
         partition,
         offset: message.offset,
-        key: message.key?.toString(),
-        timestamp: message.timestamp,
-        data: notification.newComment
+        data: parsedMessage,
       });
 
-      await this.processNotification(notification.newComment);
+      const notification: NotificationMessage = parsedMessage.newComment;
+
+      await this.processNotification(notification);
 
     } catch (error) {
-      console.error('❌ Error handling message:', error);
+      console.error("❌ Error handling message:", error);
       await this.handleError(message, error);
     }
   }
 
-  private async processNotification(notification: NotificationMessage): Promise<void> {
-
+  private async processNotification(
+    notification: NotificationMessage
+  ): Promise<void> {
     try {
-      await this.sendPushNotification(notification);
-      console.log(`✅ Notification processed for: ${notification.receiverId}`);
+      for (const userId of notification.receiverId) {
+        console.log("NNNNN", userId);
+  
+        const notificationDoc = await createNotification({
+          participants: [userId],
+          message:
+            notification.message ||
+            `${notification.senderId} commented on bug ${notification.bug_id}`,
+          reference_id: notification.bug_id,
+        });
+  
+        // 🔔 Send realtime websocket notification
+        broadcastNotification(userId, notificationDoc);
+  
+        console.log(`✅ Notification processed for user: ${userId}`);
+      }
+  
     } catch (error) {
-      console.error('❌ Error processing notification:', error);
+      console.error("❌ Error processing notification:", error);
       throw error;
     }
   }
 
-
-  // Push notification handler
-  private async sendPushNotification(notification: NotificationMessage): Promise<void> {
-    console.log('🔔 Sending push notification:', {
-      to: notification.receiverId,
-      body: notification.message
-    });
-    
-    createNotification({
-      participants: notification.receiverId,
-      message: notification.message,
-      reference_id: notification.bug_id
-    })
-    
-  }
-
-  // In-app notification handler
-  private async sendInAppNotification(notification: NotificationMessage): Promise<void> {
-    console.log('💬 Sending in-app notification:', notification);
-
-  }
-
-  // Webhook notification handler
-  private async sendWebhookNotification(notification: NotificationMessage): Promise<void> {
-    console.log('🔗 Sending webhook notification:', notification);
-  }
-
-  // Default handler
-  private async sendDefaultNotification(notification: NotificationMessage): Promise<void> {
-    console.log('📢 Default notification handler:', notification);
-    // Implement default behavior
-  }
-
-  // Error handler
   private async handleError(message: any, error: any): Promise<void> {
-    console.error('🔥 Error processing message:', {
+    console.error("🔥 Error processing Kafka message:", {
       offset: message.offset,
       key: message.key?.toString(),
       value: message.value?.toString(),
       error: error.message,
-      stack: error.stack
+      stack: error.stack,
     });
-    
   }
 
-  // Utility method
   isConsumerConnected(): boolean {
     return this.isConnected;
   }
 }
 
-// Export singleton instance
 export const notificationConsumer = new NotificationConsumer();
 export default NotificationConsumer;

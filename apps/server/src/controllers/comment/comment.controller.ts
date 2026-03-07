@@ -4,7 +4,6 @@ import ApiResponse from "@/utils/ApiResponse";
 import ApiError from "@/utils/ApiError";
 import { createCommentService, fetchCommentsService } from "@/services/comment.service";
 import { kafkaProducer } from "@/config/kafka/kafka_producer";
-import sseService from "@/services/sse.service";
 import { broadcastNewComment } from "../../../index";
 
 export const createComment = asyncHandler(async (req: Request, res: Response) => {
@@ -13,13 +12,11 @@ export const createComment = asyncHandler(async (req: Request, res: Response) =>
 
     const newComment = await createCommentService(req.body, user);
 
-    kafkaProducer.send("comment-topic", {newComment, action: "created"});
-
-    await sseService.broadcastToUsers({
-        receivers: newComment.receiverId,
-        message: { newComment, action: "created" },
-        source: "notification",
-    })
+    await kafkaProducer.send("comment-topic", {
+        newComment,
+        action: "created",
+        message: `${user.employeeId} commented on bug ${newComment.bug_id}`
+    });
 
     broadcastNewComment(newComment.bug_id, newComment);
 

@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { fetchRole } from "@/actions/employeeAction"; // ✅ your service
+import { fetchRole } from "@/actions/employeeAction";
+import NotificationBell from "@/components/Navbar/NotificationBell";
 
 export default function ProtectedNavbar() {
   const [role, setRole] = useState<string | null>(null);
+  const [employeeId, setEmployeeId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const router = useRouter();
@@ -16,9 +18,12 @@ export default function ProtectedNavbar() {
   useEffect(() => {
     async function getRole() {
       try {
-        const data = await fetchRole(); 
-        console.log("Fetched role: ", data)
-        setRole(data.role); // assumes backend returns { role: "admin" }
+        const data = await fetchRole();
+
+        console.log("Fetched role:", data);
+
+        setRole(data.role);
+        setEmployeeId(data.employee_id);
       } catch (error) {
         console.error("Failed to fetch user role:", error);
         setRole(null);
@@ -38,13 +43,12 @@ export default function ProtectedNavbar() {
     }
   }
 
-  if (loading) return null; // or a small skeleton
+  if (loading) return null;
 
   return (
     <header className="bg-white shadow p-4 flex justify-end items-center h-16">
-      {/* <div className="font-bold text-lg">Tracora</div> */}
-
       <div className="flex items-center space-x-4">
+
         {role === "admin" && (
           <button
             onClick={handleModeSwitch}
@@ -54,8 +58,11 @@ export default function ProtectedNavbar() {
           </button>
         )}
 
-        <div>🔔</div>
+        {/* Notification Component */}
+        {employeeId && <NotificationBell employeeId={employeeId} />}
+
         <div>👤</div>
+
       </div>
     </header>
   );

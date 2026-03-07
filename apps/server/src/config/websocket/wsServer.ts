@@ -2,30 +2,28 @@ import { WebSocket, WebSocketServer, RawData } from "ws";
 import { Server } from "http";
 
 /*
-We extend the default WebSocket so we can store
-extra metadata per connected client.
+Extended socket metadata
 */
 interface ExtendedWebSocket extends WebSocket {
-  subscriptions: Set<string>; // bug_id subscriptions
+  subscriptions: Set<string>; // bug subscriptions
+  userId?: string;
   isAlive: boolean;
 }
 
 /*
-Map that stores subscribers for each bug.
-
-Example:
-
-bugSubscribers = {
-  BUG-101 → Set(socketA, socketB)
-  BUG-202 → Set(socketC)
-}
+Bug watchers
 */
 const bugSubscribers: Map<string, Set<ExtendedWebSocket>> = new Map();
 
 /*
-Client subscribes to a bug
-when they open the bug page.
+User notification subscribers
 */
+const userSubscribers: Map<string, Set<ExtendedWebSocket>> = new Map();
+
+/*
+BUG SUBSCRIPTIONS
+*/
+
 function subscribeBug(bugId: string, socket: ExtendedWebSocket) {
   if (!bugSubscribers.has(bugId)) {
     bugSubscribers.set(bugId, new Set());
@@ -34,9 +32,6 @@ function subscribeBug(bugId: string, socket: ExtendedWebSocket) {
   bugSubscribers.get(bugId)!.add(socket);
 }
 
-/*
-Remove subscription.
-*/
 function unsubscribeBug(bugId: string, socket: ExtendedWebSocket) {
   const subs = bugSubscribers.get(bugId);
   if (!subs) return;
@@ -49,17 +44,44 @@ function unsubscribeBug(bugId: string, socket: ExtendedWebSocket) {
 }
 
 /*
-When client disconnects,
-remove them from all bug subscriptions.
+USER SUBSCRIPTIONS (for notifications)
 */
-function cleanupSubscriptions(socket: ExtendedWebSocket) {
-  for (const bugId of socket.subscriptions) {
-    unsubscribeBug(bugId, socket);
+
+function subscribeUser(userId: string, socket: ExtendedWebSocket) {
+  if (!userSubscribers.has(userId)) {
+    userSubscribers.set(userId, new Set());
+  }
+
+  userSubscribers.get(userId)!.add(socket);
+}
+
+function unsubscribeUser(userId: string, socket: ExtendedWebSocket) {
+  const subs = userSubscribers.get(userId);
+  if (!subs) return;
+
+  subs.delete(socket);
+
+  if (subs.size === 0) {
+    userSubscribers.delete(userId);
   }
 }
 
 /*
-Safe JSON sender
+Cleanup when socket closes
+*/
+function cleanupSubscriptions(socket: ExtendedWebSocket) {
+
+  for (const bugId of socket.subscriptions) {
+    unsubscribeBug(bugId, socket);
+  }
+
+  if (socket.userId) {
+    unsubscribeUser(socket.userId, socket);
+  }
+}
+
+/*
+Send JSON safely
 */
 function sendJson(socket: WebSocket, payload: unknown) {
   if (socket.readyState === WebSocket.OPEN) {
@@ -68,7 +90,7 @@ function sendJson(socket: WebSocket, payload: unknown) {
 }
 
 /*
-Broadcast message to everyone watching a bug
+Broadcast comment to bug watchers
 */
 function broadcastToBug(bugId: string, payload: unknown) {
   const subs = bugSubscribers.get(bugId);
@@ -84,7 +106,26 @@ function broadcastToBug(bugId: string, payload: unknown) {
 }
 
 /*
-Handle messages sent by clients
+Send notification to a specific user
+*/
+function sendNotificationToUser(userId: string, payload: unknown) {
+  console.log("SEnding notifyyyy");
+  console.log("REceiverr: ", userId);
+  console.log("All subscribers: ", userSubscribers); 
+  const subs = userSubscribers.get(userId);
+  console.log("Subscriber: ", subs); 
+  if (!subs) return;
+  const msg = JSON.stringify(payload);
+  console.log(msg);
+  for (const client of subs) {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(msg);
+    }
+  }
+}
+
+/*
+Handle client messages
 */
 function handleMessage(socket: ExtendedWebSocket, data: RawData) {
   let msg: any;
@@ -97,7 +138,7 @@ function handleMessage(socket: ExtendedWebSocket, data: RawData) {
   }
 
   /*
-  Subscribe to bug
+  Subscribe bug
   */
   if (msg.type === "subscribe_bug") {
     const bugId = msg.bugId;
@@ -112,7 +153,7 @@ function handleMessage(socket: ExtendedWebSocket, data: RawData) {
   }
 
   /*
-  Unsubscribe
+  Unsubscribe bug
   */
   if (msg.type === "unsubscribe_bug") {
     const bugId = msg.bugId;
@@ -125,18 +166,36 @@ function handleMessage(socket: ExtendedWebSocket, data: RawData) {
       bugId,
     });
   }
+
+  /*
+  Register user for notifications
+  */
+  if (msg.type === "subscribe_user") {
+    const userId = msg.employeeId;
+
+    socket.userId = userId;
+
+    subscribeUser(userId, socket);
+
+    sendJson(socket, {
+      type: "user_registered",
+      userId,
+    });
+  }
 }
 
 /*
-Attach WebSocket server to HTTP server
+Attach server
 */
 export function attachWebSocketServer(server: Server) {
+
   const wss = new WebSocketServer({
     server,
     path: "/ws",
   });
 
   wss.on("connection", (socket: WebSocket) => {
+
     const ws = socket as ExtendedWebSocket;
 
     ws.subscriptions = new Set();
@@ -156,10 +215,11 @@ export function attachWebSocketServer(server: Server) {
   });
 
   /*
-  Heartbeat check
+  Heartbeat
   */
   const interval = setInterval(() => {
     wss.clients.forEach((ws) => {
+
       const socket = ws as ExtendedWebSocket;
 
       if (!socket.isAlive) return socket.terminate();
@@ -167,20 +227,38 @@ export function attachWebSocketServer(server: Server) {
       socket.isAlive = false;
       socket.ping();
     });
+
   }, 30000);
 
   wss.on("close", () => clearInterval(interval));
 
   /*
-  This function will be used by your comment API
+  Comment broadcast (already used)
   */
   function broadcastNewComment(bugId: string, comment: any) {
+
     broadcastToBug(bugId, {
       type: "new_comment",
       bugId,
       comment,
     });
+
   }
 
-  return { broadcastNewComment };
+  /*
+  Notification sender (Kafka consumer will use this)
+  */
+  function broadcastNotification(userId: string, notification: any) {
+
+    sendNotificationToUser(userId, {
+      type: "notification",
+      notification,
+    });
+
+  }
+
+  return {
+    broadcastNewComment,
+    broadcastNotification,
+  };
 }

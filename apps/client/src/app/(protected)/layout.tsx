@@ -6,7 +6,7 @@ import Sidebar from '@/components/ProtectedLayout/Sidebar';
 import AdminSidebar from '@/components/AdminPanel/AdminSidebar';
 import Navbar from '@/components/LandingPage/Navbar';
 import ProtectedNavbar from '@/components/Navbar/ProtectedNavbar';
-import { useSSEConnection } from '@/hooks/useSSE';
+// import { useSSEConnection } from '@/hooks/useSSE';
 import { useAuthStore } from '@/schemas/authStore';
 
 export default function ProtectedLayout({
@@ -18,7 +18,7 @@ export default function ProtectedLayout({
   const pathname = usePathname();4
 
   const employeeId = useAuthStore((s) => s.employeeId);
-  useSSEConnection(`${process.env.NEXT_PUBLIC_API_URL}/sse/stream/${employeeId}?source=notification`);
+  // useSSEConnection(`${process.env.NEXT_PUBLIC_API_URL}/sse/stream/${employeeId}?source=notification`);
   
   const role = pathname.startsWith('/admin') ? 'admin' : 'user';
   return (

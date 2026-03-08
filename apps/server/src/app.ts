@@ -12,6 +12,7 @@ import adminRoutes from "@/routes/admin.route";
 import bugRoutes from "@/routes/bug.route";
 import commentRoutes from "@/routes/comment.route"
 import sseRoutes from "@/routes/sse.route";
+import notificationRoutes from "@/routes/notification.route"
 
 const app = express();
 
@@ -38,6 +39,7 @@ app.use("/admin", adminRoutes);
 app.use("/bug", bugRoutes);
 app.use("/comment", commentRoutes);
 app.use("/sse", sseRoutes);
+app.use("/notification", notificationRoutes);
 
 app.use(errorHandler);
 

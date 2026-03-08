@@ -6,7 +6,10 @@ import {
   NotificationEventSchema,
   type Notification,
 } from "@/schemas/notification.schema";
-import { markNotificationAsRead } from "@/actions/notificationAction";
+import {
+  markNotificationAsRead,
+  getNotifications,
+} from "@/actions/notificationAction";
 
 interface NotificationBellProps {
   employeeId: string;
@@ -31,6 +34,61 @@ export default function NotificationBell({ employeeId }: NotificationBellProps) 
     if (text.length <= max) return text;
     return text.slice(0, max) + "...";
   }
+
+  // -------------------------------
+  // FETCH EXISTING NOTIFICATIONS
+  // -------------------------------
+
+
+  function groupNotifications(list: Notification[]): Notification[] {
+    const map = new Map<string, Notification>();
+  
+    for (const n of list) {
+      const key = n.reference_id || n._id!;
+  
+      if (!map.has(key)) {
+        map.set(key, {
+          ...n,
+          count: n.read ? 0 : 1,
+        });
+        continue;
+      }
+  
+      const existing = map.get(key)!;
+  
+      map.set(key, {
+        ...existing,
+        message: n.message,
+        sender_name: n.sender_name,
+        createdAt: n.createdAt,
+        read: existing.read && n.read,
+        count: existing.count + (n.read ? 0 : 1),
+      });
+    }
+  
+    return Array.from(map.values()).sort(
+      (a, b) =>
+        new Date(b.createdAt || "").getTime() -
+        new Date(a.createdAt || "").getTime()
+    );
+  }
+
+  async function fetchNotifications() {
+    try {
+      const res = await getNotifications();
+
+      if (!res?.success) return;
+
+      setNotifications(groupNotifications(res.notifications || []));
+    } catch (err) {
+      console.error("Failed to fetch notifications", err);
+    }
+  }
+
+  useEffect(() => {
+    if (!employeeId) return;
+    fetchNotifications();
+  }, [employeeId]);
 
   // -------------------------------
   // WEBSOCKET CONNECTION
@@ -163,9 +221,7 @@ export default function NotificationBell({ employeeId }: NotificationBellProps) 
     try {
       const unread = notifications.filter((n) => !n.read && n._id);
 
-      await Promise.all(
-        unread.map((n) => markNotificationAsRead(n._id!))
-      );
+      await Promise.all(unread.map((n) => markNotificationAsRead(n._id!)));
 
       setNotifications((prev) =>
         prev.map((n) => ({
@@ -207,8 +263,6 @@ export default function NotificationBell({ employeeId }: NotificationBellProps) 
 
   return (
     <div ref={containerRef} className="relative">
-      {/* Bell */}
-
       <button
         onClick={() => setOpen((prev) => !prev)}
         className="relative cursor-pointer text-xl"
@@ -222,12 +276,8 @@ export default function NotificationBell({ employeeId }: NotificationBellProps) 
         )}
       </button>
 
-      {/* Dropdown */}
-
       {open && (
         <div className="absolute right-0 mt-3 w-[420px] bg-white shadow-xl rounded-xl border z-50">
-          {/* Header */}
-
           <div className="flex justify-between items-center px-4 py-3 border-b">
             <h3 className="text-sm font-semibold">Notifications</h3>
 
@@ -240,8 +290,6 @@ export default function NotificationBell({ employeeId }: NotificationBellProps) 
               </button>
             )}
           </div>
-
-          {/* Content */}
 
           <div className="max-h-[75vh] overflow-y-auto">
             {notifications.length === 0 ? (
@@ -258,9 +306,6 @@ export default function NotificationBell({ employeeId }: NotificationBellProps) 
                   }`}
                 >
                   <div className="flex flex-col gap-1">
-
-                    {/* Top */}
-
                     <div className="flex justify-between items-center">
                       <span className="text-blue-600 font-medium">
                         New comment on {n.reference_id}
@@ -273,16 +318,12 @@ export default function NotificationBell({ employeeId }: NotificationBellProps) 
                       )}
                     </div>
 
-                    {/* Comment preview */}
-
                     <div className="text-sm text-gray-600">
                       <span className="font-semibold text-gray-800">
                         {n.sender_name || "User"}:
                       </span>{" "}
                       {truncate(n.message)}
                     </div>
-
-                    {/* Bottom */}
 
                     <div className="flex justify-between items-center text-xs text-gray-400">
                       <span>

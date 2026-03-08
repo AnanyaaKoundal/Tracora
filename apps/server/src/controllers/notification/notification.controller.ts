@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import asyncHandler from "@/utils/asyncHandler";
 import ApiResponse from "@/utils/ApiResponse";
 import Notification from "@/models/notification.model";
-import { markNotificationRead } from "@/services/notification.service";
+import { getNotificationsForUser, markNotificationRead } from "@/services/notification.service";
 
 export const createEmployee = asyncHandler(async (req: Request, res: Response) => {
     const id = (req as any).user.employee_id;
@@ -37,3 +37,18 @@ export const markNotificationReadController = asyncHandler(
       );
   }
 );
+
+export const fetchNotificationForUserController = asyncHandler(async (req: Request, res: Response) => {
+  const employee_id = (req as any).user.employee_id;
+
+  const notifications = await getNotificationsForUser(employee_id);
+
+  res.status(200)
+  .json(
+    new ApiResponse(
+      200,
+      "Notifications fetched successfully",
+      notifications
+    )
+  )
+});

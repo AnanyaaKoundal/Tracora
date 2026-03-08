@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { useState, useEffect, useRef } from "react";
 import { postComment, fetchComments } from "@/actions/commentAction";
+import { fetchRole } from "@/actions/employeeAction";
 import { toast } from "sonner";
 
 interface Props {
@@ -19,6 +20,7 @@ export default function BugActivitySection({
 }: Props) {
   const [newComment, setNewComment] = useState("");
   const [posting, setPosting] = useState(false);
+  const [employee_id, setEmployeeId] = useState("");
 
   const wsRef = useRef<WebSocket | null>(null);
 
@@ -28,12 +30,12 @@ export default function BugActivitySection({
   useEffect(() => {
     async function loadComments() {
       const res = await fetchComments(bugId);
-
-      if (!res.success) {
+      const role_data = await fetchRole();
+      if (!res.success || !role_data.success) {
         toast.error("Failed to load comments");
         return;
       }
-
+      setEmployeeId(role_data.employee_id);
       const formatted = res.comments.map((c: any) => ({
         id: c._id,
         type: "comment",
@@ -66,25 +68,31 @@ export default function BugActivitySection({
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
-
+    
       if (data.type === "new_comment" && data.bugId === bugId) {
         setActivities((prev) => {
-          // prevent duplicates
-          if (prev.some((c) => c.id === data.comment._id)) {
-            return prev;
-          }
-
-          return [
-            {
-              id: data.comment._id,
-              type: "comment",
-              message: data.comment.message,
-              createdBy: data.comment.senderId?.employee_name || "User",
-              createdAt: new Date(data.comment.createdAt).toLocaleString(),
-            },
-            ...prev,
-          ];
+          if (prev.some((c) => c.id === data.comment._id)) return prev;
+    
+          const newActivity = {
+            id: data.comment._id,
+            type: "comment",
+            message: data.comment.message,
+            createdBy: data.comment.senderId?.employee_name || "User",
+            createdAt: new Date(data.comment.createdAt).toLocaleString(),
+          };
+          
+          return [newActivity, ...prev];
         });
+        console.log("SEnding Ack:", data)
+        console.log("Employee ID for ACK:", employee_id);
+        // Send ACK AFTER rendering
+          ws.send(
+            JSON.stringify({
+              type: "ack_notification",
+              comment_id: data.comment._id,
+              employee_id
+            })
+          );
       }
     };
 
@@ -96,7 +104,7 @@ export default function BugActivitySection({
       }
       ws.close();
     };
-  }, [bugId]);
+  }, [bugId, employee_id]);
 
   // -------------------------------
   // HANDLE ADD COMMENT

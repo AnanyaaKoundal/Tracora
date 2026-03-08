@@ -12,13 +12,14 @@ export const createComment = asyncHandler(async (req: Request, res: Response) =>
 
     const newComment = await createCommentService(req.body, user);
 
+    broadcastNewComment(newComment.bug_id, newComment);
+    
     await kafkaProducer.send("comment-topic", {
         newComment,
         action: "created",
         message: `${user.employeeId} commented on bug ${newComment.bug_id}`
     });
 
-    broadcastNewComment(newComment.bug_id, newComment);
 
     res.status(201).json(new ApiResponse(200, newComment, "Comment created successfully"));
 });

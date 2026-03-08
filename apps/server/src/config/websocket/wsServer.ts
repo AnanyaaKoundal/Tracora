@@ -1,5 +1,6 @@
 import { WebSocket, WebSocketServer, RawData } from "ws";
 import { Server } from "http";
+import { markCommentAsSeen } from "@/services/comment.service";
 
 /*
 Extended socket metadata
@@ -113,7 +114,7 @@ function sendNotificationToUser(userId: string, payload: unknown) {
   if (!subs) return;
   
   const msg = JSON.stringify(payload);
-  console.log(msg);
+  
   for (const client of subs) {
     if (client.readyState === WebSocket.OPEN) {
       client.send(msg);
@@ -178,6 +179,24 @@ function handleMessage(socket: ExtendedWebSocket, data: RawData) {
       type: "user_registered",
       userId,
     });
+  }
+
+  // ------------------------
+  // ACK Notification
+  // ------------------------
+  if (msg.type === "ack_notification") {
+    const { comment_id, employee_id } = msg;
+  
+    console.log("ACKK:", msg);
+    console.log("Calling markCommentAsSeen with:", comment_id, employee_id);
+  
+    markCommentAsSeen(comment_id, employee_id)
+      .then(() => {
+        console.log(`Comment ${comment_id} for ${employee_id} marked as seen`);
+      })
+      .catch((err) => {
+        console.error("Failed to mark comment seen:", err);
+      });
   }
 }
 

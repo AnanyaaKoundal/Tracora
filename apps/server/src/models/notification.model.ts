@@ -6,7 +6,7 @@ const notificationSchema = new mongoose.Schema({
         type: String,
     },
     participants: {
-        type: [String],
+        type: String,
         ref: "Employee",
         required: true
     },
@@ -30,9 +30,8 @@ const notificationSchema = new mongoose.Schema({
         type: String,
     },
     readStatus: {
-        type: Map,
-        of: Boolean,
-        default: {}
+        type: Boolean,
+        default: false
     },
     metadata: {
         type: Map,

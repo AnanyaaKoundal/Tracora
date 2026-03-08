@@ -2,14 +2,15 @@ import { Consumer, EachMessagePayload } from "kafkajs";
 import kafka from "@/config/kafka/kafka";
 import { createNotification } from "@/services/notification.service";
 import { broadcastNotification } from "../../../index";
+import Comment from "@/models/comment.model";
 
 interface NotificationMessage {
   receiverId: string[];
   bug_id: string;
   senderId?: string;
   message?: string;
-  reference_name?: string;
   createdAt?: string;
+  _id?: string;
 }
 
 class NotificationConsumer {
@@ -90,7 +91,6 @@ class NotificationConsumer {
       }
 
       const parsedMessage = JSON.parse(value);
-
       console.log("📬 Kafka Message Received:", {
         topic,
         partition,
@@ -112,22 +112,35 @@ class NotificationConsumer {
     notification: NotificationMessage
   ): Promise<void> {
     try {
-      console.log("NNNNN", notification);
+      console.log("NNNN:", notification)
+      const comment = await Comment.findById(notification._id).select("seen");
+  
+      if (!comment) {
+        console.warn("Comment not found for notification!!!!");
+        return;
+      }
+      console.log("COMMENTTT: ", comment)
       for (const userId of notification.receiverId) {
   
+        // ✅ Skip if already seen
+        if (comment.seen?.get(userId)) {
+          console.log(`👀 Skipping notification, already seen by ${userId}`);
+          continue;
+        }
+  
         const notificationDoc = await createNotification({
-          participants: [userId],
+          participants: userId,
           message:
             notification.message ||
             `${notification.senderId} commented on bug ${notification.bug_id}`,
           reference_id: notification.bug_id,
-          sender_id: notification.senderId
+          sender_id: notification.senderId,
         });
   
-        // 🔔 Send realtime websocket notification
+        // 🔔 realtime websocket
         broadcastNotification(userId, notificationDoc);
   
-        console.log(`✅ Notification processed for user: ${userId}`);
+        console.log(`✅ Notification created for ${userId}`);
       }
   
     } catch (error) {

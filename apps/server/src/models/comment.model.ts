@@ -34,6 +34,11 @@ const commentSchema = new mongoose.Schema({
       type: Boolean,
       default: false,
     },
+    seen: {
+      type: Map,
+      of: Boolean,
+      default: {},
+    },
     taggedUsers: [{
       type: String,
       ref: "Employee",

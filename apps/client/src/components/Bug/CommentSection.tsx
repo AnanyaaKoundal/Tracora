@@ -1,10 +1,11 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { postComment, fetchComments } from "@/actions/commentAction";
 import { fetchRole } from "@/actions/employeeAction";
 import { toast } from "sonner";
+import { useBugComments } from "@/services/websockets/useBugComments";
 
 interface Props {
   bugId: string;
@@ -22,8 +23,6 @@ export default function BugActivitySection({
   const [posting, setPosting] = useState(false);
   const [employee_id, setEmployeeId] = useState("");
 
-  const wsRef = useRef<WebSocket | null>(null);
-
   // -------------------------------
   // FETCH COMMENTS ON MOUNT
   // -------------------------------
@@ -31,11 +30,14 @@ export default function BugActivitySection({
     async function loadComments() {
       const res = await fetchComments(bugId);
       const role_data = await fetchRole();
+
       if (!res.success || !role_data.success) {
         toast.error("Failed to load comments");
         return;
       }
+
       setEmployeeId(role_data.employee_id);
+
       const formatted = res.comments.map((c: any) => ({
         id: c._id,
         type: "comment",
@@ -55,56 +57,13 @@ export default function BugActivitySection({
   }, [bugId, setActivities]);
 
   // -------------------------------
-  // WEBSOCKET CONNECTION
+  // REALTIME COMMENTS HOOK
   // -------------------------------
-  useEffect(() => {
-    const ws = new WebSocket("ws://localhost:5000/ws");
-    wsRef.current = ws;
-
-    ws.onopen = () => {
-      console.log("✅ WS connected");
-      ws.send(JSON.stringify({ type: "subscribe_bug", bugId }));
-    };
-
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-    
-      if (data.type === "new_comment" && data.bugId === bugId) {
-        setActivities((prev) => {
-          if (prev.some((c) => c.id === data.comment._id)) return prev;
-    
-          const newActivity = {
-            id: data.comment._id,
-            type: "comment",
-            message: data.comment.message,
-            createdBy: data.comment.senderId?.employee_name || "User",
-            createdAt: new Date(data.comment.createdAt).toLocaleString(),
-          };
-          
-          return [newActivity, ...prev];
-        });
-        console.log("SEnding Ack:", data)
-        console.log("Employee ID for ACK:", employee_id);
-        // Send ACK AFTER rendering
-          ws.send(
-            JSON.stringify({
-              type: "ack_notification",
-              comment_id: data.comment._id,
-              employee_id
-            })
-          );
-      }
-    };
-
-    ws.onerror = (err) => console.error("❌ WS error:", err);
-
-    return () => {
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ type: "unsubscribe_bug", bugId }));
-      }
-      ws.close();
-    };
-  }, [bugId, employee_id]);
+  useBugComments({
+    bugId,
+    employeeId: employee_id,
+    setActivities,
+  });
 
   // -------------------------------
   // HANDLE ADD COMMENT
@@ -127,7 +86,7 @@ export default function BugActivitySection({
         toast.error("Failed to post comment");
       } else {
         toast.success("Comment added!");
-        // WebSocket will add comment automatically
+        // WebSocket hook will update activity
       }
     } catch (err) {
       toast.error("Error posting comment");
@@ -164,7 +123,10 @@ export default function BugActivitySection({
       {/* Activity List */}
       <div className="space-y-3">
         {activities.map((act) => (
-          <div key={act.id} className="border w-[1162px] rounded p-3 text-sm bg-gray-50">
+          <div
+            key={act.id}
+            className="border w-[1162px] rounded p-3 text-sm bg-gray-50"
+          >
             <p className="break-words whitespace-pre-wrap">{act.message}</p>
             <span className="text-gray-500 text-xs">
               by {act.createdBy} on {act.createdAt}

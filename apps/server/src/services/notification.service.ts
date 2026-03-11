@@ -19,19 +19,36 @@ export const createNotification = async (notificationData: any) => {
 
 export const markNotificationRead = async (id: string) => {
   try {
-    const notification = await Notification.findByIdAndUpdate(
-      id,
-      { readStatus: true },
-      { new: true } // return the updated document
-    );
+
+    // 1️⃣ Find the clicked notification
+    const notification = await Notification.findById(id);
 
     if (!notification) {
       throw new ApiError(404, "Notification not found");
     }
-    console.log("MARKED AS READ: ", notification);
-    return notification;
+
+    const { reference_id, participants } = notification;
+
+    // 2️⃣ Mark all notifications of that bug as read for that user
+    await Notification.updateMany(
+      {
+        reference_id: reference_id,
+        participants: { $in: participants },
+      },
+      {
+        $set: { readStatus: true },
+      }
+    );
+
+    console.log("Marked all notifications read for bug:", reference_id);
+
+    return true;
+
   } catch (error: any) {
-    throw new ApiError(500, error.message || "Failed to mark notification as read");
+    throw new ApiError(
+      500,
+      error.message || "Failed to mark notifications as read"
+    );
   }
 };
 

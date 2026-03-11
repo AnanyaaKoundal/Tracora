@@ -3,13 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  NotificationEventSchema,
   type Notification,
 } from "@/schemas/notification.schema";
 import {
   markNotificationAsRead,
   getNotifications,
 } from "@/actions/notificationAction";
+
+import useNotificationSocket from "@/services/websockets/useNotifications";
 
 interface NotificationBellProps {
   employeeId: string;
@@ -19,11 +20,18 @@ export default function NotificationBell({ employeeId }: NotificationBellProps) 
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [open, setOpen] = useState(false);
 
-  const wsRef = useRef<WebSocket | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   const router = useRouter();
-  const WS_URL = "ws://localhost:5000/ws";
+
+  // -------------------------------
+  // WEBSOCKET HOOK (REFACTORED)
+  // -------------------------------
+
+  useNotificationSocket({
+    employeeId,
+    setNotifications,
+  });
 
   // -------------------------------
   // TRUNCATE MESSAGE
@@ -36,16 +44,15 @@ export default function NotificationBell({ employeeId }: NotificationBellProps) 
   }
 
   // -------------------------------
-  // FETCH EXISTING NOTIFICATIONS
+  // GROUP NOTIFICATIONS
   // -------------------------------
-
 
   function groupNotifications(list: Notification[]): Notification[] {
     const map = new Map<string, Notification>();
-  
+
     for (const n of list) {
       const key = n.reference_id || n._id!;
-  
+
       if (!map.has(key)) {
         map.set(key, {
           ...n,
@@ -53,9 +60,9 @@ export default function NotificationBell({ employeeId }: NotificationBellProps) 
         });
         continue;
       }
-  
+
       const existing = map.get(key)!;
-  
+
       map.set(key, {
         ...existing,
         message: n.message,
@@ -65,13 +72,17 @@ export default function NotificationBell({ employeeId }: NotificationBellProps) 
         count: existing.count + (n.read ? 0 : 1),
       });
     }
-  
+
     return Array.from(map.values()).sort(
       (a, b) =>
         new Date(b.createdAt || "").getTime() -
         new Date(a.createdAt || "").getTime()
     );
   }
+
+  // -------------------------------
+  // FETCH EXISTING NOTIFICATIONS
+  // -------------------------------
 
   async function fetchNotifications() {
     try {
@@ -88,81 +99,6 @@ export default function NotificationBell({ employeeId }: NotificationBellProps) 
   useEffect(() => {
     if (!employeeId) return;
     fetchNotifications();
-  }, [employeeId]);
-
-  // -------------------------------
-  // WEBSOCKET CONNECTION
-  // -------------------------------
-
-  useEffect(() => {
-    if (!employeeId) return;
-
-    const ws = new WebSocket(WS_URL);
-    wsRef.current = ws;
-
-    ws.onopen = () => {
-      console.log("🔔 Notification WS connected");
-
-      ws.send(
-        JSON.stringify({
-          type: "subscribe_user",
-          employeeId,
-        })
-      );
-    };
-
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-
-      if (data.type !== "notification") return;
-
-      const parsed = NotificationEventSchema.safeParse(data);
-
-      if (!parsed.success) {
-        console.error("Invalid WS notification payload", parsed.error);
-        return;
-      }
-
-      const incoming = parsed.data.notification;
-
-      setNotifications((prev) => {
-        const existingIndex = prev.findIndex(
-          (n) => n.reference_id === incoming.reference_id
-        );
-
-        if (existingIndex !== -1) {
-          const updated = [...prev];
-          const existing = updated[existingIndex];
-
-          const updatedNotification = {
-            ...existing,
-            message: incoming.message,
-            sender_name: incoming.sender_name,
-            createdAt: incoming.createdAt,
-            count: (existing.count || 0) + 1,
-            read: false,
-          };
-
-          updated.splice(existingIndex, 1);
-          return [updatedNotification, ...updated];
-        }
-
-        return [{ ...incoming, count: 1, read: false }, ...prev];
-      });
-    };
-
-    ws.onerror = (err) => {
-      console.error("WS error:", err);
-    };
-
-    ws.onclose = () => {
-      console.log("Notification WS disconnected");
-    };
-
-    return () => {
-      ws.close();
-      wsRef.current = null;
-    };
   }, [employeeId]);
 
   // -------------------------------
@@ -254,12 +190,7 @@ export default function NotificationBell({ employeeId }: NotificationBellProps) 
   // UNREAD COUNT
   // -------------------------------
 
-  const unreadCount = notifications.reduce((total, n) => {
-    if (!n.read) {
-      return total + (n.count || 1);
-    }
-    return total;
-  }, 0);
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
     <div ref={containerRef} className="relative">

@@ -33,6 +33,11 @@ const notificationSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    type: {
+        type: String,
+        enum: ['COMMENT', 'BUG_CREATED', 'STATUS_CHANGED', 'ASSIGNED'],
+        default: 'COMMENT'
+    },
     metadata: {
         type: Map,
         of: String,

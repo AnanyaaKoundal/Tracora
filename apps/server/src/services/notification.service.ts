@@ -3,16 +3,18 @@ import ApiError from "../utils/ApiError";
 import Employee from "@/models/employee.model";
 
 export const createNotification = async (notificationData: any) => {
-  const { sender_id } = notificationData;
+  const { sender_id, sender_name } = notificationData;
 
-  const sender = await Employee.findOne({ employee_id: sender_id }).select("employee_name");
+  let finalSenderName = sender_name;
+  if (!finalSenderName && sender_id) {
+    const sender = await Employee.findOne({ employee_id: sender_id }).select("employee_name");
+    finalSenderName = sender?.employee_name;
+  }
 
   const newNotification = await Notification.create({
     ...notificationData,
-    sender_name: sender.employee_name,
+    sender_name: finalSenderName,
   });
-
-  console.log("IN NOTIFICATION SERVICE: ", newNotification);
 
   return newNotification;
 };

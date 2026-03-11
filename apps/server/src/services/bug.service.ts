@@ -2,6 +2,7 @@ import Bug from "../models/bug.model";
 import ApiError from "../utils/ApiError";
 import { generateBugId } from "./id.service";
 import { BugPriority } from "../models/bug.model";
+import { kafkaProducer } from "@/config/kafka/kafka_producer";
 
 export const createBug = async (bugData: any, user: any) => {
   console.log("BUGDATA: ", bugData);
@@ -17,6 +18,12 @@ export const createBug = async (bugData: any, user: any) => {
     bug_id,
     reported_by: user.employee_id,
     ...bugData,
+  });
+
+  await kafkaProducer.send("bug-created-topic", {
+    bug: newbug,
+    senderId: user.employee_id,
+    senderName: user.employee_name || user.employeeId,
   });
 
   return newbug;
@@ -37,16 +44,50 @@ export const getBugById = async (bug_id: string) => {
   return bug;
 };
 
-export const editBug = async (bug_id: string, updateData: any) => {
+export const editBug = async (bug_id: string, updateData: any, user?: any) => {
   console.log("UPDATE:", updateData);
+  const oldBug = await Bug.findOne({ bug_id });
+  console.log("OLD BUG STATUS:", oldBug?.bug_status);
+  console.log("NEW BUG STATUS:", updateData.bug_status);
+  
   const bug = await Bug.findOneAndUpdate(
     { bug_id },
     { ...updateData, updated_at: Date.now() },
     { new: true }
   );
-  console.log("BUG UPDATE: ", bug);
+  
   if (!bug) {
     throw new ApiError(404, "bug not found");
+  }
+
+  if (oldBug && updateData.bug_status && oldBug.bug_status !== updateData.bug_status && user) {
+    console.log("SENDING STATUS CHANGE NOTIFICATION", { oldStatus: oldBug.bug_status, newStatus: updateData.bug_status });
+    await kafkaProducer.send("bug-status-changed-topic", {
+      bug,
+      senderId: user.employee_id,
+      senderName: user.employee_name || user.employeeId,
+      oldStatus: oldBug.bug_status,
+      newStatus: updateData.bug_status,
+    });
+  }
+
+  if (oldBug && updateData.bug_status && oldBug.bug_status !== updateData.bug_status && user) {
+    await kafkaProducer.send("bug-status-changed-topic", {
+      bug,
+      senderId: user.employee_id,
+      senderName: user.employee_name || user.employeeId,
+      oldStatus: oldBug.bug_status,
+      newStatus: updateData.bug_status,
+    });
+  }
+
+  if (oldBug && updateData.assigned_to && oldBug.assigned_to !== updateData.assigned_to && user) {
+    await kafkaProducer.send("bug-assigned-topic", {
+      bug,
+      senderId: user.employee_id,
+      senderName: user.employee_name || user.employeeId,
+      newAssignee: updateData.assigned_to,
+    });
   }
 
   return bug;

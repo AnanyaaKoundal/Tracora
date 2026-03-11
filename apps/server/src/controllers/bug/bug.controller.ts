@@ -32,7 +32,8 @@ export const getbugById = asyncHandler(async (req: Request, res: Response) => {
 
 
 export const editBug = asyncHandler(async (req: Request, res: Response) => {
-    const updatedBug = await bugService.editBug(req.params.bug_id, req.body);
+    const user = (req as any).user;
+    const updatedBug = await bugService.editBug(req.params.bug_id, req.body, user);
     res.status(200).json({
       success: true,
       message: "Bug updated successfully",

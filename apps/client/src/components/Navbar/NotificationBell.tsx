@@ -34,6 +34,27 @@ export default function NotificationBell({ employeeId }: NotificationBellProps) 
   });
 
   // -------------------------------
+  // GET NOTIFICATION TITLE
+  // -------------------------------
+
+  function getNotificationTitle(n: Notification): string {
+    const title = n.reference_name || n.reference_id || "Bug";
+    
+    switch (n.type) {
+      case "COMMENT":
+        return `New comment on ${title}`;
+      case "BUG_CREATED":
+        return `New bug created: ${title}`;
+      case "STATUS_CHANGED":
+        return `Bug status changed: ${title}`;
+      case "ASSIGNED":
+        return `You were assigned to: ${title}`;
+      default:
+        return `Notification on ${title}`;
+    }
+  }
+
+  // -------------------------------
   // TRUNCATE MESSAGE
   // -------------------------------
 
@@ -239,7 +260,7 @@ export default function NotificationBell({ employeeId }: NotificationBellProps) 
                   <div className="flex flex-col gap-1">
                     <div className="flex justify-between items-center">
                       <span className="text-blue-600 font-medium">
-                        New comment on {n.reference_id}
+                        {getNotificationTitle(n)}
                       </span>
 
                       {!n.read && n.count > 0 && (

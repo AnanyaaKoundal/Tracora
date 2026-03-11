@@ -15,7 +15,7 @@ interface NotificationMessage {
 
 class NotificationConsumer {
   private consumer: Consumer;
-  private topic: string = "comment-topic";
+  private topics: string[] = ["comment-topic", "bug-created-topic", "bug-status-changed-topic", "bug-assigned-topic"];
   private groupId: string = "notification-consumer-group";
   private isConnected: boolean = false;
 
@@ -52,14 +52,15 @@ class NotificationConsumer {
 
   async subscribe(): Promise<void> {
     try {
-      await this.consumer.subscribe({
-        topic: this.topic,
-        fromBeginning: false,
-      });
-
-      console.log(`📨 Subscribed to topic: ${this.topic}`);
+      for (const topic of this.topics) {
+        await this.consumer.subscribe({
+          topic,
+          fromBeginning: false,
+        });
+        console.log(`📨 Subscribed to topic: ${topic}`);
+      }
     } catch (error) {
-      console.error(`❌ Failed to subscribe to topic ${this.topic}:`, error);
+      console.error(`❌ Failed to subscribe to topics:`, error);
       throw error;
     }
   }
@@ -72,7 +73,7 @@ class NotificationConsumer {
         },
       });
 
-      console.log(`🚀 Notification Consumer started on topic: ${this.topic}`);
+      console.log(`🚀 Notification Consumer started on topics: ${this.topics.join(", ")}`);
     } catch (error) {
       console.error("❌ Error starting consumer:", error);
       throw error;
@@ -98,9 +99,22 @@ class NotificationConsumer {
         data: parsedMessage,
       });
 
-      const notification: NotificationMessage = parsedMessage.newComment;
-
-      await this.processNotification(notification);
+      switch (topic) {
+        case "comment-topic":
+          await this.processCommentNotification(parsedMessage.newComment);
+          break;
+        case "bug-created-topic":
+          await this.processBugCreatedNotification(parsedMessage);
+          break;
+        case "bug-status-changed-topic":
+          await this.processStatusChangedNotification(parsedMessage);
+          break;
+        case "bug-assigned-topic":
+          await this.processBugAssignedNotification(parsedMessage);
+          break;
+        default:
+          console.warn(`⚠️ Unknown topic: ${topic}`);
+      }
 
     } catch (error) {
       console.error("❌ Error handling message:", error);
@@ -108,26 +122,23 @@ class NotificationConsumer {
     }
   }
 
-  private async processNotification(
+  private async processCommentNotification(
     notification: NotificationMessage
   ): Promise<void> {
     try {
-      console.log("NNNN:", notification)
       const comment = await Comment.findById(notification._id).select("seen");
-  
+
       if (!comment) {
         console.warn("Comment not found for notification!!!!");
         return;
       }
-      console.log("COMMENTTT: ", comment)
+
       for (const userId of notification.receiverId) {
-  
-        // ✅ Skip if already seen
         if (comment.seen?.get(userId)) {
           console.log(`👀 Skipping notification, already seen by ${userId}`);
           continue;
         }
-  
+
         const notificationDoc = await createNotification({
           participants: userId,
           message:
@@ -135,16 +146,89 @@ class NotificationConsumer {
             `${notification.senderId} commented on bug ${notification.bug_id}`,
           reference_id: notification.bug_id,
           sender_id: notification.senderId,
+          type: "COMMENT",
         });
-  
-        // 🔔 realtime websocket
+
         broadcastNotification(userId, notificationDoc);
-  
         console.log(`✅ Notification created for ${userId}`);
       }
-  
     } catch (error) {
-      console.error("❌ Error processing notification:", error);
+      console.error("❌ Error processing comment notification:", error);
+      throw error;
+    }
+  }
+
+  private async processBugCreatedNotification(data: any): Promise<void> {
+    try {
+      const { bug, senderId, senderName } = data;
+      
+      for (const userId of bug.notify_users) {
+        const notificationDoc = await createNotification({
+          participants: userId,
+          message: `${senderName} created a new bug: ${bug.bug_name}`,
+          reference_id: bug.bug_id,
+          reference_name: bug.bug_name,
+          sender_id: senderId,
+          sender_name: senderName,
+          type: "BUG_CREATED",
+        });
+
+        broadcastNotification(userId, notificationDoc);
+        console.log(`✅ Bug created notification sent to ${userId}`);
+      }
+    } catch (error) {
+      console.error("❌ Error processing bug created notification:", error);
+      throw error;
+    }
+  }
+
+  private async processStatusChangedNotification(data: any): Promise<void> {
+    try {
+      const { bug, senderId, senderName, oldStatus, newStatus } = data;
+
+      for (const userId of bug.notify_users) {
+        const notificationDoc = await createNotification({
+          participants: userId,
+          message: `${senderName} changed bug "${bug.bug_name}" status from ${oldStatus} to ${newStatus}`,
+          reference_id: bug.bug_id,
+          reference_name: bug.bug_name,
+          sender_id: senderId,
+          sender_name: senderName,
+          type: "STATUS_CHANGED",
+        });
+
+        broadcastNotification(userId, notificationDoc);
+        console.log(`✅ Status changed notification sent to ${userId}`);
+      }
+    } catch (error) {
+      console.error("❌ Error processing status changed notification:", error);
+      throw error;
+    }
+  }
+
+  private async processBugAssignedNotification(data: any): Promise<void> {
+    try {
+      const { bug, senderId, senderName, newAssignee } = data;
+
+      if (!newAssignee) {
+        console.warn("No new assignee provided");
+        return;
+      }
+
+      const notificationDoc = await createNotification({
+        participants: newAssignee,
+        message: `${senderName} assigned you to bug: ${bug.bug_name}`,
+        reference_id: bug.bug_id,
+        reference_name: bug.bug_name,
+        sender_id: senderId,
+        sender_name: senderName,
+        type: "ASSIGNED",
+      });
+
+      broadcastNotification(newAssignee, notificationDoc);
+      console.log(`✅ Assignment notification sent to ${newAssignee}`);
+    } catch (error) {
+      console.error("❌ Error processing assignment notification:", error);
       throw error;
     }
   }

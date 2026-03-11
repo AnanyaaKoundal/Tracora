@@ -5,8 +5,10 @@ export const NotificationSchema = z
     _id: z.string(),
     message: z.string(),
     reference_id: z.string().optional(),
+    reference_name: z.string().optional(),
     sender_name: z.string().optional(),
     createdAt: z.string().optional(),
+    type: z.enum(['COMMENT', 'BUG_CREATED', 'STATUS_CHANGED', 'ASSIGNED']).optional(),
 
     // backend field
     readStatus: z.boolean().optional(),

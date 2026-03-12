@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { DataTable, Column } from "@/components/Table/DataTable";
+import { useState, useEffect } from "react";
+import { DataTable, Column, FilterConfig } from "@/components/Table/DataTable";
 import {
   getEmployees,
   updateEmployee,
@@ -20,7 +20,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Employee, Role, Project } from "@/schemas/admin.schema";
 
-// APIs to fetch roles & projects
 import { getRoles } from "@/actions/rolesAction";
 import { getAllProjects } from "@/actions/projectAction";
 
@@ -29,20 +28,13 @@ export default function EmployeesPage() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
 
-  // Filters
-  const [search, setSearch] = useState("");
-  const [selectedRole, setSelectedRole] = useState<string>("");
-  const [selectedProject, setSelectedProject] = useState<string>("");
-
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
-  const [deletingEmployee, setDeletingEmployee] = useState<Employee | null>(
-    null
-  );
+  const [deletingEmployee, setDeletingEmployee] = useState<Employee | null>(null);
 
   const columns: Column<Employee>[] = [
-    { key: "employee_id", header: "ID" },
-    { key: "employee_name", header: "Name" },
-    { key: "employee_email", header: "Email" },
+    { key: "employee_id", header: "ID", sortable: true },
+    { key: "employee_name", header: "Name", sortable: true },
+    { key: "employee_email", header: "Email", sortable: true },
     { key: "employee_contact_number", header: "Contact No" },
     {
       key: "role_names",
@@ -54,8 +46,7 @@ export default function EmployeesPage() {
       header: "Project",
       render: (row) => row.project_name || "-",
     },
-    { key: "createdAt", header: "Created At" },
-    { key: "updatedAt", header: "Modified At" },
+    { key: "createdAt", header: "Created At", sortable: true },
     {
       key: "actions",
       header: <div className="text-right">Actions</div>,
@@ -81,7 +72,36 @@ export default function EmployeesPage() {
     },
   ];
 
-  // Fetch data
+  const filterFields: FilterConfig[] = [
+    {
+      key: "role_names",
+      label: "Role",
+      type: "select",
+      options: roles.map(role => ({ value: role.role_name, label: role.role_name })),
+    },
+    {
+      key: "project_name",
+      label: "Project",
+      type: "select",
+      options: projects.map(project => ({ value: project.project_name, label: project.project_name })),
+    },
+    {
+      key: "employee_name",
+      label: "Name",
+      type: "text",
+    },
+    {
+      key: "employee_email",
+      label: "Email",
+      type: "text",
+    },
+    {
+      key: "createdAt",
+      label: "Created Date",
+      type: "daterange",
+    },
+  ];
+
   useEffect(() => {
     async function fetchData() {
       const [employeesData, rolesData, projectsData] = await Promise.all([
@@ -96,30 +116,14 @@ export default function EmployeesPage() {
     fetchData();
   }, []);
 
-  // Apply filters
-  const filteredEmployees = useMemo(() => {
-    return employees.filter((emp) => {
-      const matchesSearch =
-        emp.employee_name.toLowerCase().includes(search.toLowerCase()) ||
-        emp.employee_email.toLowerCase().includes(search.toLowerCase());
-
-      const matchesRole = selectedRole
-        ? emp.role_names?.includes(selectedRole)
-        : true;
-
-      const matchesProject = selectedProject
-        ? emp.project_name === selectedProject
-        : true;
-
-      return matchesSearch && matchesRole && matchesProject;
-    });
-  }, [employees, search, selectedRole, selectedProject]);
-
   return (
-    <div className="space-y-4">
+    <div className="space-y-6 p-6 bg-slate-50/50 min-h-screen">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h1 className="text-xl font-semibold">Manage Employees</h1>
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Employees</h1>
+          <p className="text-muted-foreground mt-1">Manage team members and their roles</p>
+        </div>
         <AddEmployeeDrawer
           onEmployeeCreated={async () => {
             const fresh = await getEmployees();
@@ -128,45 +132,15 @@ export default function EmployeesPage() {
         />
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-4 items-center">
-
-        <select
-          value={selectedRole}
-          onChange={(e) => setSelectedRole(e.target.value)}
-          className="border px-3 py-2 rounded-md"
-        >
-          <option value="">All Roles</option>
-          {roles.map((role) => (
-            <option key={role.role_id} value={role.role_name}>
-              {role.role_name}
-            </option>
-          ))}
-        </select>
-
-        <select
-          value={selectedProject}
-          onChange={(e) => setSelectedProject(e.target.value)}
-          className="border px-3 py-2 rounded-md"
-        >
-          <option value="">All Projects</option>
-          {projects.map((project) => (
-            <option key={project.project_id} value={project.project_name}>
-              {project.project_name}
-            </option>
-          ))}
-        </select>
-          <input
-            type="text"
-            placeholder="Search by name/email"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="border px-3 py-2 rounded-md"
-          />
-      </div>
-
-      {/* Table */}
-      <DataTable<Employee> columns={columns} data={filteredEmployees} />
+      <DataTable<Employee>
+        columns={columns}
+        data={employees}
+        enableSearch={true}
+        enableFilters={true}
+        filterFields={filterFields}
+        searchableFields={["employee_id", "employee_name", "employee_email", "employee_contact_number"] as (keyof Employee)[]}
+        pageSize={10}
+      />
 
       {/* Edit Drawer */}
       {editingEmployee && (

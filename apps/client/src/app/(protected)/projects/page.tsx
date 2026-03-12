@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { DataTable, Column } from "@/components/Table/DataTable";
+import { DataTable, Column, FilterConfig } from "@/components/Table/DataTable";
 import {
   getAllProjects,
   createProject,
@@ -28,17 +28,16 @@ export default function ProjectsPage() {
   const [deletingProject, setDeletingProject] = useState<Project | null>(null);
 
   const columns: Column<Project>[] = [
-    { key: "project_id", header: "ID" },
-    { key: "project_name", header: "Name" },
-    { key: "project_start_date", header: "Start Date" },
+    { key: "project_id", header: "ID", sortable: true },
+    { key: "project_name", header: "Name", sortable: true },
+    { key: "project_status", header: "Status", sortable: true },
+    { key: "project_start_date", header: "Start Date", sortable: true },
     {
       key: "project_end_date",
       header: "End Date",
       render: (row) => row.project_end_date || "-",
     },
-    { key: "project_status", header: "Status" },
-    { key: "createdAt", header: "Created At" },
-    { key: "updatedAt", header: "Updated At" },
+    { key: "createdAt", header: "Created At", sortable: true },
     {
       key: "actions",
       header: <div className="text-right">Actions</div>,
@@ -64,19 +63,57 @@ export default function ProjectsPage() {
     },
   ];
 
+  const filterFields: FilterConfig[] = [
+    {
+      key: "project_status",
+      label: "Status",
+      type: "select",
+      options: [
+        { value: "Active", label: "Active" },
+        { value: "Upcoming", label: "Upcoming" },
+        { value: "Completed", label: "Completed" },
+        { value: "Inactive", label: "Inactive" },
+        { value: "Overdue", label: "Overdue" },
+      ],
+    },
+    {
+      key: "project_name",
+      label: "Name",
+      type: "text",
+    },
+    {
+      key: "created_by",
+      label: "Created By",
+      type: "text",
+    },
+    {
+      key: "project_start_date",
+      label: "Start Date",
+      type: "daterange",
+    },
+    {
+      key: "project_end_date",
+      label: "End Date",
+      type: "daterange",
+    },
+  ];
+
   useEffect(() => {
     async function fetchData() {
       const projectData = await getProjects();
-      console.log("PROJECTS: ", projectData);
       setProjects(projectData);
     }
     fetchData();
   }, []);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6 p-6 bg-slate-50/50 min-h-screen">
+      {/* Header */}
       <div className="flex justify-between items-center">
-        <h1 className="text-xl font-semibold">Manage Projects</h1>
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Projects</h1>
+          <p className="text-muted-foreground mt-1">Manage your projects and track progress</p>
+        </div>
         <AddProjectDrawer
           onProjectCreated={async () => {
             const fresh = await getAllProjects();
@@ -85,7 +122,15 @@ export default function ProjectsPage() {
         />
       </div>
 
-      <DataTable<Project> columns={columns} data={projects} />
+      <DataTable<Project>
+        columns={columns}
+        data={projects}
+        enableSearch={true}
+        enableFilters={true}
+        filterFields={filterFields}
+        searchableFields={["project_id", "project_name", "created_by"] as (keyof Project)[]}
+        pageSize={10}
+      />
 
       {/* Edit Drawer */}
       {editingProject && (

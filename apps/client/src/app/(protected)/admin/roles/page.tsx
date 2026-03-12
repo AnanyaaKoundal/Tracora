@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { DeleteRoleDialog } from "@/components/AdminPanel/roles/DeleteRole";
 import { EditRoleDrawer } from "@/components/AdminPanel/roles/EditRole";
 import { updateRole, deleteRole } from "@/actions/rolesAction";
-import { useRouter } from "next/navigation";
 
 type Role = {
   role_id: string;
@@ -19,15 +18,14 @@ type Role = {
 };
 
 export default function RolesPage() {
-  const router = useRouter();
   const [roles, setRoles] = useState<Role[]>([]);
   const [editingRole, setEditingRole] = useState<Role | null>(null);
   const [deletingRole, setDeletingRole] = useState<Role | null>(null);
 
   const columns: Column<Role>[] = [
-    { key: "role_id", header: "ID" },
-    { key: "role_name", header: "Role Name" },
-    { key: "createdAt", header: "Created At" },
+    { key: "role_id", header: "ID", sortable: true },
+    { key: "role_name", header: "Role Name", sortable: true },
+    { key: "createdAt", header: "Created At", sortable: true },
     {
       key: "actions",
       header: <div className="text-right">Actions</div>,
@@ -62,19 +60,27 @@ export default function RolesPage() {
   }, []);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6 p-6 bg-slate-50/50 min-h-screen">
+      {/* Header */}
       <div className="flex justify-between items-center">
-        <h1 className="text-xl font-semibold">Manage Roles</h1>
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Roles</h1>
+          <p className="text-muted-foreground mt-1">Manage user roles and permissions</p>
+        </div>
         <AddRoleDrawer
           onRoleCreated={async () => {
             const fresh = await getRoles();
             setRoles(fresh);
           }}
         />
-
       </div>
 
-      <DataTable<Role> columns={columns} data={roles} />
+      <DataTable<Role>
+        columns={columns}
+        data={roles}
+        enableSearch={true}
+        pageSize={10}
+      />
 
       {editingRole && (
         <EditRoleDrawer
@@ -84,7 +90,6 @@ export default function RolesPage() {
           onSave={async (data) => {
             const res = await updateRole(editingRole!.role_id, data);
             if (res.success) {
-              // Refresh list
               const fresh = await getRoles();
               setRoles(fresh);
               setEditingRole(null);
@@ -102,7 +107,6 @@ export default function RolesPage() {
           onConfirm={async () => {
             const res = await deleteRole(deletingRole!.role_id);
             if (res.success) {
-              // Refresh list
               const fresh = await getRoles();
               setRoles(fresh);
               setDeletingRole(null);
@@ -111,7 +115,6 @@ export default function RolesPage() {
           }}
         />
       )}
-
     </div>
   );
 }

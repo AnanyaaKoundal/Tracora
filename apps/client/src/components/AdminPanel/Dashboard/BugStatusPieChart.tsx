@@ -5,69 +5,135 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from "recharts";
 import { fetchAllBugsService } from "@/services/bugService";
 import { toast } from "sonner";
+import { motion } from "framer-motion";
+import { Bug, TrendingUp } from "lucide-react";
 
-type Bug = {
-  bug_status: "Open" | "Closed" | "Under Review" | "Fixed";
-};
+type BugStatus = "Open" | "Closed" | "Under Review" | "Fixed";
 
-const COLORS = ["#f87171", "#22c55e", "#facc15", "#3b82f6"]; // Red, Green, Yellow, Blue
+interface BugData {
+  bug_status: BugStatus;
+}
+
+const COLORS_ARRAY = ["#ef4444", "#22c55e", "#eab308", "#3b82f6"];
 
 export default function BugStatusPieChart() {
   const [data, setData] = useState<{ name: string; value: number }[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     async function loadStatusData() {
       try {
         const res = await fetchAllBugsService();
-        if (res.success && Array.isArray(res.data)) {
+        
+        if (res?.success && Array.isArray(res.data)) {
           const counts: Record<string, number> = {};
-
-          res.data.forEach((bug: Bug) => {
-            counts[bug.bug_status] = (counts[bug.bug_status] || 0) + 1;
+          
+          res.data.forEach((bug: BugData) => {
+            const status = bug.bug_status || "Open";
+            counts[status] = (counts[status] || 0) + 1;
           });
-
+          
           const chartData = Object.entries(counts).map(([name, value]) => ({
             name,
             value,
           }));
+          
           setData(chartData);
         } else {
-          toast.error(res.message || "Failed to fetch bug status data");
+          // If no data or API error, set empty but don't show error state
+          setData([]);
         }
       } catch (err) {
-        console.error(err);
-        toast.warning("Failed to fetch bug status data");
+        console.error("Failed to load bug status data:", err);
+        setError(true);
+      } finally {
+        setLoading(false);
       }
     }
-
     loadStatusData();
   }, []);
 
+  const total = data.reduce((sum, item) => sum + item.value, 0);
+
+  // If there's no data but not loading, show empty state
+  if (!loading && data.length === 0 && !error) {
+    return (
+      <Card className="h-full shadow-sm border-0">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg font-semibold flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-primary" />
+            Bug Status Distribution
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex justify-center items-center h-[300px]">
+          <div className="text-center text-muted-foreground">
+            <Bug className="w-12 h-12 mx-auto mb-3 opacity-30" />
+            <p>No bug data available</p>
+            <p className="text-xs mt-1">Create some bugs to see the distribution</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <Card className="h-full shadow-md">
-      <CardHeader>
-        <CardTitle className="text-lg font-semibold">Bug Status Distribution</CardTitle>
+    <Card className="h-full shadow-sm border-0">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-lg font-semibold flex items-center gap-2">
+          <TrendingUp className="w-5 h-5 text-primary" />
+          Bug Status Distribution
+        </CardTitle>
       </CardHeader>
       <CardContent className="flex justify-center">
-        <ResponsiveContainer width="100%" height={300}>
-          <PieChart>
-            <Pie
-              data={data}
-              dataKey="value"
-              nameKey="name"
-              innerRadius={70}
-              outerRadius={120}
-              label={false} 
-            >
-              {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-              ))}
-            </Pie>
-
-            <Tooltip />
-            <Legend />
-          </PieChart>
-        </ResponsiveContainer>
+        {loading ? (
+          <div className="w-full h-[300px] bg-gray-100 rounded-xl animate-pulse" />
+        ) : data.length > 0 ? (
+          <div className="w-full">
+            <ResponsiveContainer width="100%" height={250}>
+              <PieChart>
+                <Pie
+                  data={data}
+                  dataKey="value"
+                  nameKey="name"
+                  innerRadius={60}
+                  outerRadius={100}
+                  paddingAngle={2}
+                >
+                  {data.map((entry, index) => (
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={COLORS_ARRAY[index % COLORS_ARRAY.length]} 
+                      stroke="transparent"
+                    />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  contentStyle={{ 
+                    borderRadius: '8px', 
+                    border: 'none', 
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)' 
+                  }}
+                  formatter={(value: number) => [`${value} bugs`, '']}
+                />
+                <Legend 
+                  verticalAlign="bottom" 
+                  height={36}
+                  formatter={(value) => <span className="text-sm text-muted-foreground">{value}</span>}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="text-center mt-2">
+              <span className="text-3xl font-bold text-foreground">{total}</span>
+              <p className="text-sm text-muted-foreground">Total Bugs</p>
+            </div>
+          </div>
+        ) : (
+          <div className="text-center py-12 text-muted-foreground">
+            <Bug className="w-12 h-12 mx-auto mb-3 opacity-30" />
+            <p>No bug data available</p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

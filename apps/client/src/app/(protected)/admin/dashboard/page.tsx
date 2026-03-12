@@ -8,7 +8,7 @@ import BugTrendChart from "@/components/AdminPanel/Dashboard/BugTrendsLineChart"
 import DashboardStatsRow from "@/components/AdminPanel/Dashboard/StatsRow";
 import { useEffect, useState } from "react";
 import { getDashboardStats } from "@/actions/dsahboardAction";
-import { getEmployees } from "@/actions/employeeAction";
+import { motion } from "framer-motion";
 
 export default function AdminDashboardPage() {
   const [data, setData] = useState<any>(null);
@@ -18,7 +18,6 @@ export default function AdminDashboardPage() {
     (async () => {
       try {
         const dashboardData = await getDashboardStats();
-        console.log("DASHBOARD: ", dashboardData);
         setData(dashboardData);
       } catch (err) {
         console.error(err);
@@ -27,37 +26,86 @@ export default function AdminDashboardPage() {
       }
     })();
   }, []);
+
   return (
-    <div className="flex flex-col gap-6 p-6 min-h-screen bg-gray-50">
+    <div className="flex flex-col gap-6 p-6 min-h-screen bg-slate-50/50">
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="flex flex-col md:flex-row md:items-center md:justify-between gap-4"
+      >
+        <div>
+          <h2 className="text-3xl font-bold text-foreground">Dashboard</h2>
+          <p className="text-muted-foreground">Welcome back! Here's what's happening with your projects.</p>
+        </div>
+        <div className="text-sm text-muted-foreground">
+          Last updated: {new Date().toLocaleDateString('en-US', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+          })}
+        </div>
+      </motion.div>
 
-      <h2 className="text-5xl font-bold"> Hello Admin</h2>
-
-      {data?.stats && <DashboardStatsRow stats={data.stats} />}
+      {/* Stats Row */}
+      {loading ? (
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="h-24 bg-gray-200 rounded-2xl animate-pulse" />
+          ))}
+        </div>
+      ) : data?.stats && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.1 }}
+        >
+          <DashboardStatsRow stats={data.stats} />
+        </motion.div>
+      )}
 
       {/* Row 1: Projects + Employees */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-        <div className="md:col-span-2">
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.2 }}
+        className="grid grid-cols-1 lg:grid-cols-5 gap-6"
+      >
+        <div className="lg:col-span-2">
           <ProjectsList />
         </div>
-        <div className="md:col-span-3">
+        <div className="lg:col-span-3">
           <EmployeesList />
         </div>
-      </div>
+      </motion.div>
 
       {/* Row 2: Bugs + Charts */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2">
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.3 }}
+        className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+      >
+        <div className="lg:col-span-2">
           <BugsList />
         </div>
-        <div className="md:col-span-1">
+        <div className="lg:col-span-1">
           <StatusPieCharts />
         </div>
-      </div>
+      </motion.div>
 
       {/* Row 3: Trends */}
-      <div className="w-full">
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.4 }}
+        className="w-full"
+      >
         <BugTrendChart />
-      </div>
+      </motion.div>
     </div>
   );
 }

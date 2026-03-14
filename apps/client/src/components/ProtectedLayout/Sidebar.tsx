@@ -21,7 +21,7 @@ const navItems = [
 export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
-  
+
   const handleLogout = async () => {
     try {
       localStorage.clear();
@@ -35,7 +35,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
 
   return (
     <>
-    <button
+      <button
         className={`
     fixed top-2 z-[60] p-1.5 bg-white border border-gray-200 rounded-lg shadow-md
     hover:bg-slate-50 transition-all duration-300
@@ -73,11 +73,10 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
               <a
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
-                  isActive 
-                    ? "bg-primary text-white shadow-md shadow-primary/25" 
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${isActive
+                    ? "bg-primary text-white shadow-md shadow-primary/25"
                     : "text-muted-foreground hover:bg-slate-100 hover:text-foreground"
-                }`}
+                  }`}
               >
                 <item.icon className={`w-5 h-5 ${isActive ? "text-white" : "group-hover:text-primary"}`} />
                 <span className="font-medium">{item.label}</span>

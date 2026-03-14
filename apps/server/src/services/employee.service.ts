@@ -127,16 +127,8 @@ export const getRoleName = async (employee_id: string) => {
 };
 
 export const getAllAssignees = async () => {
-  // 1️⃣ Get admin role ID(s)
-  const adminRole = await Role.findOne({ role_name: "admin" });
-  if (!adminRole) {
-    throw new ApiError(404, "Admin role not found");
-  }
-
-  // 2️⃣ Find employees whose roleId array does NOT contain adminRole.role_id
-  const employees = await Employee.find({
-    roleId: { $ne: adminRole.role_id },
-  }).select("employee_id employee_name employee_email");
+  // Get all employees including admins
+  const employees = await Employee.find({}).select("employee_id employee_name employee_email");
 
   if (!employees || employees.length === 0) {
     throw new ApiError(404, "No employees found");

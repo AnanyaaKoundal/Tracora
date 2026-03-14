@@ -262,7 +262,7 @@ export function DataTable<T extends Record<string, unknown>>({
     <div className="space-y-4">
       {/* Toolbar */}
       {(enableSearch || enableFilters) && (
-        <div className="flex flex-wrap items-center gap-3 p-4 bg-slate-50 rounded-xl border border-gray-200">
+        <div className="flex flex-wrap items-center gap-3 p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
           {/* Search */}
           {enableSearch && (
             <div className="relative flex-1 min-w-[200px] max-w-md">
@@ -347,15 +347,15 @@ export function DataTable<T extends Record<string, unknown>>({
       )}
 
       {/* Table Container */}
-      <div className="rounded-xl border border-gray-200 overflow-hidden">
+      <div className="rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="bg-slate-50 border-b border-gray-200">
+              <tr className="bg-gradient-to-r from-slate-50 to-white border-b border-gray-200">
                 {columns.map((col, idx) => (
                   <th
                     key={idx}
-                    className={`px-4 py-3 text-left text-sm font-semibold text-foreground ${
+                    className={`px-4 py-3.5 text-left text-sm font-bold text-slate-800 tracking-wide uppercase ${
                       col.sortable ? "cursor-pointer select-none hover:bg-slate-100 transition-colors" : ""
                     }`}
                     onClick={() => col.sortable && handleSort(col.key as keyof T)}
@@ -383,7 +383,7 @@ export function DataTable<T extends Record<string, unknown>>({
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-gray-100/50">
               {paginatedData.length > 0 ? (
                 paginatedData.map((row, rowIndex) => (
                   <motion.tr
@@ -394,12 +394,12 @@ export function DataTable<T extends Record<string, unknown>>({
                     className={`${
                       onRowClick 
                         ? "cursor-pointer hover:bg-primary/5 transition-colors" 
-                        : "hover:bg-slate-50 transition-colors"
-                    } ${rowIndex % 2 === 0 ? "bg-white" : "bg-slate-50/50"}`}
+                        : "hover:bg-blue-50/80 transition-colors"
+                    } ${rowIndex % 2 === 0 ? "bg-white" : "bg-slate-50/30"}`}
                     onClick={() => onRowClick?.(row)}
                   >
                     {columns.map((col, colIndex) => (
-                      <td key={colIndex} className="px-4 py-3 text-sm text-muted-foreground">
+                      <td key={colIndex} className="px-4 py-3 text-sm text-slate-700">
                         {col.render ? col.render(row) : String(row[col.key as string] ?? '-')}
                       </td>
                     ))}

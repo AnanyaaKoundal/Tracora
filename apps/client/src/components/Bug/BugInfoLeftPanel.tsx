@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { Bug } from "@/schemas/bug.schema";
-import { Employee } from "@/schemas/admin.schema";
-import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import BugActivitySection from "./CommentSection";
 
 interface Props {
@@ -15,52 +15,36 @@ interface Props {
 }
 
 export default function BugInfoLeftPanel({ bug, setBug, activities, setActivities }: Props) {
-  const [newComment, setNewComment] = useState("");
-
-  function handleAddComment() {
-    if (!newComment.trim()) return;
-    setActivities((prev) => [
-      {
-        id: Date.now().toString(),
-        type: "comment",
-        message: newComment.trim(),
-        createdBy: "currentUser",
-        createdAt: new Date().toLocaleString(),
-      },
-      ...prev,
-    ]);
-    setNewComment("");
-  }
-
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Bug Name */}
-      <div>
-        <input
+      <div className="space-y-2">
+        <Label className="text-sm font-medium text-muted-foreground">Title</Label>
+        <Input
           type="text"
           value={bug.bug_name}
           onChange={(e) => setBug((prev) => (prev ? { ...prev, bug_name: e.target.value } : prev))}
-          className="text-2xl font-bold border-b focus:outline-none focus:border-black w-full"
+          className="text-xl font-semibold bg-transparent border-0 border-b rounded-none px-0 focus-visible:ring-0 focus-visible:border-primary"
         />
       </div>
 
       {/* Description */}
-      <div>
-        <label className="block text-sm font-medium mb-1">Description</label>
-        <textarea
-          className="border rounded p-2 w-full h-80"
+      <div className="space-y-2">
+        <Label className="text-sm font-medium text-muted-foreground">Description</Label>
+        <Textarea
+          className="min-h-[180px] resize-none bg-muted/30"
           value={bug.bug_description}
           onChange={(e) => setBug((prev) => (prev ? { ...prev, bug_description: e.target.value } : prev))}
+          placeholder="Add a description..."
         />
       </div>
 
       {/* Activity & Comments */}
       <BugActivitySection
-  bugId={bug.bug_id}
-  activities={activities}
-  setActivities={setActivities}
-/>
-
+        bugId={bug.bug_id}
+        activities={activities}
+        setActivities={setActivities}
+      />
     </div>
   );
 }

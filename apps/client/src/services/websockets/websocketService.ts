@@ -8,7 +8,7 @@ class WebSocketService {
   private url = "ws://localhost:5000/ws";
 
   connect() {
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) return;
+    if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) return;
 
     this.ws = new WebSocket(this.url);
 
@@ -65,20 +65,29 @@ class WebSocketService {
   }
 
   send(data: any) {
-    if (!this.ws) return;
+    if (!this.ws || this.ws.readyState === WebSocket.CLOSED || this.ws.readyState === WebSocket.CLOSING) {
+      this.connect();
+      setTimeout(() => this.send(data), 100);
+      return;
+    }
   
     if (this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(data));
       return;
     }
   
-    this.ws.addEventListener(
-      "open",
-      () => {
-        this.ws?.send(JSON.stringify(data));
-      },
-      { once: true }
-    );
+    if (this.ws.readyState === WebSocket.CONNECTING) {
+      const ws = this.ws;
+      ws.addEventListener(
+        "open",
+        () => {
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify(data));
+          }
+        },
+        { once: true }
+      );
+    }
   }
 }
 

@@ -9,6 +9,7 @@ import {
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { AlertTriangle, Folder, Trash2 } from "lucide-react";
 
 export function DeleteProjectDialog({
   open,
@@ -27,40 +28,52 @@ export function DeleteProjectDialog({
     try {
       const res = await onConfirm();
       if (res.success) {
-        toast.success("Project deleted successfully ✅");
+        toast.success("Project deleted successfully");
         onOpenChange(false);
       } else {
-        toast.error(res.message || "Failed to delete project ❌");
+        toast.error(res.message || "Failed to delete project");
       }
     } catch {
-      toast.error("Unexpected error while deleting project ❌");
+      toast.error("Unexpected error while deleting project");
     }
   };
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
+      <AlertDialogContent className="max-w-md">
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete Project</AlertDialogTitle>
-          <AlertDialogDescription>
-            Are you sure you want to delete this project? This action cannot be undone.
-            <div className="mt-2 p-2 rounded-md bg-gray-100 text-sm">
-              <p>
-                <span className="font-semibold">ID:</span> {projectId || "N/A"}
-              </p>
-              <p>
-                <span className="font-semibold">Name:</span>{" "}
-                {projectName || "N/A"}
-              </p>
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+              <AlertTriangle className="w-6 h-6 text-destructive" />
             </div>
-          </AlertDialogDescription>
+            <div>
+              <AlertDialogTitle className="text-lg">Delete Project</AlertDialogTitle>
+              <AlertDialogDescription className="text-sm text-muted-foreground">
+                This action cannot be undone
+              </AlertDialogDescription>
+            </div>
+          </div>
         </AlertDialogHeader>
+        
+        <div className="my-4 p-4 rounded-xl bg-muted/50 border">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <Folder className="w-6 h-6 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium truncate">{projectName || 'Unknown Project'}</p>
+              <p className="text-sm text-muted-foreground font-mono">ID: {projectId || 'N/A'}</p>
+            </div>
+          </div>
+        </div>
+
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel className="gap-2">Cancel</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleDelete}
-            className="bg-red-600 text-white hover:bg-red-700"
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90 gap-2"
           >
+            <Trash2 className="w-4 h-4" />
             Delete
           </AlertDialogAction>
         </AlertDialogFooter>

@@ -1,17 +1,19 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
 import { postComment, fetchComments } from "@/actions/commentAction";
 import { fetchRole } from "@/actions/employeeAction";
 import { toast } from "sonner";
 import { useBugComments } from "@/services/websockets/useBugComments";
+import { MessageSquare, Send, User } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface Props {
   bugId: string;
   activities: any[];
   setActivities: React.Dispatch<React.SetStateAction<any[]>>;
-  assigneeId?: string | null;
 }
 
 export default function BugActivitySection({
@@ -23,9 +25,6 @@ export default function BugActivitySection({
   const [posting, setPosting] = useState(false);
   const [employee_id, setEmployeeId] = useState("");
 
-  // -------------------------------
-  // FETCH COMMENTS ON MOUNT
-  // -------------------------------
   useEffect(() => {
     async function loadComments() {
       const res = await fetchComments(bugId);
@@ -56,18 +55,12 @@ export default function BugActivitySection({
     loadComments();
   }, [bugId, setActivities]);
 
-  // -------------------------------
-  // REALTIME COMMENTS HOOK
-  // -------------------------------
   useBugComments({
     bugId,
     employeeId: employee_id,
     setActivities,
   });
 
-  // -------------------------------
-  // HANDLE ADD COMMENT
-  // -------------------------------
   async function handleAddComment() {
     if (!newComment.trim()) return;
 
@@ -86,7 +79,6 @@ export default function BugActivitySection({
         toast.error("Failed to post comment");
       } else {
         toast.success("Comment added!");
-        // WebSocket hook will update activity
       }
     } catch (err) {
       toast.error("Error posting comment");
@@ -96,15 +88,16 @@ export default function BugActivitySection({
   }
 
   return (
-    <div className="mt-10">
-      <h2 className="text-xl font-semibold mb-4">Activity & Comments</h2>
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold flex items-center gap-2">
+        <MessageSquare className="w-5 h-5 text-primary" />
+        Activity & Comments
+      </h3>
 
       {/* Comment Input */}
-      <div className="flex gap-2 mb-4">
-        <input
-          type="text"
+      <div className="flex gap-2">
+        <Input
           placeholder="Write a comment..."
-          className="flex-1 border rounded p-2"
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
           onKeyDown={(e) => {
@@ -113,26 +106,44 @@ export default function BugActivitySection({
               handleAddComment();
             }
           }}
+          className="flex-1"
         />
-
-        <Button disabled={posting} onClick={handleAddComment}>
-          {posting ? "Posting..." : "Post"}
+        <Button disabled={posting || !newComment.trim()} onClick={handleAddComment} className="gap-2">
+          <Send className="w-4 h-4" />
+          Post
         </Button>
       </div>
 
       {/* Activity List */}
       <div className="space-y-3">
-        {activities.map((act) => (
-          <div
+        {activities.map((act, index) => (
+          <motion.div
             key={act.id}
-            className="border w-[1162px] rounded p-3 text-sm bg-gray-50"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05 }}
+            className="border rounded-lg p-4 bg-muted/20"
           >
-            <p className="break-words whitespace-pre-wrap">{act.message}</p>
-            <span className="text-gray-500 text-xs">
-              by {act.createdBy} on {act.createdAt}
-            </span>
-          </div>
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <User className="w-4 h-4 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-medium text-sm">{act.createdBy}</span>
+                  <span className="text-xs text-muted-foreground">{act.createdAt}</span>
+                </div>
+                <p className="text-sm break-words whitespace-pre-wrap">{act.message}</p>
+              </div>
+            </div>
+          </motion.div>
         ))}
+        {activities.length === 0 && (
+          <div className="text-center py-8 text-muted-foreground">
+            <MessageSquare className="w-10 h-10 mx-auto mb-2 opacity-30" />
+            <p className="text-sm">No comments yet</p>
+          </div>
+        )}
       </div>
     </div>
   );

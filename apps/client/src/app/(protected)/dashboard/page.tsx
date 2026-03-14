@@ -236,6 +236,7 @@ export default function DashboardPage() {
               <DataTable
                 columns={data.role === "manager" || data.role === "admin" ? columnsProjects : columnsBugs}
                 data={data.role === "manager" || data.role === "admin" ? topProjects : topBugs}
+                onRowClick={(row) => router.push(data.role === "manager" || data.role === "admin" ? `/projects/${row.project_id}` : `/bugs/${row.bug_id}`)}
               />
             ) : (
               <div className="text-center py-8 text-muted-foreground">
@@ -270,7 +271,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               {secondRowBugs.length > 0 ? (
-                <DataTable columns={columnsBugs} data={secondRowBugs} />
+                <DataTable columns={columnsBugs} data={secondRowBugs} onRowClick={(row) => router.push(`/bugs/${row.bug_id}`)} />
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
                   No bugs found

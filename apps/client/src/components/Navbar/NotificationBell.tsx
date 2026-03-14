@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Bell } from "lucide-react";
 import {
   type Notification,
 } from "@/schemas/notification.schema";
@@ -217,9 +218,9 @@ export default function NotificationBell({ employeeId }: NotificationBellProps) 
     <div ref={containerRef} className="relative">
       <button
         onClick={() => setOpen((prev) => !prev)}
-        className="relative cursor-pointer text-xl"
+        className="relative cursor-pointer p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
       >
-        🔔
+        <Bell className="w-5 h-5 text-foreground" />
 
         {unreadCount > 0 && (
           <span className="absolute -top-1 -right-2 bg-red-500 text-white text-xs rounded-full px-2 py-[1px]">

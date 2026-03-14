@@ -9,6 +9,7 @@ import {
     AlertDialogAction,
   } from "@/components/ui/alert-dialog";
   import { toast } from "sonner";
+  import { AlertTriangle, User, Trash2 } from "lucide-react";
   
   export function DeleteEmployeeDialog({
     open,
@@ -39,29 +40,40 @@ import {
   
     return (
       <AlertDialog open={open} onOpenChange={onOpenChange}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Employee</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this employee? This action cannot be
-              undone.
-              <div className="mt-2 p-2 rounded-md bg-gray-100 text-sm">
-                <p>
-                  <span className="font-semibold">ID:</span> {employeeId || "N/A"}
-                </p>
-                <p>
-                  <span className="font-semibold">Email:</span>{" "}
-                  {employeeEmail || "N/A"}
-                </p>
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                <AlertTriangle className="w-6 h-6 text-destructive" />
               </div>
-            </AlertDialogDescription>
+              <div>
+                <AlertDialogTitle className="text-lg">Delete Employee</AlertDialogTitle>
+                <AlertDialogDescription className="text-sm text-muted-foreground">
+                  This action cannot be undone
+                </AlertDialogDescription>
+              </div>
+            </div>
           </AlertDialogHeader>
+          
+          <div className="my-4 p-4 rounded-xl bg-muted/50 border">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                <User className="w-6 h-6 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium truncate">{employeeEmail || 'Unknown'}</p>
+                <p className="text-sm text-muted-foreground font-mono">ID: {employeeId || 'N/A'}</p>
+              </div>
+            </div>
+          </div>
+
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="gap-2">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              className="bg-red-600 text-white hover:bg-red-700"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 gap-2"
             >
+              <Trash2 className="w-4 h-4" />
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -69,4 +81,3 @@ import {
       </AlertDialog>
     );
   }
-  

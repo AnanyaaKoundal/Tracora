@@ -7,14 +7,14 @@ export async function getAllProjects() {
   const data = await fetchAllProjectsService();
   if (data.status === 403) {
     window.location.href = "/forbidden"; 
-  return;
-}
+    return [];
+  }
   if (!data.success) {
     console.error("Failed to fetch roles", data.error);
     return [];
   }
 
-  return data.data;
+  return Array.isArray(data.data) ? data.data : [];
 }
 
 export async function createProject(data: z.Infer<typeof createProjectSchema>) {

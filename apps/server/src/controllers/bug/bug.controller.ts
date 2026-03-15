@@ -4,7 +4,11 @@ import asyncHandler from "../../utils/asyncHandler";
 
 export const createBug = asyncHandler(async (req: Request, res: Response) => {
     const user = (req as any).user;
-    const newBug = await bugService.createBug(req.body, user);
+    const bugData = {
+      ...req.body,
+      company_id: user.company_id
+    };
+    const newBug = await bugService.createBug(bugData, user);
     res.status(201).json({
         success: true,
         message: "Bug created successfully",
@@ -12,8 +16,9 @@ export const createBug = asyncHandler(async (req: Request, res: Response) => {
     });
 });
 
-export const getAllBugs = asyncHandler(async (_req: Request, res: Response) => {
-    const bug = await bugService.getAllBugs();
+export const getAllBugs = asyncHandler(async (req: Request, res: Response) => {
+    const company_id = (req as any).user.company_id;
+    const bug = await bugService.getAllBugs(company_id);
     res.status(200).json({
         success: true,
         message: "Bugs fetched successfully",

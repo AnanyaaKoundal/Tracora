@@ -10,7 +10,6 @@ const projectSchema = new mongoose.Schema({
     project_name: {
         type: String,
         required: true,
-        unique: true
     },
     project_description: {
         type: String,
@@ -28,6 +27,11 @@ const projectSchema = new mongoose.Schema({
         enum: ["Upcoming","Active", "Completed", "Inactive", "Overdue"],
         default: "Active"
     },
+    company_id: {
+        type: String,
+        required: true,
+        ref: 'Company'
+    },
     created_by: {
         type: String,
         ref: 'Employee',
@@ -36,6 +40,8 @@ const projectSchema = new mongoose.Schema({
 },
     { timestamps: true}
 )
+
+projectSchema.index({ project_name: 1, company_id: 1 }, { unique: true })
 
 const Project = mongoose.models.Project || mongoose.model("Project", projectSchema);
 

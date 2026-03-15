@@ -144,17 +144,19 @@ export function AddBugDrawer({ onBugCreated }: { onBugCreated: () => void }) {
         const employeeId = roleData.employee_id;
         
         const res = await fetchAllAssigneesService();
-        if (res.success) {
-          setEmployees(res.data);
+        const employeeList = res.data || res;
+        if (Array.isArray(employeeList)) {
+          setEmployees(employeeList);
           // Find the actual current user based on fetched employeeId
           if (employeeId) {
-            const currentEmp = res.data.find((e: Employee) => e.employee_id === employeeId);
+            const currentEmp = employeeList.find((e: Employee) => e.employee_id === employeeId);
             if (currentEmp) {
               setCurrentUser(currentEmp);
             }
           }
         } else {
-          toast.error(res.message || "Failed to load employees");
+          console.error("Invalid employee data:", res);
+          setEmployees([]);
         }
       } catch (err) {
         console.error(err);

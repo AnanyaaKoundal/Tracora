@@ -5,7 +5,8 @@ import ApiError from "@/utils/ApiError"; // assuming you have this class
 import ApiResponse from "@/utils/ApiResponse";
 
 export const getAdminStats = asyncHandler(async (req: Request, res: Response): Promise<any> => {
-  const stats = await AdminStatsService();
+  const company_id = (req as any).user.company_id;
+  const stats = await AdminStatsService(company_id);
 
   if (!stats) {
     return res.json(new ApiError(500, "Failed to fetch admin stats"));
@@ -20,7 +21,8 @@ export const getAdminStats = asyncHandler(async (req: Request, res: Response): P
 
 export const getEmployeeList = asyncHandler(async(req: Request, res: Response): Promise<any> => {
   try{
-    const employees = await getEmployeeForTable();
+    const company_id = (req as any).user.company_id;
+    const employees = await getEmployeeForTable(company_id);
     if(!employees){
       return res.json(new ApiError(500, "No employees found"));
     }
@@ -34,7 +36,8 @@ export const getEmployeeList = asyncHandler(async(req: Request, res: Response): 
 
 export const getProjectList = asyncHandler(async(req: Request, res: Response): Promise<any> => {
   try{
-    const projects = await getProjectsForTable();
+    const company_id = (req as any).user.company_id;
+    const projects = await getProjectsForTable(company_id);
     if(!projects){
       return res.json(new ApiError(500, "No projects found"));
     }
@@ -47,7 +50,8 @@ export const getProjectList = asyncHandler(async(req: Request, res: Response): P
 
 export const getBugList =  asyncHandler(async(req: Request, res: Response): Promise<any> => {
   try{
-    const projects = await getBugsforDashboard();
+    const company_id = (req as any).user.company_id;
+    const projects = await getBugsforDashboard(company_id);
     if(!projects){
       return res.json(new ApiError(500, "No  bugs found"));
     }
@@ -60,7 +64,8 @@ export const getBugList =  asyncHandler(async(req: Request, res: Response): Prom
 
 export const getBugTrendsController  =  asyncHandler(async(req: Request, res: Response): Promise<any> => {
   try{
-    const projects = await getBugTrends();
+    const company_id = (req as any).user.company_id;
+    const projects = await getBugTrends(company_id);
     if(!projects){
       return res.json(new ApiError(500, "No  bugs found"));
     }

@@ -18,7 +18,6 @@ const employeeSchema = new mongoose.Schema({
     employee_email: {
         type: String,
         required: true,
-        unique: true
     },
     employee_contact_number:{
         type: String,
@@ -35,6 +34,9 @@ const employeeSchema = new mongoose.Schema({
 },
     { timestamps: true}
 )
+
+employeeSchema.index({ employee_email: 1, company_id: 1 }, { unique: true })
+employeeSchema.index({ employee_contact_number: 1, company_id: 1 }, { unique: true })
 
 const Employee = mongoose.models.Employee || mongoose.model("Employee", employeeSchema);
 

@@ -140,9 +140,12 @@ export const createEmployeeService = async (data: z.Infer<typeof createEmployeeS
       body: JSON.stringify(data),
     });
 
-    if (!res.ok) throw new Error("Error creating role");
+    const responseData = await res.json();
+    if (!res.ok) {
+      throw new Error(responseData.message || "Error creating employee");
+    }
 
-    return res.json();
+    return responseData;
 };
 
 export const updateEmployeeService = async (id: string, data: z.Infer<typeof employeeSchema>) => {
@@ -153,9 +156,12 @@ export const updateEmployeeService = async (id: string, data: z.Infer<typeof emp
     body: JSON.stringify(data),
   });
   console.log("Res: ", res);
-  if (!res.ok) throw new Error("Error updating employee");
+  const responseData = await res.json();
+  if (!res.ok) {
+    throw new Error(responseData.message || "Error updating employee");
+  }
 
-  return res.json();
+  return responseData;
 };
 
 export const deleteEmployeeService = async (id: string) => {

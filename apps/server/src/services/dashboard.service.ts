@@ -10,19 +10,18 @@ import Bug from "@/models/bug.model";
 
 type RoleType = "admin" | "manager" | "developer" | "tester";
 
-export const AdminStatsService = async () => {
-  // Fetch all items using existing services
+export const AdminStatsService = async (company_id: string) => {
   const [projects, bugs, employees] = await Promise.all([
-    getAllProjects(),  // returns full project array
-    getAllBugs(),          // returns full bug array
-    getEmployees() // returns full employee array
+    Project.find({ company_id }),
+    Bug.find({ company_id }),
+    Employee.find({ company_id })
   ]);
 
   const totalProjects = projects.length;
   const activeProjects = projects.filter(p => p.project_status === "Active").length;
 
   const totalBugs = bugs.length;
-  const activeBugs = bugs.filter(b => b.bug_status === "Open" || b.status === "iUnder Review").length;
+  const activeBugs = bugs.filter(b => b.bug_status === "Open" || b.bug_status === "Under Review").length;
 
   const totalEmployees = employees.length;
 
@@ -42,13 +41,12 @@ export const AdminStatsService = async () => {
   }
 }
 
-export const getEmployeeForTable = async () => {
-  const adminRole = await Role.findOne({ role_name: "admin" });
-
-  const employees = await Employee.find({ roleId: { $ne: adminRole?.role_id } })
+export const getEmployeeForTable = async (company_id: string) => {
+  const employees = await Employee.find({ company_id })
     .populate({
       path: "roleId",
       model: Role,
+      match: { company_id },
       select: "role_name role_id",
       localField: "roleId",
       foreignField: "role_id"
@@ -76,7 +74,7 @@ type ProjectRow = {
  * Return up to `limit` projects for the admin table.
  * Priority: Upcoming (by start date) -> Active (by end date) -> Completed (by end date) -> others.
  */
-export const getProjectsForTable = async (limit = 3): Promise<ProjectRow[]> => {
+export const getProjectsForTable = async (company_id: string, limit = 3): Promise<ProjectRow[]> => {
   const statusesPriority = ["Upcoming", "Active", "Completed"];
   const picked: any[] = [];
   const pickedIds = new Set<string>();
@@ -100,7 +98,7 @@ export const getProjectsForTable = async (limit = 3): Promise<ProjectRow[]> => {
     ? { project_end_date: "asc", project_start_date: "asc" }
     : { project_end_date: "asc", project_start_date: "asc" };
 
-const docs = await Project.find({ project_status: status })
+const docs = await Project.find({ company_id, project_status: status })
   .sort(sortObj)
   .limit(remaining)
   .populate(populateOptions)
@@ -125,7 +123,7 @@ const docs = await Project.find({ project_status: status })
   // 2) If still not enough, fetch projects of any other status (excluding already used statuses)
   if (picked.length < limit) {
     const remaining = limit - picked.length;
-    const others = await Project.find({ project_status: { $nin: statusesPriority } })
+    const others = await Project.find({ company_id, project_status: { $nin: statusesPriority } })
       .sort({ project_end_date: 1, project_start_date: 1 })
       .limit(remaining)
       .populate(populateOptions)
@@ -152,8 +150,8 @@ const docs = await Project.find({ project_status: status })
   }));
 };
 
-export const getBugsforDashboard = async () => {
-  const bugs = await Bug.find()
+export const getBugsforDashboard = async (company_id: string) => {
+  const bugs = await Bug.find({ company_id })
     .limit(4)
     .exec();
 
@@ -162,10 +160,7 @@ export const getBugsforDashboard = async () => {
     bug_name: b.bug_name,
     bug_status: b.bug_status,
     bug_priority: b.bug_priority,
-    // reported_by: (b.reported_by as any)?.employee_name || "",
-    // assigned_to: (b.assigned_to as any)?.employee_name || "",
     createdAt: b.createdAt,
-    // closedAt: b.closedAt,
   }));
 };
 
@@ -187,8 +182,8 @@ export const getRecentBugs = async (limit = 5) => {
 };
 
 // Return bug trends for chart
-export const getBugTrends = async () => {
-  const bugs = await Bug.find().exec();
+export const getBugTrends = async (company_id: string) => {
+  const bugs = await Bug.find({ company_id }).exec();
 
   const counts: Record<string, { created: number; closed: number }> = {};
 
@@ -203,15 +198,14 @@ export const getBugTrends = async () => {
       counts[closedDate].closed++;
     }
   });
-  console.log("BUGSS: ", bugs);
   return Object.entries(counts)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([date, val]) => ({ date, created: val.created, closed: val.closed }));
 };
 
 // Return bug count by priority for pie chart
-export const getBugPriorityStats = async () => {
-  const bugs = await Bug.find().exec();
+export const getBugPriorityStats = async (company_id: string) => {
+  const bugs = await Bug.find({ company_id }).exec();
 
   const stats: Record<string, number> = {
     Critical: 0,
@@ -230,46 +224,47 @@ export const getBugPriorityStats = async () => {
 };
 
 // Return dashboard data for a user
-export const getDashboardData = async (userId: string, role: RoleType) => {
+export const getDashboardData = async (userId: string, role: RoleType, company_id: string) => {
   let row1Data: any[] = [];
   let row2Data: any[] = [];
 
   // 🔹 Manager: top projects + bugs in those projects
   if (role === "manager" || role === "admin") {
-    row1Data = await Project.find()
+    row1Data = await Project.find({ company_id })
       .sort({ project_end_date: 1 } as Record<string, SortOrder>)
       .limit(5)
       .exec();
 
     const projectIds = row1Data.map(p => p.project_id);
 
-    row2Data = await Bug.find();
+    row2Data = await Bug.find({ company_id });
     
   } else if (role === "developer") {
     // 🔹 Developer: assigned bugs
-    row1Data = await Bug.find({ assigned_to: userId })
+    row1Data = await Bug.find({ company_id, assigned_to: userId })
     .sort({ updatedAt: -1 } as Record<string, SortOrder>)
     .exec();
     
-    row2Data = await Bug.find({ assigned_to: userId, bug_status: { $in: ["Closed", "Fixed"] } })
+    row2Data = await Bug.find({ company_id, assigned_to: userId, bug_status: { $in: ["Closed", "Fixed"] } })
     .sort({ updatedAt: -1 } as Record<string, SortOrder>)
     .exec();
     
   } else if (role === "tester") {
     // 🔹 Tester: reported bugs
-    row1Data = await Bug.find({ reported_by: userId })
+    row1Data = await Bug.find({ company_id, reported_by: userId })
     .sort({ updatedAt: -1 } as Record<string, SortOrder>)
     .exec();
-    console.log("Tester Row 2: ", row1Data);
 
-    row2Data = row1Data; // All reported bugs for second row
+    row2Data = row1Data;
   }
 
   // 🔹 Bug priority stats (all relevant bugs)
   const allBugs = await Bug.find(
-    (role === "manager" ||  role === "admin") ? { project_id: { $in: row1Data.map(p => p.project_id) } } :
-    role === "developer" ? { assigned_to: userId } :
-    { reported_by: userId }
+    (role === "manager" ||  role === "admin") 
+      ? { company_id, project_id: { $in: row1Data.map(p => p.project_id) } } 
+      : role === "developer" 
+        ? { company_id, assigned_to: userId } 
+        : { company_id, reported_by: userId }
   ).exec();
 
   const priorityCounts: Record<string, number> = {

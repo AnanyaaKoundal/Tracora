@@ -15,8 +15,9 @@ export const createEmployee = asyncHandler(async (req: Request, res: Response) =
 });
 
 // Get all users
-export const getEmployees = asyncHandler(async (_req: Request, res: Response) => {
-  const result = await userService.getEmployees();
+export const getEmployees = asyncHandler(async (req: Request, res: Response) => {
+  const company_id = (req as any).user.company_id;
+  const result = await userService.getEmployees(company_id);
   res.status(200).json(new ApiResponse(200, "Employees fetched", result));
 });
 
@@ -39,6 +40,7 @@ export const deleteEmployeeById = asyncHandler(async (req: Request, res: Respons
 });
 
 export const getAllAssigneesController = asyncHandler(async (req: Request, res: Response):Promise<any> => {
-  const assignees = await getAllAssignees(); // service we wrote earlier
+  const company_id = (req as any).user.company_id;
+  const assignees = await getAllAssignees(company_id);
   return res.status(200).json(new ApiResponse(200, "Assignees fetched successfully", assignees));
 });

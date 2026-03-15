@@ -9,6 +9,7 @@ import {
   deleteProject,
   getProjects,
 } from "@/actions/projectAction";
+import { fetchRole } from "@/actions/employeeAction";
 import { AddProjectDrawer } from "@/components/AdminPanel/projects/AddProject";
 import { EditProjectDrawer } from "@/components/AdminPanel/projects/EditProject";
 import { DeleteProjectDialog } from "@/components/AdminPanel/projects/DeleteProject";
@@ -26,8 +27,9 @@ export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [deletingProject, setDeletingProject] = useState<Project | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
-  const columns: Column<Project>[] = [
+  const getColumns = (): Column<Project>[] => [
     { key: "project_id", header: "ID", sortable: true },
     { key: "project_name", header: "Name", sortable: true },
     { key: "project_status", header: "Status", sortable: true },
@@ -38,7 +40,7 @@ export default function ProjectsPage() {
       render: (row) => row.project_end_date || "-",
     },
     { key: "createdAt", header: "Created At", sortable: true },
-    {
+    ...(isAdmin ? [{
       key: "actions",
       header: <div className="text-right">Actions</div>,
       render: (row: Project) => (
@@ -60,7 +62,7 @@ export default function ProjectsPage() {
           </DropdownMenu>
         </div>
       ),
-    },
+    }] : []),
   ];
 
   const filterFields: FilterConfig[] = [
@@ -102,6 +104,11 @@ export default function ProjectsPage() {
     async function fetchData() {
       const projectData = await getProjects();
       setProjects(projectData);
+      
+      const roleData = await fetchRole();
+      if (roleData.success && roleData.role === "admin") {
+        setIsAdmin(true);
+      }
     }
     fetchData();
   }, []);
@@ -114,16 +121,18 @@ export default function ProjectsPage() {
           <h1 className="text-3xl font-bold text-foreground">Projects</h1>
           <p className="text-muted-foreground mt-1">Manage your projects and track progress</p>
         </div>
-        <AddProjectDrawer
-          onProjectCreated={async () => {
-            const fresh = await getAllProjects();
-            setProjects(fresh);
-          }}
-        />
+        {isAdmin && (
+          <AddProjectDrawer
+            onProjectCreated={async () => {
+              const fresh = await getAllProjects();
+              setProjects(fresh);
+            }}
+          />
+        )}
       </div>
 
       <DataTable<Project>
-        columns={columns}
+        columns={getColumns()}
         data={projects}
         enableSearch={true}
         enableFilters={true}
@@ -133,7 +142,7 @@ export default function ProjectsPage() {
       />
 
       {/* Edit Drawer */}
-      {editingProject && (
+      {isAdmin && editingProject && (
         <EditProjectDrawer
           open={!!editingProject}
           onOpenChange={(open: boolean) => {
@@ -158,7 +167,7 @@ export default function ProjectsPage() {
       )}
 
       {/* Delete Dialog */}
-      {deletingProject && (
+      {isAdmin && deletingProject && (
         <DeleteProjectDialog
           open={!!deletingProject}
           onOpenChange={(open: boolean) => {

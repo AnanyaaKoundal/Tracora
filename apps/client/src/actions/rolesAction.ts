@@ -6,14 +6,14 @@ export async function getRoles() {
   const data = await fetchRolesforAdmin();
   if (data.status === 403) {
       window.location.href = "/forbidden"; 
-    return;
+    return [];
   }
   if (!data.success) {
     console.error("Failed to fetch roles", data.error);
     return [];
   }
 
-  return data.data;
+  return Array.isArray(data.data) ? data.data : [];
 }
 
 

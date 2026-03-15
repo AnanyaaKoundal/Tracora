@@ -6,13 +6,15 @@ import { request } from "http";
 import ApiError from "@/utils/ApiError";
 
 export const createRole = asyncHandler(async (req: Request, res: Response) => {
-  const newRole = await roleService.createRole(req.body);
+  const company_id = (req as any).user.company_id;
+  const newRole = await roleService.createRole({ ...req.body, company_id });
   res.status(201).json(new ApiResponse(201, "Role created successfully", newRole));
 });
 
 // Get all Roles
-export const getRoles = asyncHandler(async (_req: Request, res: Response) => {
-  const roles = await roleService.getRoles();
+export const getRoles = asyncHandler(async (req: Request, res: Response) => {
+  const company_id = (req as any).user.company_id;
+  const roles = await roleService.getRoles(company_id);
   res.status(200).json(new ApiResponse(200, "Roles fetched successfully", roles));
 });
 

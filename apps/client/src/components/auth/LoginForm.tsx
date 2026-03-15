@@ -28,6 +28,7 @@ export default function LoginForm() {
     {}
   );
   const [companies, setCompanies] = useState<{ company_id: string; company_name: string }[]>([]);
+  const [loginError, setLoginError] = useState<string>("");
 
   const router = useRouter();
 
@@ -56,17 +57,22 @@ export default function LoginForm() {
 
   const onSubmit = async (data: z.infer<typeof loginSchema>) => {
     if (step === "company") {
-      setFormData(prev => ({ ...prev, ...data }));
+      const selectedCompany = companies.find(c => c.company_id === data.company_id);
+      if (!selectedCompany) return;
+      setFormData(prev => ({ ...prev, company_id: data.company_id, company_name: selectedCompany.company_name }));
       setStep("details");
+      setLoginError("");
       return;
     }
 
     if (step === "details") {
       const payload = { ...formData, ...data };
       const result = await verifyUser(payload);
-      if (!result?.success) {
+      if (result?.error || !result?.employee_id) {
+        setLoginError(result?.error || "Please check your credentials and try again");
         return;
       }
+      setLoginError("");
       setFormData(prev => ({
         ...prev,
         ...payload,
@@ -79,9 +85,11 @@ export default function LoginForm() {
     if (step === "otp") {
       const payload = { ...formData, ...data };
       const result = await verifyOtp(payload);
-      if (result?.error) {
+      if (result?.error || !result?.success) {
+        setLoginError(result?.error || "Invalid OTP");
         return;
       }
+      setLoginError("");
       const roleName = result?.role;
       if (roleName === "admin") {
         router.push("/admin/dashboard");
@@ -265,6 +273,9 @@ export default function LoginForm() {
                         </p>
                       )}
                     </div>
+                    {loginError && (
+                      <p className="text-red-500 text-sm">{loginError}</p>
+                    )}
                     <Button
                       type="button"
                       variant="ghost"

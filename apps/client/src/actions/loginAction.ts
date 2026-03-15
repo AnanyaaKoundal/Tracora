@@ -9,7 +9,7 @@ export const verifyUser = async (values : z.infer<typeof loginSchema>) => {
   console.log("Response", responseData)
 
   if (responseData?.success === false) {
-    return { error: true};
+    return { error: responseData.message || "Invalid credentials" };
   }
   console.log("Front: ", { success: responseData.success, employee_id: responseData.employee_id});
   if (responseData?.success === true) {

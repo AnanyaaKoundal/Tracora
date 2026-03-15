@@ -7,15 +7,31 @@ import { generateEmployeeId } from "./id.service";
 
 // Create user
 export const createEmployee = async (userData: any) => {
-  const { employee_email, roleId } = userData;
-  const existingEmployee = await Employee.findOne({ employee_email });
-  if (existingEmployee) {
-    throw new ApiError(400, "Employee already exists");
+  const { employee_email, employee_contact_number, roleId, company_id } = userData;
+  
+  const existingEmployeeByEmail = await Employee.findOne({ employee_email, company_id });
+  if (existingEmployeeByEmail) {
+    throw new ApiError(400, "Employee with this email already exists for this company");
+  }
+
+  if (employee_contact_number) {
+    const existingEmployeeByMobile = await Employee.findOne({ employee_contact_number, company_id });
+    if (existingEmployeeByMobile) {
+      throw new ApiError(400, "Employee with this mobile number already exists for this company");
+    }
   }
 
   if (!Array.isArray(roleId)) {
     throw new ApiError(400, "role_id must be an array of role IDs");
   }
+
+  if (roleId && roleId.length > 0) {
+    const roles = await Role.find({ role_id: { $in: roleId }, company_id });
+    if (roles.length !== roleId.length) {
+      throw new ApiError(400, "One or more roles not found for this company");
+    }
+  }
+
   const employee_id = generateEmployeeId();
   const newEmployee = await Employee.create({
     employee_id,
@@ -26,20 +42,20 @@ export const createEmployee = async (userData: any) => {
 };
 
 export const createAdminEmployee = async (userData: any) => {
-  const { employee_email } = userData;
+  const { employee_email, company_id } = userData;
 
-  const existingEmployee = await Employee.findOne({ employee_email });
+  const existingEmployee = await Employee.findOne({ employee_email, company_id });
   if (existingEmployee) {
     throw new ApiError(400, "Employee already exists");
   }
 
-  const role = await Role.findOne({ role_name: 'admin' });
+  const role = await Role.findOne({ role_name: 'admin', company_id });
   if (!role) {
-    throw new ApiError(400, "Admin role not found. Please create admin role first.");
+    throw new ApiError(400, "Admin role not found for this company");
   }
   const employee_id = generateEmployeeId();
   const newEmployee = await Employee.create({
-    employee_id: uuidv4(),
+    employee_id,
     roleId: [role.role_id],
     ...userData,
   });
@@ -48,25 +64,24 @@ export const createAdminEmployee = async (userData: any) => {
 };
 
 // Get all users
-export const getEmployees = async () => {
-  const employees = await Employee.find();
+export const getEmployees = async (company_id?: string) => {
+  const query = company_id ? { company_id } : {};
+  const employees = await Employee.find(query);
 
   const enrichedEmployees = await Promise.all(
     employees.map(async (employee) => {
-      // Fetch project
       const project = employee.projectId
         ? await Project.findOne({ project_id: employee.projectId })
         : null;
 
-      // Fetch roles (since roleId is an array)
       const roles = employee.roleId?.length
-        ? await Role.find({ role_id: { $in: employee.roleId } })
+        ? await Role.find({ role_id: { $in: employee.roleId }, company_id })
         : [];
 
       return {
         ...employee.toObject(),
         project_name: project ? project.project_name : null,
-        role_names: roles.map((r) => r.role_name), // collect all role names
+        role_names: roles.map((r) => r.role_name),
       };
     })
   );
@@ -87,15 +102,32 @@ export const getEmployeeById = async (user_id: string) => {
 
 // Edit user
 export const editEmployee = async (employee_id: string, updateData: any) => {
+  const existingUser = await Employee.findOne({ employee_id });
+  if (!existingUser) {
+    throw new ApiError(404, "Employee not found");
+  }
+
+  const { employee_email, employee_contact_number, company_id } = updateData;
+
+  if (employee_email && employee_email !== existingUser.employee_email) {
+    const duplicateEmail = await Employee.findOne({ employee_email, company_id, employee_id: { $ne: employee_id } });
+    if (duplicateEmail) {
+      throw new ApiError(400, "Employee with this email already exists for this company");
+    }
+  }
+
+  if (employee_contact_number && employee_contact_number !== existingUser.employee_contact_number) {
+    const duplicateMobile = await Employee.findOne({ employee_contact_number, company_id, employee_id: { $ne: employee_id } });
+    if (duplicateMobile) {
+      throw new ApiError(400, "Employee with this mobile number already exists for this company");
+    }
+  }
+
   const user = await Employee.findOneAndUpdate(
     { employee_id },
     { ...updateData, updated_at: Date.now() },
     { new: true }
   );
-
-  if (!user) {
-    throw new ApiError(404, "Employee not found");
-  }
 
   return user;
 };
@@ -126,9 +158,9 @@ export const getRoleName = async (employee_id: string) => {
   return role.role_name;
 };
 
-export const getAllAssignees = async () => {
-  // Get all employees including admins
-  const employees = await Employee.find({}).select("employee_id employee_name employee_email");
+export const getAllAssignees = async (company_id?: string) => {
+  const query = company_id ? { company_id } : {};
+  const employees = await Employee.find(query).select("employee_id employee_name employee_email");
 
   if (!employees || employees.length === 0) {
     throw new ApiError(404, "No employees found");

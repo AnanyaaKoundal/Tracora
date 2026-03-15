@@ -4,14 +4,18 @@ import ApiError from "../utils/ApiError";
 import { generateProjectId } from "./id.service";
 
 export const createProject = async (projectData: any, user: any) => {
-  const { project_name } = projectData;
-  const existingProject = await Project.findOne({ project_name });
+  const { project_name, company_id } = projectData;
+  if (!company_id) {
+    throw new ApiError(400, "Company ID is required");
+  }
+  const existingProject = await Project.findOne({ project_name, company_id });
   if (existingProject) {
-    throw new ApiError(400, "Project already exists");
+    throw new ApiError(400, "Project already exists for this company");
   }
   const project_id = generateProjectId();
   const newProject = await Project.create({
     project_id,
+    company_id,
     created_by: user.employee_id,
     ...projectData,
   });
@@ -19,8 +23,9 @@ export const createProject = async (projectData: any, user: any) => {
   return newProject;
 };
 
-export const getAllProjects = async () => {
-  const projects = await Project.find();
+export const getAllProjects = async (company_id?: string) => {
+  const query = company_id ? { company_id } : {};
+  const projects = await Project.find(query);
   return projects;
 };
 
@@ -79,17 +84,22 @@ export const deleteProjectsByIds = async (projectIds: string[]) => {
 
 
 export const getProjects = async (user: any) => {
-  console.log("User; ", user);
-  if(user.role === 'admin'){
-    const projs = await Project.find();
+  if (!user) {
+    return [];
+  }
+
+  if (user.is_admin) {
+    const projs = await Project.find({ company_id: user.company_id });
     return projs;
   }
-  if (!user || !user.projectId) {
-    return []; // No projects assigned
+
+  if (!user.projectId) {
+    return [];
   }
+
   const projects = await Project.find({
-    project_id: { $in: user.projectId }
+    project_id: { $in: user.projectId },
+    company_id: user.company_id
   });
-  console.log("Projects: ", projects);
   return projects;
 };

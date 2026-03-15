@@ -4,7 +4,11 @@ import asyncHandler from "../../utils/asyncHandler";
 
 export const createProject = asyncHandler(async (req: Request, res: Response) => {
   const user = (req as any).user;
-  const newProject = await projectService.createProject(req.body, user);
+  const projectData = {
+    ...req.body,
+    company_id: user.company_id
+  };
+  const newProject = await projectService.createProject(projectData, user);
   res.status(201).json({
     success: true,
     message: "Project created successfully",
@@ -12,8 +16,9 @@ export const createProject = asyncHandler(async (req: Request, res: Response) =>
   });
 });
 
-export const getAllProjects = asyncHandler(async (_req: Request, res: Response) => {
-  const projects = await projectService.getAllProjects();
+export const getAllProjects = asyncHandler(async (req: Request, res: Response) => {
+  const company_id = (req as any).user.company_id;
+  const projects = await projectService.getAllProjects(company_id);
   res.status(200).json({
     success: true,
     message: "Projects fetched successfully",

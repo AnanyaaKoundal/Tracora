@@ -5,17 +5,19 @@ import { BugPriority } from "../models/bug.model";
 import { kafkaProducer } from "@/config/kafka/kafka_producer";
 
 export const createBug = async (bugData: any, user: any) => {
-  console.log("BUGDATA: ", bugData);
-  const { bug_name } = bugData;
-  console.log("Bug: ", user);
-  const existingbug = await Bug.findOne({ bug_name });
+  const { bug_name, company_id } = bugData;
+  if (!company_id) {
+    throw new ApiError(400, "Company ID is required");
+  }
+  const existingbug = await Bug.findOne({ bug_name, company_id });
   if (existingbug) {
-    throw new ApiError(400, "Bug already exists");
+    throw new ApiError(400, "Bug already exists for this company");
   }
   const bug_id = generateBugId();
 
   const newbug = await Bug.create({
     bug_id,
+    company_id,
     reported_by: user.employee_id,
     ...bugData,
   });
@@ -29,8 +31,9 @@ export const createBug = async (bugData: any, user: any) => {
   return newbug;
 };
 
-export const getAllBugs = async () => {
-  const bugs = await Bug.find();
+export const getAllBugs = async (company_id?: string) => {
+  const query = company_id ? { company_id } : {};
+  const bugs = await Bug.find(query);
   return bugs;
 };
 
@@ -120,14 +123,20 @@ export const deleteBugsByIds = async (bugIds: string[]) => {
 
 
 export const getBugs = async (user: any) => {
-  console.log("User; ", user);
-  if (!user || !user.bugId) {
+  if (!user || !user.company_id) {
     return [];
   }
 
+  if (user.is_admin || user.role === "manager") {
+    return await Bug.find({ company_id: user.company_id });
+  }
+
   const bugs = await Bug.find({
-    reported_by: { $in: user.employee_id }
+    company_id: user.company_id,
+    $or: [
+      { reported_by: user.employee_id },
+      { assigned_to: user.employee_id }
+    ]
   });
-  console.log("bugs: ", bugs);
   return bugs;
 };

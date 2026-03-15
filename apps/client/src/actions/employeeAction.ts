@@ -12,7 +12,7 @@ export async function getEmployees() {
     return [];
   }
 
-  return data.data;
+  return Array.isArray(data.data) ? data.data : [];
 }
 
 

@@ -29,12 +29,14 @@ export const authenticate: RequestHandler = async (req, res, next) => {
       
       let roleDoc = null;
       if (user.roleId?.length > 0) {
-        roleDoc = await Role.findOne({ role_id: user.roleId[0] });
+        roleDoc = await Role.findOne({ role_id: user.roleId[0], company_id: decoded.company_id });
       }
 
     (req as any).user = {
       ...user.toObject(),
+      company_id: decoded.company_id,
       role: roleDoc ? roleDoc.role_name : decoded.role, // fallback to token
+      is_admin: roleDoc?.is_admin || false,
     };
 
     next();
@@ -47,10 +49,17 @@ export const authenticate: RequestHandler = async (req, res, next) => {
 export const authorizeRole = (allowedRoles: string[]): RequestHandler => {
   return (req, res, next) => {
     const user = (req as any).user;
-    // console.log("Auth: ", user);
-    // console.log("Checking role:", user.role, "Allowed:", allowedRoles);
 
-    if (!user || !allowedRoles.includes(user.role)) {
+    if (!user) {
+      res.status(401).json({ message: "Unauthorized" });
+      return;
+    }
+
+    if (user.is_admin) {
+      return next();
+    }
+
+    if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
       res.status(403).json({ message: "Forbidden: Insufficient role" });
       return;
     }

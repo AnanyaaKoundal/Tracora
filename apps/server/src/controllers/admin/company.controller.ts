@@ -3,7 +3,9 @@ import { companyExists, createCompany, editCompanyEmailService, editCompanyPassw
 import { createAdminEmployee } from "@services/employee.service";
 import { sendOtp, verifyOtp } from "@services/otp.service";
 import {generateToken} from "@services/auth.service";
+import { seedDefaultRoles } from "@/services/role.service";
 import Company from "@/models/company.model";
+import Role from "@/models/role.model";
 import ApiError from "@/utils/ApiError";
 import asyncHandler from "@/utils/asyncHandler";
 
@@ -75,12 +77,15 @@ export const verifyOtpAndRegisterCompanyController = async (req: Request, res: R
         return res.status(400).json({ success: false, message: "Error while creating company" });
       }
 
-      // 3. Create admin employee corresponding to company
+      // 3. Seed default roles for the company
+      await seedDefaultRoles(company.company_id);
+
+      // 4. Create admin employee corresponding to company
       const adminEmployee = await createAdminEmployee({
-        company_id : company.company_id,
-        employee_name : "Admin",
-        employee_email : company_email,
-        employee_contact_number : company_phone
+        company_id: company.company_id,
+        employee_name: "Admin",
+        employee_email: company_email,
+        employee_contact_number: company_phone
       })
 
       if(!adminEmployee){
@@ -88,14 +93,17 @@ export const verifyOtpAndRegisterCompanyController = async (req: Request, res: R
         return res.status(400).json(new ApiError(400, "Error while creating admin employee"));
       }
 
-      // 4. Create JWT
+      const adminRole = await Role.findOne({ company_id: company.company_id, is_admin: true });
+      const roleName = adminRole ? adminRole.role_name : "admin";
+
+      // 5. Create JWT
     const token = generateToken({
       company_id: company.company_id,
       employee_id: adminEmployee.employee_id,
-      role: "admin"
+      role: roleName
     });
 
-    // 5. Set cookie
+    // 6. Set cookie
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -108,7 +116,7 @@ export const verifyOtpAndRegisterCompanyController = async (req: Request, res: R
         message: "Company created successfully",
         company_id: company.company_id,
         employee_id: adminEmployee.employee_id,
-        role: "admin"
+        role: roleName
       });
     } catch (error: any) {
       return res.status(400).json({ success: false, message: error.message });

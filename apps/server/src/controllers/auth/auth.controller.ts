@@ -87,6 +87,7 @@ export const getCurrentUserRole = async (req: Request, res: Response):Promise<an
       { 
         role: (req as any).user.role,
         employee_id: (req as any).user.employee_id,
+        company_id: (req as any).user.company_id
   }));
   } catch (error) {
     console.error("Error fetching user role:", error);

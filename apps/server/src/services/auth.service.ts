@@ -18,6 +18,11 @@ export const loginService = async (company_id:string, employee_email: string, mo
   if (!emp) {
     throw new Error("Invalid credentials");
   }
+  
+  if (emp.employee_contact_number !== mobile) {
+    throw new Error("Invalid credentials");
+  }
+  
   return emp.employee_id;
 };
 

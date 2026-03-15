@@ -28,13 +28,13 @@ export function DeleteProjectDialog({
     try {
       const res = await onConfirm();
       if (res.success) {
-        toast.success("Project deleted successfully");
+        toast.success("Bug deleted successfully");
         onOpenChange(false);
       } else {
-        toast.error(res.message || "Failed to delete project");
+        toast.error(res.message || "Failed to delete bug");
       }
     } catch {
-      toast.error("Unexpected error while deleting project");
+      toast.error("Unexpected error while deleting bug");
     }
   };
 

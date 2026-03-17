@@ -6,14 +6,14 @@ import Navbar from "@/components/LandingPage/Navbar";
 import Features from "@/components/LandingPage/Features";
 import HowItWorks from "@/components/LandingPage/HowItWorks";
 import DashboardPreview from "@/components/LandingPage/DashboardPreview";
-import StatsSection from "@/components/LandingPage/StatsSection";
+import BenefitsSection from "@/components/LandingPage/BenefitsSection";
 
 export default function LandingPage() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-white to-slate-50">
       <Navbar />
       <HeroSection />
-      <StatsSection />
+      <BenefitsSection />
       <Features />
       <DashboardPreview />
       <HowItWorks />

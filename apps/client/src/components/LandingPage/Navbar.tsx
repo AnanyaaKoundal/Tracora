@@ -21,6 +21,7 @@ export default function Navbar() {
 
   const navLinks = [
     { href: "#features", label: "Features" },
+    { href: "#dashboard-preview", label: "Preview" },
     { href: "#how-it-works", label: "How It Works" },
     { href: "#contact", label: "Contact" },
   ];
@@ -33,7 +34,7 @@ export default function Navbar() {
           : 'bg-transparent py-5'
       }`}
     >
-      <div className="max-w-6xl mx-auto px-4">
+      <div className="w-full px-6 lg:px-12">
         <nav className="flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">

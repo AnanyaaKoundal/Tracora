@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Bell } from "lucide-react";
 import {
@@ -26,13 +26,34 @@ export default function NotificationBell({ employeeId }: NotificationBellProps) 
   const router = useRouter();
 
   // -------------------------------
-  // WEBSOCKET HOOK (REFACTORED)
+  // WEBSOCKET HOOK
   // -------------------------------
 
   useNotificationSocket({
     employeeId,
     setNotifications,
   });
+
+  // -------------------------------
+  // SORT: Unread first (by date), then read (by date)
+  // -------------------------------
+
+  const sortedNotifications = useMemo(() => {
+    return [...notifications].sort((a, b) => {
+      // First, separate unread and read
+      const aUnread = !a.read;
+      const bUnread = !b.read;
+
+      // If one is unread and other is read, unread goes first
+      if (aUnread && !bUnread) return -1;
+      if (!aUnread && bUnread) return 1;
+
+      // Both same read status - sort by date (newest first)
+      const dateA = new Date(a.createdAt || "").getTime();
+      const dateB = new Date(b.createdAt || "").getTime();
+      return dateB - dateA;
+    });
+  }, [notifications]);
 
   // -------------------------------
   // GET NOTIFICATION TITLE
@@ -59,7 +80,7 @@ export default function NotificationBell({ employeeId }: NotificationBellProps) 
   // TRUNCATE MESSAGE
   // -------------------------------
 
-  function truncate(text: string, max = 30) {
+  function truncate(text: string, max = 40) {
     if (!text) return "";
     if (text.length <= max) return text;
     return text.slice(0, max) + "...";
@@ -72,7 +93,14 @@ export default function NotificationBell({ employeeId }: NotificationBellProps) 
   function groupNotifications(list: Notification[]): Notification[] {
     const map = new Map<string, Notification>();
 
-    for (const n of list) {
+    // Sort by createdAt descending first to ensure latest is processed last
+    const sorted = [...list].sort(
+      (a, b) =>
+        new Date(b.createdAt || "").getTime() -
+        new Date(a.createdAt || "").getTime()
+    );
+
+    for (const n of sorted) {
       const key = n.reference_id || n._id!;
 
       if (!map.has(key)) {
@@ -85,6 +113,7 @@ export default function NotificationBell({ employeeId }: NotificationBellProps) 
 
       const existing = map.get(key)!;
 
+      // Keep the latest message (since sorted by date descending)
       map.set(key, {
         ...existing,
         message: n.message,
@@ -95,11 +124,7 @@ export default function NotificationBell({ employeeId }: NotificationBellProps) 
       });
     }
 
-    return Array.from(map.values()).sort(
-      (a, b) =>
-        new Date(b.createdAt || "").getTime() -
-        new Date(a.createdAt || "").getTime()
-    );
+    return Array.from(map.values());
   }
 
   // -------------------------------
@@ -155,6 +180,8 @@ export default function NotificationBell({ employeeId }: NotificationBellProps) 
       const res = await markNotificationAsRead(id);
       if (!res?.success) return;
 
+      // Update the notification - set read to true, count to 0
+      // The useMemo will automatically re-sort it
       setNotifications((prev) =>
         prev.map((n) =>
           n._id === id
@@ -234,7 +261,7 @@ export default function NotificationBell({ employeeId }: NotificationBellProps) 
           <div className="flex justify-between items-center px-4 py-3 border-b">
             <h3 className="text-sm font-semibold">Notifications</h3>
 
-            {notifications.some((n) => !n.read) && (
+            {sortedNotifications.some((n) => !n.read) && (
               <button
                 onClick={markAllAsRead}
                 className="text-xs text-blue-600 hover:underline"
@@ -245,12 +272,12 @@ export default function NotificationBell({ employeeId }: NotificationBellProps) 
           </div>
 
           <div className="max-h-[75vh] overflow-y-auto">
-            {notifications.length === 0 ? (
+            {sortedNotifications.length === 0 ? (
               <div className="p-8 text-center text-gray-500 text-sm">
                 Nothing new 🎉
               </div>
             ) : (
-              notifications.map((n) => (
+              sortedNotifications.map((n) => (
                 <div
                   key={n._id}
                   onClick={() => openBug(n)}
@@ -264,7 +291,7 @@ export default function NotificationBell({ employeeId }: NotificationBellProps) 
                         {getNotificationTitle(n)}
                       </span>
 
-                      {!n.read && n.count > 0 && (
+                      {!n.read && n.count > 1 && (
                         <span className="bg-red-500 text-white text-[11px] px-2 py-[2px] rounded-full">
                           {n.count}
                         </span>

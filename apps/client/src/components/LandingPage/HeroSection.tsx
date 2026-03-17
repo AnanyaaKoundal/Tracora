@@ -13,7 +13,7 @@ export default function HeroSection() {
         <div className="absolute bottom-20 right-10 w-96 h-96 bg-secondary/10 rounded-full blur-3xl" />
       </div>
 
-      <div className="max-w-6xl mx-auto">
+      <div className="w-full px-6 lg:px-12">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}

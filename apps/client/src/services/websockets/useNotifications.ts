@@ -12,6 +12,42 @@ interface Props {
   setNotifications: React.Dispatch<React.SetStateAction<Notification[]>>;
 }
 
+// Helper to group notifications
+function groupNotifications(list: Notification[]): Notification[] {
+  const map = new Map<string, Notification>();
+
+  const sorted = [...list].sort(
+    (a, b) =>
+      new Date(b.createdAt || "").getTime() -
+      new Date(a.createdAt || "").getTime()
+  );
+
+  for (const n of sorted) {
+    const key = n.reference_id || n._id!;
+
+    if (!map.has(key)) {
+      map.set(key, {
+        ...n,
+        count: n.read ? 0 : 1,
+      });
+      continue;
+    }
+
+    const existing = map.get(key)!;
+
+    map.set(key, {
+      ...existing,
+      message: n.message,
+      sender_name: n.sender_name,
+      createdAt: n.createdAt,
+      read: existing.read && n.read,
+      count: existing.count + (n.read ? 0 : 1),
+    });
+  }
+
+  return Array.from(map.values());
+}
+
 export default function useNotificationSocket({
   employeeId,
   setNotifications,
@@ -31,28 +67,11 @@ export default function useNotificationSocket({
     const incoming = parsed.data.notification;
 
     setNotifications((prev) => {
-      const existingIndex = prev.findIndex(
-        (n) => n.reference_id === incoming.reference_id
-      );
-
-      if (existingIndex !== -1) {
-        const updated = [...prev];
-        const existing = updated[existingIndex];
-
-        const updatedNotification = {
-          ...existing,
-          message: incoming.message,
-          sender_name: incoming.sender_name,
-          createdAt: incoming.createdAt,
-          count: (existing.count || 0) + 1,
-          read: false,
-        };
-
-        updated.splice(existingIndex, 1);
-        return [updatedNotification, ...updated];
-      }
-
-      return [{ ...incoming, count: 1, read: false }, ...prev];
+      // Add the new notification to the list
+      const withNew = [{ ...incoming, count: 1, read: false }, ...prev];
+      
+      // Group and return - this ensures latest message is kept
+      return groupNotifications(withNew);
     });
   };
 

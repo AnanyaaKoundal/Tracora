@@ -219,30 +219,26 @@ Non-Admin: Read-only on projects, CRUD on own bugs
 
 ```
 Tracora/
-├── apps/
-│   ├── client/                 # Next.js frontend
-│   │   ├── src/
-│   │   │   ├── actions/       # Server action handlers
-│   │   │   ├── app/           # App router pages
-│   │   │   ├── components/    # React components
-│   │   │   ├── schemas/       # Zod validation schemas
-│   │   │   ├── services/      # API service functions
-│   │   │   └── lib/           # Utilities
-│   │   └── package.json
-│   │
-│   └── server/                # Express.js backend
-│       ├── src/
-│       │   ├── config/        # DB, Kafka, WebSocket configs
-│       │   ├── controllers/   # Request handlers
-│       │   ├── models/       # Mongoose schemas
-│       │   ├── routes/        # Express routes
-│       │   ├── services/      # Business logic
-│       │   ├── middlewares/   # Auth, error handling
-│       │   └── utils/         # Helpers
-│       └── package.json
+├── client/                    # Next.js frontend
+│   ├── src/
+│   │   ├── actions/           # Server action handlers
+│   │   ├── app/               # App router pages
+│   │   ├── components/        # React components
+│   │   ├── schemas/           # Zod validation schemas
+│   │   ├── services/          # API service functions
+│   │   └── lib/               # Utilities
+│   └── package.json
 │
-├── package.json               # Root workspace config
-└── README.md
+└── server/                    # Express.js backend
+    ├── src/
+    │   ├── config/            # DB, Kafka, WebSocket configs
+    │   ├── controllers/       # Request handlers
+    │   ├── models/            # Mongoose schemas
+    │   ├── routes/            # Express routes
+    │   ├── services/          # Business logic
+    │   ├── middlewares/       # Auth, error handling
+    │   └── utils/             # Helpers
+    └── package.json
 ```
 
 ---
@@ -269,7 +265,7 @@ yarn install
 
 ### Environment Variables
 
-Create `apps/server/.env`:
+Create `server/.env`:
 ```env
 PORT=5000
 MONGO_URI=mongodb://localhost:27017/tracora
@@ -283,10 +279,10 @@ KAFKA_BROKER=localhost:9092
 ### Running the App
 
 ```bash
-# Start backend (from apps/server)
+# Start backend (from server)
 npm run dev
 
-# Start frontend (from apps/client)
+# Start frontend (from client)
 npm run dev
 ```
 

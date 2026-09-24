@@ -2,22 +2,34 @@
   "compilerOptions": {
     "target": "es6",
     "module": "commonjs",
-    "rootDir": ".",                 // Root is apps/server, not just src
+    "rootDir": ".", // Root is server, not just src
     "outDir": "dist",
     "moduleResolution": "node",
+    "ignoreDeprecations": "6.0",
     "strict": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "baseUrl": "src",       
+    "baseUrl": "src",
     "paths": {
-      "@/*": ["*"],      
-      "@services/*": ["services/*"],
-      "@controllers/*": ["controllers/*"]
+      "@/*": [
+        "*"
+      ],
+      "@services/*": [
+        "services/*"
+      ],
+      "@controllers/*": [
+        "controllers/*"
+      ]
     }
-
   },
-  "include": ["index.ts", "src/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "include": [
+    "index.ts",
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

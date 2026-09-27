@@ -4,9 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { DataTable, Column, FilterConfig } from "@/components/Table/DataTable";
 import { getAllBugs, deleteBug } from "@/actions/bugAction";
-import { AddBugDrawer } from "@/components/Bug/AddBug";
 import { Bug } from "@/schemas/bug.schema";
-import { Trash2 } from "lucide-react";
+import { Trash2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DeleteProjectDialog } from "@/components/AdminPanel/projects/DeleteProject";
 
@@ -105,12 +104,13 @@ export default function BugsPage() {
           <h1 className="text-3xl font-bold text-foreground">Bugs</h1>
           <p className="text-muted-foreground mt-1">Manage and track all reported bugs</p>
         </div>
-        <AddBugDrawer
-          onBugCreated={async () => {
-            const fresh = await getAllBugs();
-            setBugs(fresh);
-          }}
-        />
+        <Button
+          className="gap-2"
+          onClick={() => router.push("/bugs/new")}
+        >
+          <Plus className="w-4 h-4" />
+          New Bug
+        </Button>
       </div>
 
       <DataTable<Bug>

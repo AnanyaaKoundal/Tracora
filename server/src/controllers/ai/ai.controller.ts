@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import asyncHandler from "../../utils/asyncHandler";
 import ApiError from "../../utils/ApiError";
-import { findDuplicates, suggestTitle, AiServiceError } from "../../services/ai.service";
+import { findDuplicates, suggestTitle, chatTurn, AiServiceError } from "../../services/ai.service";
 
 const requireDescription = (req: Request): string => {
     const { description } = req.body;
@@ -33,6 +33,32 @@ export const getTitleSuggestion = asyncHandler(async (req: Request, res: Respons
 
     try {
       const result = await suggestTitle(description);
+      res.status(200).json(result);
+    } catch (err) {
+      if (err instanceof AiServiceError) {
+        throw new ApiError(err.status, err.message);
+      }
+      throw err;
+    }
+});
+
+export const chat = asyncHandler(async (req: Request, res: Response) => {
+    const { message, context } = req.body;
+    if (!message || typeof message !== "string" || !message.trim()) {
+      throw new ApiError(400, "Message is required");
+    }
+
+    // Identity is taken from the verified token. The client never sends it, and the
+    // agent is never allowed to choose a tenant.
+    const user = (req as any).user;
+
+    try {
+      const result = await chatTurn(
+        message.trim(),
+        user.company_id,
+        user.employee_id,
+        context ?? null
+      );
       res.status(200).json(result);
     } catch (err) {
       if (err instanceof AiServiceError) {

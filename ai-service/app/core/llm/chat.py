@@ -13,12 +13,17 @@ def chat(
     messages: list[dict[str, str]],
     model: str | None = None,
     json_schema: dict[str, Any] | None = None,
+    num_predict: int | None = None,
 ) -> str:
+    options = dict(LLM_OPTIONS)
+    if num_predict is not None:
+        options["num_predict"] = num_predict
+
     payload: dict[str, Any] = {
         "model": model or settings.ollama_chat_model,
         "messages": messages,
         "stream": False,
-        "options": LLM_OPTIONS,
+        "options": options,
         "format": json_schema if json_schema is not None else "json",
     }
 

@@ -6,6 +6,8 @@ import Sidebar from '@/components/ProtectedLayout/Sidebar';
 import AdminSidebar from '@/components/AdminPanel/AdminSidebar';
 import Navbar from '@/components/LandingPage/Navbar';
 import ProtectedNavbar from '@/components/Navbar/ProtectedNavbar';
+import AssistantBadge from '@/components/Assistant/AssistantBadge';
+import AssistantPanel from '@/components/Assistant/AssistantPanel';
 // import { useSSEConnection } from '@/hooks/useSSE';
 import { useAuthStore } from '@/schemas/authStore';
 
@@ -15,6 +17,7 @@ export default function ProtectedLayout({
   children: ReactNode;
 }) {
   const [isOpen, setIsOpen] = useState(true);
+  const [assistantOpen, setAssistantOpen] = useState(false);
   const pathname = usePathname();4
 
   const employeeId = useAuthStore((s) => s.employeeId);
@@ -43,6 +46,10 @@ export default function ProtectedLayout({
         {/* Page content */}
         <main className="p-6 overflow-auto">{children}</main>
       </div>
+
+      {/* Assistant */}
+      {assistantOpen && <AssistantPanel onClose={() => setAssistantOpen(false)} />}
+      <AssistantBadge open={assistantOpen} onClick={() => setAssistantOpen((o) => !o)} />
     </div>
   );
 }

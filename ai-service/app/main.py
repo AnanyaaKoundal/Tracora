@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from app.routers import bugs, debug, health
+from app.routers import agent, bugs, debug, health
 
 app = FastAPI(
     title="Tracora AI Service",
@@ -11,6 +11,7 @@ app = FastAPI(
 app.include_router(health.router)
 app.include_router(debug.router)
 app.include_router(bugs.router)
+app.include_router(agent.router)
 
 
 if __name__ == "__main__":

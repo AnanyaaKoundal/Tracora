@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import asyncHandler from "../../utils/asyncHandler";
 import ApiError from "../../utils/ApiError";
-import { findDuplicates, suggestTitle, chatTurn, AiServiceError } from "../../services/ai.service";
+import { findDuplicates, suggestTitle, chatTurn, AiServiceError, AgentHistoryTurn } from "../../services/ai.service";
 
 const requireDescription = (req: Request): string => {
     const { description } = req.body;
@@ -42,8 +42,29 @@ export const getTitleSuggestion = asyncHandler(async (req: Request, res: Respons
     }
 });
 
+const MAX_HISTORY = 4;
+const MAX_HISTORY_CHARS = 4000;
+
+const requireHistory = (raw: unknown): AgentHistoryTurn[] => {
+  if (raw === undefined || raw === null) return [];
+  if (!Array.isArray(raw)) {
+    throw new ApiError(400, "History must be an array");
+  }
+
+  // Trimmed to the cap here as well as in ai-service, so an oversized payload is
+  // rejected at the edge rather than forwarded. Roles are whitelisted: the client
+  // must not be able to inject a system turn.
+  return raw.slice(-MAX_HISTORY).flatMap((turn) => {
+    if (!turn || typeof turn !== "object") return [];
+    const { role, content } = turn as Record<string, unknown>;
+    if (role !== "user" && role !== "assistant") return [];
+    if (typeof content !== "string" || !content.trim()) return [];
+    return [{ role, content: content.slice(0, MAX_HISTORY_CHARS) }];
+  });
+};
+
 export const chat = asyncHandler(async (req: Request, res: Response) => {
-    const { message, context } = req.body;
+    const { message, context, history } = req.body;
     if (!message || typeof message !== "string" || !message.trim()) {
       throw new ApiError(400, "Message is required");
     }
@@ -57,7 +78,8 @@ export const chat = asyncHandler(async (req: Request, res: Response) => {
         message.trim(),
         user.company_id,
         user.employee_id,
-        context ?? null
+        context ?? null,
+        requireHistory(history)
       );
       res.status(200).json(result);
     } catch (err) {
@@ -66,4 +88,4 @@ export const chat = asyncHandler(async (req: Request, res: Response) => {
       }
       throw err;
     }
-});
+  });

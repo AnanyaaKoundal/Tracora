@@ -43,15 +43,29 @@ export type AgentReply = {
   steps: string[];
 };
 
+export type AgentHistoryTurn = {
+  role: "user" | "assistant";
+  content: string;
+};
+
+// Sent with the request, never stored server-side. The server caps this at 4 turns;
+// trimming here keeps the payload small and the behaviour obvious.
+export const MAX_HISTORY_TURNS = 4;
+
 export const chatService = async (
   message: string,
-  context?: AssistantContext | null
+  context?: AssistantContext | null,
+  history: AgentHistoryTurn[] = []
 ): Promise<AgentReply> => {
   const res = await fetch(`${URL}/ai/chat`, {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message, context: context ?? null }),
+    body: JSON.stringify({
+      message,
+      context: context ?? null,
+      history: history.slice(-MAX_HISTORY_TURNS),
+    }),
   });
 
   if (!res.ok) {

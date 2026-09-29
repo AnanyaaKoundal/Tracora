@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import { Loader2, Send, X } from 'lucide-react';
 import { chatService } from '@/services/aiService';
+import Markdown from './Markdown';
 
 type Message = {
   role: 'user' | 'assistant';
@@ -32,11 +33,16 @@ export default function AssistantPanel({ onClose }: { onClose: () => void }) {
 
     setInput('');
     setError(null);
+
+    // The current message is pushed for display, then excluded from the history we
+    // send, otherwise the server sees it twice.
+    const priorTurns = messages.map((m) => ({ role: m.role, content: m.content }));
+
     setMessages((prev) => [...prev, { role: 'user', content: trimmed }]);
     setBusy(true);
 
     try {
-      const result = await chatService(trimmed);
+      const result = await chatService(trimmed, null, priorTurns);
       setMessages((prev) => [
         ...prev,
         { role: 'assistant', content: result.reply, steps: result.steps },
@@ -105,15 +111,13 @@ export default function AssistantPanel({ onClose }: { onClose: () => void }) {
                   ))}
                 </ul>
               )}
-              <p
-                className={
-                  m.role === 'user'
-                    ? ''
-                    : 'rounded-lg rounded-bl-sm bg-gray-100 px-3 py-2 text-sm text-gray-900 whitespace-pre-wrap'
-                }
-              >
-                {m.content}
-              </p>
+              {m.role === 'user' ? (
+                <p className="whitespace-pre-wrap">{m.content}</p>
+              ) : (
+                <div className="rounded-lg rounded-bl-sm bg-gray-100 px-3 py-2 text-sm text-gray-900">
+                  <Markdown>{m.content}</Markdown>
+                </div>
+              )}
             </div>
           </div>
         ))}

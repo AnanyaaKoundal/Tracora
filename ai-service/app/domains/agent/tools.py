@@ -1,6 +1,7 @@
 from collections.abc import Callable
 from typing import Any
 
+from app.config import settings
 from app.core.llm.embedder import embed_query
 from app.core.vector.qdrant import search_entities
 
@@ -14,7 +15,8 @@ TOOL_SPECS: list[dict[str, Any]] = [
         "description": (
             "Search this company's existing bugs by meaning. Use it whenever the user "
             "describes a problem, or asks whether something similar has been reported "
-            "before. Returns bug id, title, description and a similarity score."
+            "before. Returns a 'match' field of 'strong' or 'weak', the best similarity "
+            "score, and a list of bugs with their id, title, description and score."
         ),
         "args": {
             "type": "object",
@@ -42,14 +44,22 @@ def _clamp_limit(limit: Any) -> int:
     return max(1, min(value, MAX_LIMIT))
 
 
-def _find_similar_bugs(company_id: str, text: str, limit: Any = DEFAULT_LIMIT) -> list[dict[str, Any]]:
+def _find_similar_bugs(company_id: str, text: str, limit: Any = DEFAULT_LIMIT) -> dict[str, Any]:
+    """Search and label the strength of the best hit.
+
+    The label matters more than the filter. Returning nothing hides near misses the
+    engineer might still want to read, so weak hits are kept and marked instead. That
+    gives the model an explicit "this is not the same bug" signal rather than leaving
+    it to infer relevance from a number it was never told how to interpret.
+    """
     hits = search_entities(
         embed_query(text),
         company_id=company_id,
         entity_type="bug",
         limit=_clamp_limit(limit),
     )
-    return [
+
+    matches = [
         {
             "bug_id": hit["entity_id"],
             "title": hit.get("title"),
@@ -58,6 +68,13 @@ def _find_similar_bugs(company_id: str, text: str, limit: Any = DEFAULT_LIMIT) -
         }
         for hit in hits
     ]
+
+    best = max((m["similarity"] for m in matches), default=0.0)
+    return {
+        "match": "strong" if best >= settings.similar_strong_threshold else "weak",
+        "best_similarity": round(best, 3),
+        "results": matches,
+    }
 
 
 def build_registry(company_id: str) -> dict[str, Callable[..., Any]]:

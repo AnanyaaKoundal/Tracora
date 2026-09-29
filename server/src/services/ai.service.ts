@@ -45,14 +45,26 @@ export const suggestTitle = (description: string) =>
 // real deployment needs a job queue rather than a long request.
 const AGENT_TIMEOUT_MS = 180_000;
 
+export type AgentHistoryTurn = {
+  role: "user" | "assistant";
+  content: string;
+};
+
 export const chatTurn = (
   message: string,
   company_id: string,
   employee_id?: string,
-  context?: Record<string, unknown> | null
+  context?: Record<string, unknown> | null,
+  history?: AgentHistoryTurn[]
 ) =>
   callAiService(
     "/agent/turn",
-    { message, company_id, user_id: employee_id, context: context ?? null },
+    {
+      message,
+      company_id,
+      user_id: employee_id,
+      context: context ?? null,
+      history: history ?? [],
+    },
     AGENT_TIMEOUT_MS
   );

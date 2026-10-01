@@ -22,8 +22,10 @@ import { Employee, Role, Project } from "@/schemas/admin.schema";
 
 import { getRoles } from "@/actions/rolesAction";
 import { getAllProjects } from "@/actions/projectAction";
+import { usePageContext } from "@/hooks/useAssistantContext";
 
 export default function EmployeesPage() {
+  usePageContext("Employees");
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);

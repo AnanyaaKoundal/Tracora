@@ -10,8 +10,10 @@ import { toast } from "sonner";
 import { getCompany, editCompanyEmail, editCompanyPhone, editCompanyPassword } from "@/actions/companyAction";
 import { Building2, Mail, Phone, Lock, Calendar, Shield, Save, X, Send, Eye, EyeOff, KeyRound } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { usePageContext } from "@/hooks/useAssistantContext";
 
 export default function CompanyDetailsPage() {
+  usePageContext("Company settings");
   const [company, setCompany] = useState<Company | null>(null);
   const [editField, setEditField] = useState<"email" | "phone" | "password" | null>(null);
   const [tempValue, setTempValue] = useState("");

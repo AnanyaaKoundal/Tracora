@@ -4,19 +4,33 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { DataTable, Column, FilterConfig } from "@/components/Table/DataTable";
 import { getAllBugs, deleteBug } from "@/actions/bugAction";
+import { fetchCompanyProjectsService } from "@/services/projectService";
 import { Bug } from "@/schemas/bug.schema";
+import { Project } from "@/schemas/project.schema";
 import { Trash2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DeleteProjectDialog } from "@/components/AdminPanel/projects/DeleteProject";
+import { usePageContext } from "@/hooks/useAssistantContext";
 
 export default function BugsPage() {
+  usePageContext("Bugs");
   const [bugs, setBugs] = useState<Bug[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [deletingBug, setDeletingBug] = useState<Bug | null>(null);
   const router = useRouter();
+
+  const projectName = (id?: string) =>
+    projects.find((p) => p.project_id === id)?.project_name || "-";
 
   const columns: Column<Bug>[] = [
     { key: "bug_id", header: "ID", sortable: true },
     { key: "bug_name", header: "Name", sortable: true },
+    {
+      key: "project_name",
+      header: "Project",
+      sortable: true,
+      render: (row: Bug) => projectName(row.project_id),
+    },
     { key: "bug_status", header: "Status", sortable: true },
     { key: "bug_priority", header: "Priority", sortable: true },
     { key: "reported_by", header: "Reported By", sortable: true },
@@ -48,6 +62,15 @@ export default function BugsPage() {
   ];
 
   const filterFields: FilterConfig[] = [
+    {
+      key: "project_id",
+      label: "Project",
+      type: "select",
+      options: projects.map((p) => ({
+        value: p.project_id,
+        label: p.project_name || p.project_id,
+      })),
+    },
     {
       key: "bug_status",
       label: "Status",
@@ -94,6 +117,18 @@ export default function BugsPage() {
       setBugs(bugData);
     }
     fetchData();
+  }, []);
+
+  useEffect(() => {
+    async function fetchProjects() {
+      try {
+        const res = await fetchCompanyProjectsService();
+        if (res?.success && Array.isArray(res.data)) setProjects(res.data);
+      } catch {
+        // Non-fatal, the column just shows "-".
+      }
+    }
+    fetchProjects();
   }, []);
 
   return (

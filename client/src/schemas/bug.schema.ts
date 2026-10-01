@@ -16,7 +16,10 @@ export const createBugSchema = z.object({
   assigned_to: z.string().optional(),
   comments: z.array(z.string()).optional(),
   bug_priority: z.nativeEnum(BugPriority).default(BugPriority.Medium),
-  notify_users: z.array(z.string())
+  notify_users: z.array(z.string()),
+  // Required on the form, though the database keeps it optional so that bugs filed
+  // before projects existed remain valid.
+  project_id: z.string().min(1, "Project is required")
 });
 
 // General schema for a bug (used for type inference)
@@ -31,7 +34,12 @@ export const bugSchema = z.object({
   comments: z.array(z.string()).optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
-  notify_users: z.array(z.string())
+  notify_users: z.array(z.string()),
+  // Optional here: pre-project bugs exist and render fine without one.
+  project_id: z.string().optional(),
+  // Not stored on the bug. Joined from the projects list at render time so the
+  // table shows a readable name instead of a raw id.
+  project_name: z.string().optional()
 });
 
 // Type inference

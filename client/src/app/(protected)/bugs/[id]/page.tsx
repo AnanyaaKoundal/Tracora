@@ -12,8 +12,11 @@ import { toast } from "sonner";
 import BugInfoLeftPanel from "@/components/Bug/BugInfoLeftPanel";
 import BugInfoRightPanel from "@/components/Bug/BugInfoRightPanel";
 import { Employee } from "@/schemas/admin.schema";
+import { Project } from "@/schemas/project.schema";
+import { fetchCompanyProjectsService } from "@/services/projectService";
 import BugActivitySection from "@/components/Bug/CommentSection";
 import { motion } from "framer-motion";
+import { useAssistantContext } from "@/hooks/useAssistantContext";
 
 export default function BugInfoPage() {
   const { id } = useParams();
@@ -25,6 +28,7 @@ export default function BugInfoPage() {
   const [saving, setSaving] = useState(false);
 
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [notifyUsers, setNotifyUsers] = useState<Employee[]>([]);
   const [activities, setActivities] = useState<any[]>([]);
@@ -72,6 +76,18 @@ export default function BugInfoPage() {
   }, []);
 
   useEffect(() => {
+    async function fetchProjects() {
+      try {
+        const res = await fetchCompanyProjectsService();
+        if (res?.success && Array.isArray(res.data)) setProjects(res.data);
+      } catch {
+        // Non-fatal. The select just shows no options.
+      }
+    }
+    fetchProjects();
+  }, []);
+
+  useEffect(() => {
     if (!bug || employees.length === 0) return;
 
     const emp = employees.find((e) => e.employee_id === bug.assigned_to);
@@ -84,6 +100,20 @@ export default function BugInfoPage() {
       setNotifyUsers(initialNotify);
     } else setNotifyUsers([]);
   }, [bug, employees]);
+
+  // Tells the assistant which bug is on screen, so "this one" and "has this
+  // happened before" resolve without the user re-typing the id. The label is just the
+  // id: the pill it renders into should stay short.
+  useAssistantContext(
+    bug
+      ? {
+          kind: "bug",
+          label: bug.bug_id,
+          data: { title: bug.bug_name, description: bug.bug_description },
+        }
+      : null,
+    bug ? `bug:${bug.bug_id}` : "bug:loading"
+  );
 
   if (loading) return (
     <div className="p-6 space-y-6 bg-slate-50/50 min-h-screen">
@@ -191,6 +221,7 @@ export default function BugInfoPage() {
                 bug={bug}
                 setBug={setBug}
                 employees={employees}
+                projects={projects}
                 selectedEmployee={selectedEmployee}
                 setSelectedEmployee={setSelectedEmployee}
                 notifyUsers={notifyUsers}

@@ -22,6 +22,10 @@ class AgentTurnRequest(BaseModel):
     history: list[HistoryTurn] = Field(default_factory=list, max_length=4)
     context: dict[str, Any] | None = None
     company_id: str = Field(min_length=1)
+    # Optional sticky project scope from the UI. It narrows bug search within the
+    # company; the company itself still comes from the authenticated request. An
+    # explicit project named in the message overrides this.
+    project_id: str | None = None
     # Accepted for contract stability across services. Unused while the only tool is
     # retrieval; nothing in the agent path authorises anything from it.
     user_id: str | None = None

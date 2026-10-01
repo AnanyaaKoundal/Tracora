@@ -27,11 +27,22 @@ export const getAllProjects = asyncHandler(async (req: Request, res: Response) =
 });
 
 export const getProjectById = asyncHandler(async (req: Request, res: Response) => {
-  const project = await projectService.getProjectById(req.params.project_id);
+  const company_id = (req as any).user.company_id;
+  const project = await projectService.getProjectById(req.params.project_id, company_id);
   res.status(200).json({
     success: true,
     message: "Project fetched successfully",
     data: project,
+  });
+});
+
+export const getCompanyProjects = asyncHandler(async (req: Request, res: Response) => {
+  const company_id = (req as any).user.company_id;
+  const projects = await projectService.getAllProjects(company_id);
+  res.status(200).json({
+    success: true,
+    message: "Projects fetched successfully",
+    data: projects,
   });
 });
 

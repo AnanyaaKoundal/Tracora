@@ -42,7 +42,7 @@ _STYLES: dict[str, tuple[str, str]] = {
     "turn": ("⏱️", "Turn total"),
     "agent.triage": ("🤔", "Enough detail to search"),
     "agent.clarify": ("❓", "Question too broad, asking first"),
-    "agent.retrieval": ("🔍", "Tool: find_similar_bugs"),
+    "agent.retrieval": ("🔍", "Tool: {tool}"),
     "agent.retrieval.done": ("📊", "Search results"),
     "agent.history": ("🧵", "Conversation history"),
     "agent.step": ("↩", "Model chose to {action}"),
@@ -126,7 +126,16 @@ def _emit(event: str, message: str, level: str, **fields: Any) -> None:
     tag = request_id.get()
     # The id stays on the line: it's short, and without it concurrent turns are
     # impossible to tell apart.
-    print(f"[{tag}] {_render(event, fields)}", file=sys.stdout, flush=True)
+    line = f"[{tag}] {_render(event, fields)}"
+    try:
+        print(line, file=sys.stdout, flush=True)
+    except UnicodeEncodeError:
+        # A model can emit an emoji or another astral character, and a Windows console
+        # does not speak UTF-8 by default. Losing a glyph is fine; losing the turn to a
+        # logging call is not.
+        encoding = getattr(sys.stdout, "encoding", None) or "utf-8"
+        safe = line.encode(encoding, errors="replace").decode(encoding, errors="replace")
+        print(safe, file=sys.stdout, flush=True)
 
 
 def log(event: str, message: str = "", **fields: Any) -> None:

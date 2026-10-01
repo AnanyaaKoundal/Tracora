@@ -14,12 +14,18 @@ import {
 } from "@/components/ui/command";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Check, X, User, Bell } from "lucide-react";
+import { Check, X, User, Bell, FolderKanban } from "lucide-react";
+import { Project } from "@/schemas/project.schema";
 
 interface Props {
   bug: Bug;
   setBug: React.Dispatch<React.SetStateAction<Bug | null>>;
   employees: Employee[];
+  projects: Project[];
+  required?: boolean;
+  // Only show validation messaging once the user has tried to submit. Showing it on
+  // mount reads as an error the form caused, before anyone has done anything.
+  showProjectError?: boolean;
   selectedEmployee: Employee | null;
   setSelectedEmployee: React.Dispatch<React.SetStateAction<Employee | null>>;
   notifyUsers: Employee[];
@@ -30,6 +36,9 @@ export default function BugPropertiesFields({
   bug,
   setBug,
   employees,
+  projects,
+  required = false,
+  showProjectError = false,
   selectedEmployee,
   setSelectedEmployee,
   notifyUsers,
@@ -62,6 +71,51 @@ export default function BugPropertiesFields({
 
   return (
     <div className="space-y-5">
+      {/* Project - required when filing, optional afterwards */}
+      <div className="space-y-2">
+        <Label className="text-sm font-medium text-muted-foreground">
+          Project {required ? <span className="text-destructive">*</span> : null}
+        </Label>
+        <Select
+          value={bug.project_id || ""}
+          onValueChange={(value) =>
+            setBug((prev) => (prev ? { ...prev, project_id: value } : prev))
+          }
+        >
+          <SelectTrigger
+            className="bg-muted/30"
+            aria-invalid={showProjectError && !bug.project_id}
+          >
+            <SelectValue
+              placeholder={
+                projects.length === 0
+                  ? "No projects available"
+                  : "Select a project"
+              }
+            />
+          </SelectTrigger>
+          <SelectContent>
+            {projects.map((p) => (
+              <SelectItem key={p.project_id} value={p.project_id}>
+                <span className="flex items-center gap-2">
+                  <FolderKanban className="h-4 w-4" />
+                  {p.project_name}
+                </span>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {projects.length === 0 ? (
+          <p className="text-xs text-muted-foreground">
+            No projects yet. Ask an admin to create one first.
+          </p>
+        ) : showProjectError && !bug.project_id ? (
+          <p className="text-xs text-destructive">
+            Select a project to continue.
+          </p>
+        ) : null}
+      </div>
+
       {/* Status */}
       <div className="space-y-2">
         <Label className="text-sm font-medium text-muted-foreground">Status</Label>

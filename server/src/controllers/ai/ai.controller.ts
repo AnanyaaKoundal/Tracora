@@ -1,7 +1,9 @@
 import { Request, Response } from "express";
 import asyncHandler from "../../utils/asyncHandler";
 import ApiError from "../../utils/ApiError";
-import { findDuplicates, suggestTitle, chatTurn, AiServiceError, AgentHistoryTurn } from "../../services/ai.service";
+import { findDuplicates, suggestTitle, chatTurn, AiServiceError } from "../../services/ai.service";
+import { getProjectById } from "../../services/project.service";
+import * as conversationService from "../../services/conversation.service";
 
 const requireDescription = (req: Request): string => {
     const { description } = req.body;
@@ -42,29 +44,27 @@ export const getTitleSuggestion = asyncHandler(async (req: Request, res: Respons
     }
 });
 
-const MAX_HISTORY = 4;
-const MAX_HISTORY_CHARS = 4000;
-
-const requireHistory = (raw: unknown): AgentHistoryTurn[] => {
-  if (raw === undefined || raw === null) return [];
-  if (!Array.isArray(raw)) {
-    throw new ApiError(400, "History must be an array");
+// Page context is a draft being written, a bug being viewed, or any other page the
+// user is on. Anything else is dropped rather than forwarded, so the model never
+// receives an unexpected shape.
+const normalizeContext = (raw: unknown): Record<string, unknown> | null => {
+  if (raw === undefined || raw === null) return null;
+  if (typeof raw !== "object") {
+    throw new ApiError(400, "Context must be an object");
   }
+  const { kind, label, data } = raw as Record<string, unknown>;
+  if (kind !== "draft" && kind !== "bug" && kind !== "page") return null;
+  return { kind, label: label ?? null, data: data ?? {} };
+};
 
-  // Trimmed to the cap here as well as in ai-service, so an oversized payload is
-  // rejected at the edge rather than forwarded. Roles are whitelisted: the client
-  // must not be able to inject a system turn.
-  return raw.slice(-MAX_HISTORY).flatMap((turn) => {
-    if (!turn || typeof turn !== "object") return [];
-    const { role, content } = turn as Record<string, unknown>;
-    if (role !== "user" && role !== "assistant") return [];
-    if (typeof content !== "string" || !content.trim()) return [];
-    return [{ role, content: content.slice(0, MAX_HISTORY_CHARS) }];
-  });
+const kindFromContext = (context: Record<string, unknown> | null): string => {
+  if (context?.kind === "draft") return "draft";
+  if (context?.kind === "bug") return "bug";
+  return "general";
 };
 
 export const chat = asyncHandler(async (req: Request, res: Response) => {
-    const { message, context, history } = req.body;
+    const { message, context, conversation_id } = req.body;
     if (!message || typeof message !== "string" || !message.trim()) {
       throw new ApiError(400, "Message is required");
     }
@@ -73,19 +73,121 @@ export const chat = asyncHandler(async (req: Request, res: Response) => {
     // agent is never allowed to choose a tenant.
     const user = (req as any).user;
 
+    // Optional UI project scope. Validated against the caller's tenant before it is
+    // forwarded, so a guessed project_id cannot narrow into another company. A bad id
+    // is a client error, not a silent whole-company search.
+    const rawProjectId = req.body?.project_id;
+    if (rawProjectId !== undefined && rawProjectId !== null && rawProjectId !== "") {
+      if (typeof rawProjectId !== "string") {
+        throw new ApiError(400, "project_id must be a string");
+      }
+      try {
+        await getProjectById(rawProjectId, user.company_id);
+      } catch {
+        throw new ApiError(400, "Unknown project for this company");
+      }
+    }
+    const project_id =
+      typeof rawProjectId === "string" && rawProjectId ? rawProjectId : null;
+
+    if (conversation_id !== undefined && conversation_id !== null && conversation_id !== "") {
+      if (typeof conversation_id !== "string") {
+        throw new ApiError(400, "conversation_id must be a string");
+      }
+    }
+
+    const normalizedContext = normalizeContext(context);
+
+    // A turn either continues the conversation the client is on, or starts a new one.
+    // Loading via the service scopes to tenant and employee, so a forged id 404s.
+    const conversation =
+      typeof conversation_id === "string" && conversation_id
+        ? await conversationService.getConversation(
+            conversation_id,
+            user.company_id,
+            user.employee_id
+          )
+        : await conversationService.createConversation({
+            company_id: user.company_id,
+            employee_id: user.employee_id,
+            title: message.trim(),
+            kind: kindFromContext(normalizedContext),
+            project_id,
+          });
+
+    if (project_id && conversation.project_id !== project_id) {
+      conversation.project_id = project_id;
+    }
+
+    // History comes from the stored conversation, never from the client payload.
+    const history = conversationService.historyForModel(conversation);
+
     try {
       const result = await chatTurn(
         message.trim(),
         user.company_id,
+        project_id,
         user.employee_id,
-        context ?? null,
-        requireHistory(history)
+        normalizedContext,
+        history
       );
-      res.status(200).json(result);
+
+      await conversationService.appendExchange(
+        conversation,
+        message.trim(),
+        result.reply,
+        result.steps ?? []
+      );
+
+      res.status(200).json({
+        conversation_id: conversation.conversation_id,
+        reply: result.reply,
+        steps: result.steps ?? [],
+      });
     } catch (err) {
       if (err instanceof AiServiceError) {
         throw new ApiError(err.status, err.message);
       }
       throw err;
     }
-  });
+});
+
+export const listConversations = asyncHandler(async (req: Request, res: Response) => {
+    const user = (req as any).user;
+    const conversations = await conversationService.listConversations(
+      user.company_id,
+      user.employee_id
+    );
+    res.status(200).json({
+      success: true,
+      message: "Conversations fetched successfully",
+      data: conversations,
+    });
+});
+
+export const getConversation = asyncHandler(async (req: Request, res: Response) => {
+    const user = (req as any).user;
+    const conversation = await conversationService.getConversation(
+      req.params.conversation_id,
+      user.company_id,
+      user.employee_id
+    );
+    res.status(200).json({
+      success: true,
+      message: "Conversation fetched successfully",
+      data: conversationService.toClient(conversation),
+    });
+});
+
+export const deleteConversation = asyncHandler(async (req: Request, res: Response) => {
+    const user = (req as any).user;
+    await conversationService.deleteConversation(
+      req.params.conversation_id,
+      user.company_id,
+      user.employee_id
+    );
+    res.status(200).json({
+      success: true,
+      message: "Conversation deleted successfully",
+    });
+});

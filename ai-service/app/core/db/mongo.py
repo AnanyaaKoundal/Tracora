@@ -44,3 +44,8 @@ def find_bugs(company_id: str | None = None, limit: int = 5) -> list[dict]:
 
 def all_bugs() -> list[dict]:
     return list(get_db()["bugs"].find({}, {"_id": 0}))
+
+
+def all_projects(company_id: str | None = None) -> list[dict]:
+    query = {"company_id": company_id} if company_id else {}
+    return list(get_db()["projects"].find(query, {"_id": 0}))

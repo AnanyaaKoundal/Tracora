@@ -17,7 +17,7 @@ export default function Markdown({ children }: { children: string }) {
       components={{
         p: ({ children: c }) => <p className="whitespace-pre-wrap">{c}</p>,
         strong: ({ children: c }) => (
-          <strong className="font-semibold text-gray-900">{c}</strong>
+          <strong className="font-semibold text-slate-900">{c}</strong>
         ),
         em: ({ children: c }) => <em className="italic">{c}</em>,
         ul: ({ children: c }) => (
@@ -28,7 +28,7 @@ export default function Markdown({ children }: { children: string }) {
         ),
         li: ({ children: c }) => <li className="pl-0.5">{c}</li>,
         code: ({ children: c }) => (
-          <code className="rounded bg-gray-200 px-1 py-0.5 font-mono text-xs">
+          <code className="rounded bg-slate-200 px-1 py-0.5 font-mono text-xs">
             {c}
           </code>
         ),

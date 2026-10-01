@@ -237,8 +237,14 @@ export const getDashboardData = async (userId: string, role: RoleType, company_i
 
     const projectIds = row1Data.map(p => p.project_id);
 
-    row2Data = await Bug.find({ company_id });
-    
+    // "Top Bugs in Projects" is only meaningful if the rows are actually scoped to
+    // those projects. This was returning every bug in the tenant.
+    row2Data = projectIds.length
+      ? await Bug.find({ company_id, project_id: { $in: projectIds } })
+          .sort({ updatedAt: -1 } as Record<string, SortOrder>)
+          .exec()
+      : [];
+
   } else if (role === "developer") {
     // 🔹 Developer: assigned bugs
     row1Data = await Bug.find({ company_id, assigned_to: userId })
@@ -259,11 +265,21 @@ export const getDashboardData = async (userId: string, role: RoleType, company_i
   }
 
   // 🔹 Bug priority stats (all relevant bugs)
+  // For managers the scope is the top projects listed above. If none of those have
+  // any bugs yet the chart must fall back to the whole tenant, otherwise it renders
+  // as all zeros and reads as "no priority data" rather than "no bugs in these".
+  const isManager = role === "manager" || role === "admin";
+  const managerProjectIds = isManager ? row1Data.map(p => p.project_id) : [];
+  const managerBugFilter =
+    isManager && managerProjectIds.length
+      ? { company_id, project_id: { $in: managerProjectIds } }
+      : { company_id };
+
   const allBugs = await Bug.find(
-    (role === "manager" ||  role === "admin") 
-      ? { company_id, project_id: { $in: row1Data.map(p => p.project_id) } } 
-      : role === "developer" 
-        ? { company_id, assigned_to: userId } 
+    isManager
+      ? managerBugFilter
+      : role === "developer"
+        ? { company_id, assigned_to: userId }
         : { company_id, reported_by: userId }
   ).exec();
 

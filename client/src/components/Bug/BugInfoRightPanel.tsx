@@ -2,6 +2,7 @@
 
 import { Bug, BugPriority } from "@/schemas/bug.schema";
 import { Employee } from "@/schemas/admin.schema";
+import { Project } from "@/schemas/project.schema";
 import { Button } from "@/components/ui/button";
 import { Copy, Save } from "lucide-react";
 import { toast } from "sonner";
@@ -12,6 +13,7 @@ interface Props {
   bug: Bug;
   setBug: React.Dispatch<React.SetStateAction<Bug | null>>;
   employees: Employee[];
+  projects: Project[];
   selectedEmployee: Employee | null;
   setSelectedEmployee: React.Dispatch<React.SetStateAction<Employee | null>>;
   notifyUsers: Employee[];
@@ -24,6 +26,7 @@ export default function BugInfoRightPanel({
   bug,
   setBug,
   employees,
+  projects,
   selectedEmployee,
   setSelectedEmployee,
   notifyUsers,
@@ -85,6 +88,7 @@ export default function BugInfoRightPanel({
         bug={bug}
         setBug={setBug}
         employees={employees}
+        projects={projects}
         selectedEmployee={selectedEmployee}
         setSelectedEmployee={setSelectedEmployee}
         notifyUsers={notifyUsers}

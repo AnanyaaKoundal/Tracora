@@ -39,6 +39,12 @@ const bugSchema = new mongoose.Schema({
         required: true,
         ref: 'Company'
     },
+    // Optional so bugs filed before projects existed stay valid. The client form
+    // requires it, but the database must not, or old documents become unwriteable.
+    project_id: {
+        type: String,
+        ref: 'Project'
+    },
     reported_by: {
         type: String,
         ref: 'Employee',

@@ -64,6 +64,9 @@ def upsert_entities(records: list[dict[str, Any]]) -> None:
                 "company_id": record.get("company_id"),
                 "title": record.get("title"),
                 "text": record.get("text"),
+                "project_id": record.get("project_id"),
+                "project_name": record.get("project_name"),
+                "status": record.get("status"),
             },
         )
         for record in records
@@ -75,6 +78,7 @@ def search_entities(
     query_vector: list[float],
     company_id: str | None = None,
     entity_type: str | None = None,
+    project_id: str | None = None,
     limit: int = 5,
     score_threshold: float | None = None,
 ) -> list[dict[str, Any]]:
@@ -85,6 +89,12 @@ def search_entities(
         )
     if entity_type:
         conditions.append(FieldCondition(key="type", match=MatchValue(value=entity_type)))
+    # Hard scoping for a chosen project. This is a narrowing filter, not a security
+    # boundary: company_id is the tenant boundary, project_id only narrows within it.
+    if project_id:
+        conditions.append(
+            FieldCondition(key="project_id", match=MatchValue(value=project_id))
+        )
 
     response = get_client().query_points(
         collection_name=settings.qdrant_collection,

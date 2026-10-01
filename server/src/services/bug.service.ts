@@ -1,8 +1,27 @@
 import Bug from "../models/bug.model";
+import Project from "../models/project.model";
 import ApiError from "../utils/ApiError";
 import { generateBugId } from "./id.service";
 import { BugPriority } from "../models/bug.model";
 import { kafkaProducer } from "@/config/kafka/kafka_producer";
+
+// A project_id in the body is caller-controlled, so it has to be checked against the
+// same tenant as the bug. Otherwise a bug could be filed against another company's
+// project and then leak through that project's bug views.
+const assertProjectInTenant = async (project_id: unknown, company_id: string) => {
+  if (project_id === undefined || project_id === null || project_id === "") return undefined;
+
+  if (typeof project_id !== "string") {
+    throw new ApiError(400, "Invalid project_id");
+  }
+
+  const project = await Project.findOne({ project_id, company_id });
+  if (!project) {
+    throw new ApiError(400, "Project does not exist in this company");
+  }
+
+  return project_id;
+};
 
 export const createBug = async (bugData: any, user: any) => {
   const { bug_name, company_id } = bugData;
@@ -13,6 +32,7 @@ export const createBug = async (bugData: any, user: any) => {
   if (existingbug) {
     throw new ApiError(400, "Bug already exists for this company");
   }
+  await assertProjectInTenant(bugData.project_id, company_id);
   const bug_id = generateBugId();
 
   const newbug = await Bug.create({
@@ -31,8 +51,12 @@ export const createBug = async (bugData: any, user: any) => {
   return newbug;
 };
 
-export const getAllBugs = async (company_id?: string) => {
-  const query = company_id ? { company_id } : {};
+export const getAllBugs = async (company_id?: string, project_id?: string) => {
+  // Both terms are optional, but company_id is always supplied from the verified
+  // token. It is what keeps one tenant from reading another's bugs.
+  const query: Record<string, unknown> = {};
+  if (company_id) query.company_id = company_id;
+  if (project_id) query.project_id = project_id;
   const bugs = await Bug.find(query);
   return bugs;
 };
@@ -48,11 +72,17 @@ export const getBugById = async (bug_id: string) => {
 };
 
 export const editBug = async (bug_id: string, updateData: any, user?: any) => {
-  console.log("UPDATE:", updateData);
   const oldBug = await Bug.findOne({ bug_id });
-  console.log("OLD BUG STATUS:", oldBug?.bug_status);
-  console.log("NEW BUG STATUS:", updateData.bug_status);
-  
+
+  if (oldBug && "project_id" in updateData) {
+    // Re-checked on edit too, otherwise a bug could be moved into another tenant's
+    // project after creation.
+    updateData.project_id = await assertProjectInTenant(
+      updateData.project_id,
+      oldBug.company_id
+    );
+  }
+
   const bug = await Bug.findOneAndUpdate(
     { bug_id },
     { ...updateData, updated_at: Date.now() },

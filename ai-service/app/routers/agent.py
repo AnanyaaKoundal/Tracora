@@ -19,6 +19,7 @@ def turn(payload: AgentTurnRequest) -> AgentTurnResponse:
             reply, steps = run_turn(
                 message=payload.message,
                 company_id=payload.company_id,
+                project_id=payload.project_id,
                 context=payload.context,
                 history=[turn.model_dump() for turn in payload.history],
             )

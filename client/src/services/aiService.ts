@@ -32,30 +32,53 @@ export const suggestTitleService = async (description: string) => {
   return res.json() as Promise<{ title: string }>;
 };
 
+// The page the user is on when they ask. A bug they are viewing, a draft they are
+// writing, or any other page ("page"). The server whitelists the shape before
+// forwarding it to the model.
 export type AssistantContext = {
-  kind: "draft" | "bug";
+  kind: "draft" | "bug" | "page";
   label: string;
   data: { title?: string; description?: string };
 };
 
 export type AgentReply = {
+  conversation_id: string;
   reply: string;
   steps: string[];
 };
 
-export type AgentHistoryTurn = {
-  role: "user" | "assistant";
-  content: string;
+export type ConversationSummary = {
+  conversation_id: string;
+  title: string;
+  kind: string;
+  project_id: string | null;
+  updated_at: string;
+  message_count: number;
+  preview: string;
 };
 
-// Sent with the request, never stored server-side. The server caps this at 4 turns;
-// trimming here keeps the payload small and the behaviour obvious.
-export const MAX_HISTORY_TURNS = 4;
+export type ConversationMessage = {
+  role: "user" | "assistant";
+  content: string;
+  steps: string[];
+};
 
+export type ConversationDetail = {
+  conversation_id: string;
+  title: string;
+  kind: string;
+  project_id: string | null;
+  updated_at: string;
+  messages: ConversationMessage[];
+};
+
+// History is no longer sent by the client: the server reads it back from the stored
+// conversation, which is the single source of truth and survives a page refresh.
 export const chatService = async (
   message: string,
   context?: AssistantContext | null,
-  history: AgentHistoryTurn[] = []
+  projectId?: string | null,
+  conversationId?: string | null
 ): Promise<AgentReply> => {
   const res = await fetch(`${URL}/ai/chat`, {
     method: "POST",
@@ -64,7 +87,8 @@ export const chatService = async (
     body: JSON.stringify({
       message,
       context: context ?? null,
-      history: history.slice(-MAX_HISTORY_TURNS),
+      project_id: projectId ?? null,
+      conversation_id: conversationId ?? null,
     }),
   });
 
@@ -74,4 +98,37 @@ export const chatService = async (
   }
 
   return res.json() as Promise<AgentReply>;
+};
+
+export const listConversationsService = async () => {
+  const res = await fetch(`${URL}/ai/conversations`, {
+    method: "GET",
+    credentials: "include",
+  });
+
+  if (!res.ok) throw new Error("Failed to load conversations");
+
+  const body = (await res.json()) as { data: ConversationSummary[] };
+  return body.data;
+};
+
+export const getConversationService = async (conversationId: string) => {
+  const res = await fetch(`${URL}/ai/conversations/${conversationId}`, {
+    method: "GET",
+    credentials: "include",
+  });
+
+  if (!res.ok) throw new Error("Failed to load conversation");
+
+  const body = (await res.json()) as { data: ConversationDetail };
+  return body.data;
+};
+
+export const deleteConversationService = async (conversationId: string) => {
+  const res = await fetch(`${URL}/ai/conversations/${conversationId}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+
+  if (!res.ok) throw new Error("Failed to delete conversation");
 };

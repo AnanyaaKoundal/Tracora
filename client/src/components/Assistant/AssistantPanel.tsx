@@ -1,158 +1,123 @@
 'use client';
 
-import { FormEvent, useEffect, useRef, useState } from 'react';
-import { Loader2, Send, X } from 'lucide-react';
-import { chatService } from '@/services/aiService';
-import Markdown from './Markdown';
+import { useEffect, useState } from 'react';
+import { Maximize2, Menu, Plus, Sparkles, X } from 'lucide-react';
+import { useAssistantStore } from '@/schemas/assistantStore';
+import ChatMessages from './ChatMessages';
+import Composer from './Composer';
+import ConversationList from './ConversationList';
 
-type Message = {
-  role: 'user' | 'assistant';
-  content: string;
-  steps?: string[];
-};
+export default function AssistantPanel() {
+  const open = useAssistantStore((s) => s.open);
+  const expanded = useAssistantStore((s) => s.expanded);
+  const error = useAssistantStore((s) => s.error);
+  const setOpen = useAssistantStore((s) => s.setOpen);
+  const setExpanded = useAssistantStore((s) => s.setExpanded);
+  const loadConversations = useAssistantStore((s) => s.loadConversations);
+  const newConversation = useAssistantStore((s) => s.newConversation);
 
-const STARTERS = [
-  'Is there an existing bug for a missing reset password link?',
-  'Any prior bugs about the signin page being slow?',
-];
-
-export default function AssistantPanel({ onClose }: { onClose: () => void }) {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const [showHistory, setShowHistory] = useState(false);
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
-  }, [messages, busy]);
+    if (!open) setShowHistory(false);
+  }, [open]);
 
-  const send = async (text: string) => {
-    const trimmed = text.trim();
-    if (!trimmed || busy) return;
+  useEffect(() => {
+    if (open) loadConversations();
+  }, [open, loadConversations]);
 
-    setInput('');
-    setError(null);
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      if (showHistory) setShowHistory(false);
+      else setOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open, showHistory, setOpen]);
 
-    // The current message is pushed for display, then excluded from the history we
-    // send, otherwise the server sees it twice.
-    const priorTurns = messages.map((m) => ({ role: m.role, content: m.content }));
+  if (!open || expanded) return null;
 
-    setMessages((prev) => [...prev, { role: 'user', content: trimmed }]);
-    setBusy(true);
-
-    try {
-      const result = await chatService(trimmed, null, priorTurns);
-      setMessages((prev) => [
-        ...prev,
-        { role: 'assistant', content: result.reply, steps: result.steps },
-      ]);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const onSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    send(input);
-  };
+  const iconButton =
+    'rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800';
 
   return (
-    <div className="fixed bottom-24 right-6 z-40 flex h-[32rem] w-[24rem] flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl">
-      <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
-        <div>
-          <h2 className="text-sm font-semibold text-gray-900">Assistant</h2>
-          <p className="text-xs text-gray-500">Searches this company&apos;s bugs</p>
+    <div className="fixed bottom-24 right-6 z-40 flex h-[32rem] w-[24rem] max-w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+      <div className="flex items-center justify-between border-b border-slate-200 bg-white px-3 py-2.5">
+        <div className="flex min-w-0 items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowHistory((v) => !v)}
+            aria-label="Conversations"
+            className={iconButton}
+          >
+            <Menu className="h-4 w-4" />
+          </button>
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-teal-600 text-white">
+            <Sparkles className="h-4 w-4" />
+          </span>
+          <div className="min-w-0">
+            <h2 className="text-sm font-semibold text-slate-900">Assistant</h2>
+            <p className="truncate text-xs text-slate-500">Your workspace assistant</p>
+          </div>
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close assistant"
-          className="rounded p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700"
-        >
-          <X className="h-4 w-4" />
-        </button>
+        <div className="flex items-center gap-0.5">
+          <button
+            type="button"
+            onClick={newConversation}
+            aria-label="New chat"
+            title="New chat"
+            className={iconButton}
+          >
+            <Plus className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setExpanded(true)}
+            aria-label="Expand assistant"
+            title="Open in workspace"
+            className={iconButton}
+          >
+            <Maximize2 className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            aria-label="Close assistant"
+            className={iconButton}
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
-      <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
-        {messages.length === 0 && (
-          <div className="space-y-2">
-            <p className="text-xs text-gray-500">Try one of these:</p>
-            {STARTERS.map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => send(s)}
-                className="block w-full rounded-lg border border-gray-200 px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:border-indigo-300 hover:bg-indigo-50"
-              >
-                {s}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {messages.map((m, i) => (
-          <div key={i} className={m.role === 'user' ? 'flex justify-end' : ''}>
-            <div
-              className={
-                m.role === 'user'
-                  ? 'max-w-[85%] rounded-lg rounded-br-sm bg-indigo-600 px-3 py-2 text-sm text-white whitespace-pre-wrap'
-                  : 'max-w-[95%] space-y-2'
-              }
+      {showHistory ? (
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div className="flex items-center justify-between border-b border-slate-200 px-3 py-2">
+            <span className="text-xs font-medium text-slate-600">Conversations</span>
+            <button
+              type="button"
+              onClick={() => setShowHistory(false)}
+              aria-label="Close conversations"
+              className={iconButton}
             >
-              {m.role === 'assistant' && m.steps && m.steps.length > 0 && (
-                <ul className="space-y-1 border-l-2 border-indigo-200 pl-2">
-                  {m.steps.map((step, j) => (
-                    <li key={j} className="text-xs text-gray-500">
-                      {step}
-                    </li>
-                  ))}
-                </ul>
-              )}
-              {m.role === 'user' ? (
-                <p className="whitespace-pre-wrap">{m.content}</p>
-              ) : (
-                <div className="rounded-lg rounded-bl-sm bg-gray-100 px-3 py-2 text-sm text-gray-900">
-                  <Markdown>{m.content}</Markdown>
-                </div>
-              )}
-            </div>
+              <X className="h-3.5 w-3.5" />
+            </button>
           </div>
-        ))}
-
-        {busy && (
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Searching the bug tracker...
-          </div>
-        )}
-      </div>
-
-      {error && (
-        <div className="border-t border-red-100 bg-red-50 px-4 py-2 text-xs text-red-700">
-          {error}
+          <ConversationList onSelect={() => setShowHistory(false)} />
         </div>
+      ) : (
+        <>
+          <ChatMessages />
+          {error && (
+            <div className="border-t border-red-100 bg-red-50 px-4 py-2 text-xs text-red-700">
+              {error}
+            </div>
+          )}
+          <Composer />
+        </>
       )}
-
-      <form onSubmit={onSubmit} className="flex items-center gap-2 border-t border-gray-200 p-3">
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          disabled={busy}
-          placeholder="Describe a problem, or ask about existing bugs"
-          className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-indigo-400 disabled:bg-gray-50"
-        />
-        <button
-          type="submit"
-          disabled={busy || !input.trim()}
-          aria-label="Send"
-          className="rounded-lg bg-indigo-600 p-2 text-white transition-colors hover:bg-indigo-700 disabled:bg-gray-300"
-        >
-          <Send className="h-4 w-4" />
-        </button>
-      </form>
     </div>
   );
 }

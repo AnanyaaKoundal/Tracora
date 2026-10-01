@@ -18,7 +18,10 @@ export const createBug = asyncHandler(async (req: Request, res: Response) => {
 
 export const getAllBugs = asyncHandler(async (req: Request, res: Response) => {
     const company_id = (req as any).user.company_id;
-    const bug = await bugService.getAllBugs(company_id);
+    // Optional narrowing. company_id never comes from the query string, only from the
+    // verified token, so a crafted ?company_id= cannot reach another tenant.
+    const project_id = typeof req.query.project_id === "string" ? req.query.project_id : undefined;
+    const bug = await bugService.getAllBugs(company_id, project_id);
     res.status(200).json({
         success: true,
         message: "Bugs fetched successfully",

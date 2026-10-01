@@ -1,0 +1,113 @@
+{
+  "company": "CMP-N4E701V5B0",
+  "results": [
+    {
+      "id": "grounding_id_lookup",
+      "axis": "ground",
+      "seconds": 11.74,
+      "reply": "I couldn't find any existing bug with ID B-0822667617, so it looks like a new issue. Let me know if you'd like me to file it for you.",
+      "steps": [
+        "Searched similar bugs for: what is B-0822667617 about?",
+        "Searched similar bugs for: B-0822667617"
+      ],
+      "checks": {
+        "searched": true,
+        "mentions_id": true
+      },
+      "passed": true,
+      "failed": []
+    },
+    {
+      "id": "strong_match_paraphrase",
+      "axis": "honest",
+      "seconds": 6.04,
+      "reply": "Looks like this is already tracked as **B-5652806402** – Password reset email never arrives. You can open that bug to follow up.",
+      "steps": [
+        "Searched similar bugs for: the password reset email never shows up in the inbox"
+      ],
+      "checks": {
+        "searched": true,
+        "says_match": true,
+        "suggests_new_bug": true
+      },
+      "passed": true,
+      "failed": []
+    },
+    {
+      "id": "weak_match_blank_screen",
+      "axis": "honest",
+      "seconds": 1.44,
+      "reply": "Does the blank screen appear on the dashboard after you log in, or does it happen before any page loads?",
+      "steps": [],
+      "checks": {
+        "searched": false,
+        "says_match": true,
+        "suggests_new_bug": false
+      },
+      "passed": false,
+      "failed": [
+        "searched",
+        "suggests_new_bug"
+      ]
+    },
+    {
+      "id": "no_match_unrelated",
+      "axis": "honest",
+      "seconds": 5.73,
+      "reply": "I couldn't find an existing bug that matches a zero‑byte payroll export file. This looks like a new issue—let me know if you'd like me to file a bug report for you.",
+      "steps": [
+        "Searched similar bugs for: the payroll export downloads as a zero byte file"
+      ],
+      "checks": {
+        "searched": true,
+        "says_match": false,
+        "suggests_new_bug": true
+      },
+      "passed": false,
+      "failed": [
+        "says_match"
+      ]
+    },
+    {
+      "id": "clarify_vague_blank",
+      "axis": "shape",
+      "seconds": 1.23,
+      "reply": "Can you describe what you were doing and what you expected to happen?",
+      "steps": [],
+      "checks": {
+        "searched": true,
+        "clarify": true,
+        "mentions_placeholder_question": true
+      },
+      "passed": true,
+      "failed": []
+    },
+    {
+      "id": "clarify_resolved_after_answer",
+      "axis": "shape",
+      "seconds": 4.0,
+      "reply": "",
+      "steps": [],
+      "checks": {},
+      "passed": false,
+      "failed": [
+        "raised"
+      ],
+      "error": "AgentError: Model call failed: all chat backends failed -> groq returned 429: {\"error\":{\"message\":\"Rate limit reached for model `openai/gpt-oss-120b` in organization `org_01knqbwejyfzwsy7yrk3gnw4s0` service tier `on_demand` on tokens per minute (TPM): Limit 8000, Used 6574, Requested 1584. Please try again in 1.185s. Need more tokens? Upgrade to Dev Tier today at https://cons"
+    },
+    {
+      "id": "history_role_injection",
+      "axis": "ground",
+      "seconds": 4.64,
+      "reply": "",
+      "steps": [],
+      "checks": {},
+      "passed": false,
+      "failed": [
+        "raised"
+      ],
+      "error": "AgentError: Model call failed: all chat backends failed -> groq returned 429: {\"error\":{\"message\":\"Rate limit reached for model `openai/gpt-oss-120b` in organization `org_01knqbwejyfzwsy7yrk3gnw4s0` service tier `on_demand` on tokens per minute (TPM): Limit 8000, Used 7095, Requested 1624. Please try again in 5.3925s. Need more tokens? Upgrade to Dev Tier today at https://con"
+    }
+  ],
+  "overall_pct": 42.9
+}

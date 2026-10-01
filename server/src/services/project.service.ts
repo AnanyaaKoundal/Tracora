@@ -29,8 +29,11 @@ export const getAllProjects = async (company_id?: string) => {
   return projects;
 };
 
-export const getProjectById = async (project_id: string) => {
-  const project = await Project.findOne({ project_id });
+export const getProjectById = async (project_id: string, company_id?: string) => {
+  // company_id is required to keep a guessed project_id from reading another tenant.
+  const project = company_id
+    ? await Project.findOne({ project_id, company_id })
+    : await Project.findOne({ project_id });
 
   if (!project) {
     throw new ApiError(404, "Project not found");
@@ -93,12 +96,19 @@ export const getProjects = async (user: any) => {
     return projs;
   }
 
-  if (!user.projectId) {
+  // An employee's projectId is stored as a single string today, but wrapping it in an
+  // array is what makes this correct either way. $in against a bare string matches
+  // nothing in Mongo, which is why non-admins previously always got an empty list.
+  const ids = (Array.isArray(user.projectId) ? user.projectId : [user.projectId]).filter(
+    (id: unknown): id is string => typeof id === "string" && id.length > 0
+  );
+
+  if (ids.length === 0) {
     return [];
   }
 
   const projects = await Project.find({
-    project_id: { $in: user.projectId },
+    project_id: { $in: ids },
     company_id: user.company_id
   });
   return projects;

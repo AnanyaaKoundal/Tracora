@@ -2,6 +2,7 @@
 
 import { Bug } from "@/schemas/bug.schema";
 import { Employee } from "@/schemas/admin.schema";
+import { Project } from "@/schemas/project.schema";
 import { Button } from "@/components/ui/button";
 import { Plus, Loader2 } from "lucide-react";
 import BugPropertiesFields from "./BugPropertiesFields";
@@ -10,6 +11,8 @@ interface Props {
   bug: Bug;
   setBug: React.Dispatch<React.SetStateAction<Bug | null>>;
   employees: Employee[];
+  projects: Project[];
+  showProjectError: boolean;
   selectedEmployee: Employee | null;
   setSelectedEmployee: React.Dispatch<React.SetStateAction<Employee | null>>;
   notifyUsers: Employee[];
@@ -24,6 +27,8 @@ export default function CreateBugRightPanel({
   bug,
   setBug,
   employees,
+  projects,
+  showProjectError,
   selectedEmployee,
   setSelectedEmployee,
   notifyUsers,
@@ -39,6 +44,9 @@ export default function CreateBugRightPanel({
         bug={bug}
         setBug={setBug}
         employees={employees}
+        projects={projects}
+        required
+        showProjectError={showProjectError}
         selectedEmployee={selectedEmployee}
         setSelectedEmployee={setSelectedEmployee}
         notifyUsers={notifyUsers}

@@ -8,6 +8,7 @@ import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recha
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { FolderKanban, Bug, TrendingUp, ArrowRight, Clock, CheckCircle } from "lucide-react";
+import { usePageContext } from "@/hooks/useAssistantContext";
 
 type DashboardData = {
   role: "admin" | "manager" | "developer" | "tester";
@@ -39,6 +40,7 @@ const COLORS = {
 const COLORS_ARRAY = ["#ef4444", "#f97316", "#eab308", "#22c55e", "#6b7280"];
 
 export default function DashboardPage() {
+  usePageContext("Dashboard");
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();

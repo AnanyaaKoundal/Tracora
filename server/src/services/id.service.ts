@@ -18,3 +18,7 @@ export const generateProjectId = () => {
 export const generateBugId = () => {
   return `B-${bugid()}`;
 }
+
+export const generateConversationId = () => {
+  return `CNV-${nanoid()}`;
+}

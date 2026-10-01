@@ -21,8 +21,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Project } from "@/schemas/project.schema";
+import { usePageContext } from "@/hooks/useAssistantContext";
 
 export default function ProjectsPage() {
+  usePageContext("Projects");
   const [projects, setProjects] = useState<Project[]>([]);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [deletingProject, setDeletingProject] = useState<Project | null>(null);

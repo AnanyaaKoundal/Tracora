@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createBug } from "@/actions/bugAction";
 import { fetchAllAssigneesService } from "@/services/bugService";
+import { fetchCompanyProjectsService } from "@/services/projectService";
 import { Bug as BugSchema, BugPriority, CreateBugInput } from "@/schemas/bug.schema";
 import { Employee } from "@/schemas/admin.schema";
+import { Project } from "@/schemas/project.schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Bug as BugIcon, Flag } from "lucide-react";
@@ -13,6 +15,7 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import CreateBugForm from "@/components/Bug/CreateBugForm";
 import CreateBugRightPanel from "@/components/Bug/CreateBugRightPanel";
+import { useAssistantContext } from "@/hooks/useAssistantContext";
 
 const emptyDraft = (): BugSchema => ({
   bug_id: "",
@@ -25,6 +28,7 @@ const emptyDraft = (): BugSchema => ({
   createdAt: "",
   updatedAt: "",
   notify_users: [],
+  project_id: "",
 });
 
 export default function CreateBugPage() {
@@ -32,6 +36,10 @@ export default function CreateBugPage() {
 
   const [bug, setBug] = useState<BugSchema | null>(null);
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  // Validation messaging is suppressed until the first submit attempt, so the form
+  // does not greet the user with errors before they have typed anything.
+  const [showValidation, setShowValidation] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [notifyUsers, setNotifyUsers] = useState<Employee[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -54,15 +62,50 @@ export default function CreateBugPage() {
     loadEmployees();
   }, []);
 
+  useEffect(() => {
+    async function loadProjects() {
+      try {
+        // Tenant-wide list, so a developer can file against any project in their own
+        // company rather than being limited to the admin view.
+        const res = await fetchCompanyProjectsService();
+        if (res?.success && Array.isArray(res.data)) setProjects(res.data);
+      } catch {
+        // Non-fatal: the form will show "no projects available" and block submit.
+      }
+    }
+    loadProjects();
+  }, []);
+
+  // The assistant sees the in-progress draft, so it can check the description against
+  // existing bugs while the user is still writing it.
+  useAssistantContext(
+    bug
+      ? {
+          kind: "draft",
+          label: "New bug",
+          data: { title: bug.bug_name, description: bug.bug_description },
+        }
+      : null,
+    bug ? `draft:${bug.bug_name}:${bug.bug_description}` : "draft:loading"
+  );
+
   if (!bug) return null;
 
-  const isValid = bug.bug_name.trim().length > 0 && bug.bug_description.trim().length > 0;
+  const isValid =
+    bug.bug_name.trim().length > 0 &&
+    bug.bug_description.trim().length > 0 &&
+    (bug.project_id ?? "").trim().length > 0;
 
   async function handleSubmit() {
     if (!bug) return;
 
     if (!isValid) {
-      toast.error("Title and description are required");
+      setShowValidation(true);
+      const missing: string[] = [];
+      if (!bug.bug_name.trim()) missing.push("title");
+      if (!bug.bug_description.trim()) missing.push("description");
+      if (!(bug.project_id ?? "").trim()) missing.push("project");
+      toast.error(`Add a ${missing.join(", ")} to create this bug.`);
       return;
     }
 
@@ -76,6 +119,7 @@ export default function CreateBugPage() {
         bug_priority: Number(bug.bug_priority) as BugPriority,
         notify_users: notifyUsers.map((u) => u.employee_id),
         comments: [],
+        project_id: bug.project_id ?? "",
       };
 
       const res = await createBug(payload);
@@ -167,6 +211,8 @@ export default function CreateBugPage() {
                 bug={bug}
                 setBug={setBug}
                 employees={employees}
+                projects={projects}
+                showProjectError={showValidation}
                 selectedEmployee={selectedEmployee}
                 setSelectedEmployee={setSelectedEmployee}
                 notifyUsers={notifyUsers}
@@ -174,7 +220,6 @@ export default function CreateBugPage() {
                 duplicateCount={duplicateCount}
                 submitting={submitting}
                 onSubmit={handleSubmit}
-                disabled={!isValid}
               />
             </CardContent>
           </Card>

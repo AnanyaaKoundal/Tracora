@@ -9,8 +9,10 @@ import DashboardStatsRow from "@/components/AdminPanel/Dashboard/StatsRow";
 import { useEffect, useState } from "react";
 import { getDashboardStats } from "@/actions/dsahboardAction";
 import { motion } from "framer-motion";
+import { usePageContext } from "@/hooks/useAssistantContext";
 
 export default function AdminDashboardPage() {
+  usePageContext("Admin dashboard");
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 

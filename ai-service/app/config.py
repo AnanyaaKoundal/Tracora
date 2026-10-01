@@ -52,5 +52,13 @@ class Settings(BaseSettings):
     # described as "the same bug".
     similar_strong_threshold: float = 0.70
 
+    # A project reference is resolved by exact name, then substring, then embedding
+    # similarity. The semantic step is the only fuzzy one, so these gate only that
+    # step: below min_score the reference is treated as not a project, and a top two
+    # gap under margin is reported as ambiguous so the assistant asks instead of
+    # guessing. Both are tunable against the eval set, not constants.
+    project_match_min_score: float = 0.60
+    project_match_margin: float = 0.05
+
 
 settings = Settings()

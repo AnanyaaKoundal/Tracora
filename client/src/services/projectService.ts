@@ -62,6 +62,25 @@ export const deleteProjectService = async (id: string) => {
   return res.json();
 };
 
+// Projects in the caller's own company. Use this for the bug form, which every role
+// can reach; fetchAllProjectsService is admin-only and returns 403 otherwise.
+export const fetchCompanyProjectsService = async () => {
+  const res = await fetch(`${URL}/projects/company-projects`, {
+      method: "GET",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      cache: "no-store",
+    });
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch projects");
+  }
+
+  return res.json();
+}
+
 export const fetchProjectsService = async () => {
   const res = await fetch(`${URL}/projects/get-projects`, {
       method: "GET",

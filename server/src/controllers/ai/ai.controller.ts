@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import asyncHandler from "../../utils/asyncHandler";
 import ApiError from "../../utils/ApiError";
 import { findDuplicates, suggestTitle, chatTurn, AiServiceError } from "../../services/ai.service";
-import { getProjectById } from "../../services/project.service";
 import * as conversationService from "../../services/conversation.service";
 
 const requireDescription = (req: Request): string => {
@@ -54,13 +53,25 @@ const normalizeContext = (raw: unknown): Record<string, unknown> | null => {
   }
   const { kind, label, data } = raw as Record<string, unknown>;
   if (kind !== "draft" && kind !== "bug" && kind !== "page") return null;
-  return { kind, label: label ?? null, data: data ?? {} };
+  // `data` must be a plain object. A non-object here used to reach the agent and
+  // crash it, because it assumes a dict when it reads title/description.
+  const safeData =
+    data !== null && typeof data === "object" && !Array.isArray(data) ? data : {};
+  return { kind, label: label ?? null, data: safeData };
 };
 
 const kindFromContext = (context: Record<string, unknown> | null): string => {
   if (context?.kind === "draft") return "draft";
   if (context?.kind === "bug") return "bug";
   return "general";
+};
+
+// The id that identifies which page the user is on, used to detect navigation between
+// turns. Only bug pages carry an id; drafts and generic pages do not.
+const contextKey = (context: Record<string, unknown> | null): string | null => {
+  if (context?.kind !== "bug") return null;
+  const label = context.label;
+  return typeof label === "string" && label.trim() ? label.trim() : null;
 };
 
 export const chat = asyncHandler(async (req: Request, res: Response) => {
@@ -72,23 +83,6 @@ export const chat = asyncHandler(async (req: Request, res: Response) => {
     // Identity is taken from the verified token. The client never sends it, and the
     // agent is never allowed to choose a tenant.
     const user = (req as any).user;
-
-    // Optional UI project scope. Validated against the caller's tenant before it is
-    // forwarded, so a guessed project_id cannot narrow into another company. A bad id
-    // is a client error, not a silent whole-company search.
-    const rawProjectId = req.body?.project_id;
-    if (rawProjectId !== undefined && rawProjectId !== null && rawProjectId !== "") {
-      if (typeof rawProjectId !== "string") {
-        throw new ApiError(400, "project_id must be a string");
-      }
-      try {
-        await getProjectById(rawProjectId, user.company_id);
-      } catch {
-        throw new ApiError(400, "Unknown project for this company");
-      }
-    }
-    const project_id =
-      typeof rawProjectId === "string" && rawProjectId ? rawProjectId : null;
 
     if (conversation_id !== undefined && conversation_id !== null && conversation_id !== "") {
       if (typeof conversation_id !== "string") {
@@ -112,31 +106,33 @@ export const chat = asyncHandler(async (req: Request, res: Response) => {
             employee_id: user.employee_id,
             title: message.trim(),
             kind: kindFromContext(normalizedContext),
-            project_id,
           });
-
-    if (project_id && conversation.project_id !== project_id) {
-      conversation.project_id = project_id;
-    }
 
     // History comes from the stored conversation, never from the client payload.
     const history = conversationService.historyForModel(conversation);
+
+    // A change of page since the last turn means the newly opened bug is what a bare
+    // "it" refers to. Compared against what was stored, not what the client claims.
+    const activeContextId = contextKey(normalizedContext);
+    const previousContextId = conversationService.lastUserContextId(conversation);
+    const contextChanged = activeContextId !== null && activeContextId !== previousContextId;
 
     try {
       const result = await chatTurn(
         message.trim(),
         user.company_id,
-        project_id,
         user.employee_id,
         normalizedContext,
-        history
+        history,
+        contextChanged
       );
 
       await conversationService.appendExchange(
         conversation,
         message.trim(),
         result.reply,
-        result.steps ?? []
+        result.steps ?? [],
+        activeContextId
       );
 
       res.status(200).json({

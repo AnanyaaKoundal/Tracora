@@ -17,17 +17,15 @@ class HistoryTurn(BaseModel):
 
 class AgentTurnRequest(BaseModel):
     message: str = Field(min_length=1)
-    # Capped server-side regardless of what the client sends. Sent with the request,
-    # not stored: nothing is persisted and nothing survives a page refresh.
+    # Capped server-side regardless of what the client sends. Sent with the request, not stored: nothing is persisted and nothing survives a page refresh.
     history: list[HistoryTurn] = Field(default_factory=list, max_length=4)
     context: dict[str, Any] | None = None
+    # True when the page context differs from the one on the previous turn, i.e. the
+    # user just navigated. That makes the freshly opened page the referent of a bare
+    # "it" even while a conversation is in flight.
+    context_changed: bool = False
     company_id: str = Field(min_length=1)
-    # Optional sticky project scope from the UI. It narrows bug search within the
-    # company; the company itself still comes from the authenticated request. An
-    # explicit project named in the message overrides this.
-    project_id: str | None = None
-    # Accepted for contract stability across services. Unused while the only tool is
-    # retrieval; nothing in the agent path authorises anything from it.
+    # Accepted for contract stability across services. Unused while the only tool is retrieval; nothing in the agent path authorises anything from it.
     user_id: str | None = None
 
 

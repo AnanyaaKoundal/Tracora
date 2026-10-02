@@ -49,3 +49,17 @@ def all_bugs() -> list[dict]:
 def all_projects(company_id: str | None = None) -> list[dict]:
     query = {"company_id": company_id} if company_id else {}
     return list(get_db()["projects"].find(query, {"_id": 0}))
+
+
+def find_bug(bug_id: str, company_id: str | None = None) -> dict | None:
+    query: dict = {"bug_id": bug_id}
+    if company_id:
+        query["company_id"] = company_id
+    return get_db()["bugs"].find_one(query, {"_id": 0})
+
+
+def find_project(project_id: str, company_id: str | None = None) -> dict | None:
+    query: dict = {"project_id": project_id}
+    if company_id:
+        query["company_id"] = company_id
+    return get_db()["projects"].find_one(query, {"_id": 0})

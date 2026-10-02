@@ -17,6 +17,12 @@ const conversationMessageSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    // The bug/project page the user was on for this turn, if any. Compared against
+    // the next turn's context so the agent can tell the user just navigated.
+    context_id: {
+      type: String,
+      default: null,
+    },
   },
   { _id: false }
 );
@@ -48,10 +54,6 @@ const conversationSchema = new mongoose.Schema(
       type: String,
       enum: ["general", "bug", "draft"],
       default: "general",
-    },
-    project_id: {
-      type: String,
-      default: null,
     },
     messages: {
       type: [conversationMessageSchema],

@@ -120,7 +120,6 @@ export const useAssistantStore = create<AssistantState>((set, get) => ({
       const result = await chatService(
         trimmed,
         get().shareContext ? get().context : null,
-        null,
         get().conversationId
       );
       set((s) => ({

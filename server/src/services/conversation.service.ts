@@ -23,7 +23,6 @@ export const toClient = (conversation: any) => ({
   conversation_id: conversation.conversation_id,
   title: conversation.title,
   kind: conversation.kind,
-  project_id: conversation.project_id,
   updated_at: conversation.updatedAt,
   messages: (conversation.messages ?? []).map((m: any) => ({
     role: m.role,
@@ -37,7 +36,6 @@ export const createConversation = async (data: {
   employee_id: string;
   title: string;
   kind?: string | null;
-  project_id?: string | null;
 }) => {
   return Conversation.create({
     conversation_id: generateConversationId(),
@@ -45,7 +43,6 @@ export const createConversation = async (data: {
     employee_id: data.employee_id,
     title: deriveTitle(data.title),
     kind: data.kind ?? "general",
-    project_id: data.project_id ?? null,
     messages: [],
   });
 };
@@ -59,7 +56,6 @@ export const listConversations = async (company_id: string, employee_id: string)
     conversation_id: conversation.conversation_id,
     title: conversation.title,
     kind: conversation.kind,
-    project_id: conversation.project_id,
     updated_at: conversation.updatedAt,
     message_count: conversation.messages.length,
     preview: previewOf(conversation),
@@ -88,15 +84,29 @@ export const appendExchange = async (
   conversation: any,
   userContent: string,
   assistantContent: string,
-  steps: string[]
+  steps: string[],
+  contextId?: string | null
 ) => {
-  conversation.messages.push({ role: "user", content: userContent });
+  conversation.messages.push({ role: "user", content: userContent, context_id: contextId ?? null });
   conversation.messages.push({
     role: "assistant",
     content: assistantContent,
     steps: steps ?? [],
   });
   await conversation.save();
+};
+
+// The page context of the employee's previous turn, for detecting navigation. Returns
+// the last user message's context even when it is null, so moving from a plain page
+// onto a bug page also reads as a change.
+export const lastUserContextId = (conversation: any): string | null => {
+  const messages = conversation.messages ?? [];
+  for (let i = messages.length - 1; i >= 0; i -= 1) {
+    if (messages[i].role === "user") {
+      return messages[i].context_id ?? null;
+    }
+  }
+  return null;
 };
 
 export const deleteConversation = async (

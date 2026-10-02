@@ -53,20 +53,20 @@ export type AgentHistoryTurn = {
 export const chatTurn = (
   message: string,
   company_id: string,
-  project_id: string | null,
   employee_id?: string,
   context?: Record<string, unknown> | null,
-  history?: AgentHistoryTurn[]
+  history?: AgentHistoryTurn[],
+  contextChanged?: boolean
 ) =>
   callAiService(
     "/agent/turn",
     {
       message,
       company_id,
-      project_id,
       user_id: employee_id,
       context: context ?? null,
       history: history ?? [],
+      context_changed: contextChanged ?? false,
     },
     AGENT_TIMEOUT_MS
   );

@@ -51,7 +51,6 @@ export type ConversationSummary = {
   conversation_id: string;
   title: string;
   kind: string;
-  project_id: string | null;
   updated_at: string;
   message_count: number;
   preview: string;
@@ -67,7 +66,6 @@ export type ConversationDetail = {
   conversation_id: string;
   title: string;
   kind: string;
-  project_id: string | null;
   updated_at: string;
   messages: ConversationMessage[];
 };
@@ -77,7 +75,6 @@ export type ConversationDetail = {
 export const chatService = async (
   message: string,
   context?: AssistantContext | null,
-  projectId?: string | null,
   conversationId?: string | null
 ): Promise<AgentReply> => {
   const res = await fetch(`${URL}/ai/chat`, {
@@ -87,7 +84,6 @@ export const chatService = async (
     body: JSON.stringify({
       message,
       context: context ?? null,
-      project_id: projectId ?? null,
       conversation_id: conversationId ?? null,
     }),
   });

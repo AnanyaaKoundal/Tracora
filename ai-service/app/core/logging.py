@@ -122,11 +122,7 @@ def _render(event: str, fields: dict[str, Any]) -> str:
     return line
 
 
-def _emit(event: str, message: str, level: str, **fields: Any) -> None:
-    tag = request_id.get()
-    # The id stays on the line: it's short, and without it concurrent turns are
-    # impossible to tell apart.
-    line = f"[{tag}] {_render(event, fields)}"
+def _write(line: str) -> None:
     try:
         print(line, file=sys.stdout, flush=True)
     except UnicodeEncodeError:
@@ -136,6 +132,21 @@ def _emit(event: str, message: str, level: str, **fields: Any) -> None:
         encoding = getattr(sys.stdout, "encoding", None) or "utf-8"
         safe = line.encode(encoding, errors="replace").decode(encoding, errors="replace")
         print(safe, file=sys.stdout, flush=True)
+
+
+def _emit(event: str, message: str, level: str, **fields: Any) -> None:
+    # `detail` is printed verbatim under the line and never truncated. The one-line
+    # tail is for quick scanning, but an error body is the whole point, so clipping it
+    # to a tail field hides the cause. Pass the full text here instead.
+    detail = fields.pop("detail", None)
+    tag = request_id.get()
+    # The id stays on the line: it's short, and without it concurrent turns are
+    # impossible to tell apart.
+    _write(f"[{tag}] {_render(event, fields)}")
+    if detail:
+        text = str(detail)
+        for chunk in (text.splitlines() or [text]):
+            _write(f"[{tag}]     {chunk}")
 
 
 def log(event: str, message: str = "", **fields: Any) -> None:

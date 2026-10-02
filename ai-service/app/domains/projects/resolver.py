@@ -93,11 +93,7 @@ def resolve_project(reference: str, company_id: str) -> list[ProjectCandidate]:
     return candidates
 
 
-def choose_project(
-    reference: str,
-    company_id: str,
-    context_project_id: str | None = None,
-) -> dict[str, Any]:
+def choose_project(reference: str, company_id: str) -> dict[str, Any]:
     """Turn a reference into a decision: resolved, ambiguous, or not_found.
 
     The policy is separate from the scorer so the thresholds live in one place and the
@@ -105,14 +101,6 @@ def choose_project(
     ambiguous on purpose. Answering about the wrong project is a worse failure than
     asking one extra question, so ties and near-ties abstain.
     """
-    if context_project_id:
-        return {
-            "status": "resolved",
-            "project_id": context_project_id,
-            "source": "context",
-            "candidates": [],
-        }
-
     candidates = resolve_project(reference, company_id)
     if not candidates:
         return {"status": "not_found", "reference": reference, "candidates": []}

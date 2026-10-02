@@ -19,15 +19,21 @@ def turn(payload: AgentTurnRequest) -> AgentTurnResponse:
             reply, steps = run_turn(
                 message=payload.message,
                 company_id=payload.company_id,
-                project_id=payload.project_id,
                 context=payload.context,
                 history=[turn.model_dump() for turn in payload.history],
+                context_changed=payload.context_changed,
             )
     except AgentError as exc:
         log("turn.error", "agent error", error=str(exc)[:300])
         raise HTTPException(status_code=502, detail=str(exc)) from exc
     except Exception as exc:
-        log("turn.error", "agent unavailable", error=f"{type(exc).__name__}: {exc}")
+        # The crash site, not a full traceback: enough to find the line next time
+        # without dumping message text or locals into the log.
+        tb = exc.__traceback__
+        while tb is not None and tb.tb_next is not None:
+            tb = tb.tb_next
+        where = f"{tb.tb_frame.f_code.co_filename}:{tb.tb_lineno}" if tb else "?"
+        log("turn.error", "agent unavailable", error=f"{type(exc).__name__}: {exc}", where=where)
         raise HTTPException(status_code=503, detail=f"Agent unavailable: {exc}") from exc
     finally:
         request_id.reset(token)

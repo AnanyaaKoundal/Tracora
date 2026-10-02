@@ -2,7 +2,7 @@ from collections.abc import Callable
 from typing import Any
 
 from app.config import settings
-from app.core.db.mongo import all_projects
+from app.core.db.mongo import all_projects, find_bug, find_project
 from app.core.llm.embedder import embed_query
 from app.core.vector.qdrant import search_entities
 from app.domains.projects.resolver import choose_project, resolve_project
@@ -10,6 +10,12 @@ from app.domains.projects.resolver import choose_project, resolve_project
 DESCRIPTION_CHAR_LIMIT = 600
 DEFAULT_LIMIT = 5
 MAX_LIMIT = 10
+
+_PRIORITY_LABELS = {1: "Critical", 2: "High", 3: "Medium", 4: "Low", 5: "Trivial"}
+
+
+def _iso(value: Any) -> str | None:
+    return value.isoformat() if hasattr(value, "isoformat") else None
 
 TOOL_SPECS: list[dict[str, Any]] = [
     {
@@ -47,6 +53,25 @@ TOOL_SPECS: list[dict[str, Any]] = [
         },
     },
     {
+        "name": "get_bug",
+        "description": (
+            "Read one bug by its exact id. Use it when the user pastes or gives a bug id, "
+            "or when a shared bug page gives you one, before describing that bug. Returns "
+            "the bug's id, title, description, status, priority, project, reporter and "
+            "assignee. If 'status' is 'not_found' no such bug exists in this company."
+        ),
+        "args": {
+            "type": "object",
+            "properties": {
+                "bug_id": {
+                    "type": "string",
+                    "description": "The exact bug id, for example B-0822667617.",
+                },
+            },
+            "required": ["bug_id"],
+        },
+    },
+    {
         "name": "find_projects",
         "description": (
             "Look up this company's projects by name or description. Use it when the user "
@@ -72,6 +97,26 @@ TOOL_SPECS: list[dict[str, Any]] = [
 ]
 
 
+def function_schemas() -> list[dict[str, Any]]:
+    """The tool specs in the OpenAI `tools` wire format for native tool calling.
+
+    TOOL_SPECS already carries a JSON Schema per tool under "args", so this is a shape
+    change, not a second source of truth. Descriptions and argument schemas travel with
+    the call, which is what lets the model stop guessing argument names.
+    """
+    return [
+        {
+            "type": "function",
+            "function": {
+                "name": spec["name"],
+                "description": spec["description"],
+                "parameters": spec["args"],
+            },
+        }
+        for spec in TOOL_SPECS
+    ]
+
+
 def _clamp_limit(limit: Any) -> int:
     try:
         value = int(limit)
@@ -80,21 +125,15 @@ def _clamp_limit(limit: Any) -> int:
     return max(1, min(value, MAX_LIMIT))
 
 
-def _project_scope(
-    company_id: str, project: str | None, context_project_id: str | None
-) -> dict[str, Any] | None:
+def _project_scope(company_id: str, project: str | None) -> dict[str, Any] | None:
     """Decide which project a bug search should be filtered to.
 
-    Returns None for the whole company. An explicit reference in the message takes
-    precedence over the sticky UI scope, so naming a different project works even when
-    the panel is narrowed to one. Only a resolved decision reaches the filter; an
-    ambiguous or unknown reference is reported back instead of guessed.
+    Returns None for the whole company. Only a project named in the message reaches the
+    filter; an ambiguous or unknown reference is reported back instead of guessed.
     """
     candidate = project.strip() if isinstance(project, str) else ""
     if candidate:
         return choose_project(candidate, company_id)
-    if context_project_id:
-        return choose_project("", company_id, context_project_id=context_project_id)
     return None
 
 
@@ -103,7 +142,6 @@ def _find_similar_bugs(
     text: str,
     limit: Any = DEFAULT_LIMIT,
     project: str | None = None,
-    context_project_id: str | None = None,
 ) -> dict[str, Any]:
     """Search and label the strength of the best hit.
 
@@ -112,7 +150,7 @@ def _find_similar_bugs(
     gives the model an explicit "this is not the same bug" signal rather than leaving
     it to infer relevance from a number it was never told how to interpret.
     """
-    scope = _project_scope(company_id, project, context_project_id)
+    scope = _project_scope(company_id, project)
     if scope and scope["status"] == "ambiguous":
         return {
             "status": "ambiguous",
@@ -157,6 +195,42 @@ def _find_similar_bugs(
     }
 
 
+def _get_bug(company_id: str, bug_id: str) -> dict[str, Any]:
+    """Return one bug by exact id, or a not_found result.
+
+    The deterministic counterpart to find_similar_bugs: an id is not in any vector, so
+    semantic search can never match one, but reading by id is exact and cheap.
+    """
+    reference = bug_id.strip() if isinstance(bug_id, str) else ""
+    if not reference:
+        return {"status": "not_found", "bug_id": bug_id}
+
+    bug = find_bug(reference, company_id)
+    if not bug:
+        return {"status": "not_found", "bug_id": reference}
+
+    project = (
+        find_project(bug.get("project_id"), company_id)
+        if bug.get("project_id")
+        else None
+    )
+    return {
+        "status": "ok",
+        "bug": {
+            "bug_id": bug.get("bug_id"),
+            "title": bug.get("bug_name"),
+            "description": (bug.get("bug_description") or "")[:DESCRIPTION_CHAR_LIMIT],
+            "status": bug.get("bug_status"),
+            "priority": _PRIORITY_LABELS.get(bug.get("bug_priority"), bug.get("bug_priority")),
+            "project": project.get("project_name") if project else None,
+            "reported_by": bug.get("reported_by"),
+            "assigned_to": bug.get("assigned_to"),
+            "created_at": _iso(bug.get("createdAt")),
+            "updated_at": _iso(bug.get("updatedAt")),
+        },
+    }
+
+
 def _find_projects(company_id: str, query: str | None = None, limit: Any = DEFAULT_LIMIT) -> dict[str, Any]:
     """Rank a company's projects against a reference, or list them when query is empty."""
     capped = _clamp_limit(limit)
@@ -191,9 +265,7 @@ def _find_projects(company_id: str, query: str | None = None, limit: Any = DEFAU
     }
 
 
-def build_registry(
-    company_id: str, context_project_id: str | None = None
-) -> dict[str, Callable[..., Any]]:
+def build_registry(company_id: str) -> dict[str, Callable[..., Any]]:
     """Map tool name -> implementation.
 
     Every closure captures company_id from the authenticated request context. The
@@ -201,11 +273,12 @@ def build_registry(
     """
     return {
         "find_similar_bugs": lambda text, limit=DEFAULT_LIMIT, project=None: (
-            _find_similar_bugs(company_id, text, limit, project, context_project_id)
+            _find_similar_bugs(company_id, text, limit, project)
         ),
         "find_projects": lambda query=None, limit=DEFAULT_LIMIT: _find_projects(
             company_id, query, limit
         ),
+        "get_bug": lambda bug_id: _get_bug(company_id, bug_id),
     }
 
 

@@ -14,6 +14,10 @@ class Settings(BaseSettings):
     ollama_host: str = "http://localhost:11434"
     ollama_chat_model: str = "llama3.2"
     ollama_embed_model: str = "nomic-embed-text"
+    # llama3.2 and qwen are tool-trained; phi3 and older small models are not. Set
+    # false for those so the agent skips the local backend for tool-driven turns
+    # instead of getting a malformed reply.
+    ollama_supports_tools: bool = True
 
     # --- chat backend selection ---
     # One of: ollama | groq | hf | openai | auto

@@ -3,7 +3,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from app.core.db.mongo import all_bugs, all_projects
+from mongo import all_bugs, all_projects
 from app.core.llm.embedder import embed_documents
 from app.core.vector.qdrant import ensure_collection, upsert_entities
 from app.domains.bugs.content import compose_bug_text

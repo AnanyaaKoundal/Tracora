@@ -12,13 +12,18 @@ export class AiServiceError extends Error {
 async function callAiService(
   path: string,
   body: Record<string, unknown>,
-  timeoutMs: number = TIMEOUT_MS
+  timeoutMs: number = TIMEOUT_MS,
+  authToken?: string
 ) {
   let response: Response;
+  // The caller's JWT is forwarded on chat turns so the AI service can act on that
+  // user's behalf when it reads data back from Express. It is used for nothing else.
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (authToken) headers["Authorization"] = authToken;
   try {
     response = await fetch(`${AI_SERVICE_URL}${path}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(timeoutMs),
     });
@@ -56,7 +61,8 @@ export const chatTurn = (
   employee_id?: string,
   context?: Record<string, unknown> | null,
   history?: AgentHistoryTurn[],
-  contextChanged?: boolean
+  contextChanged?: boolean,
+  authToken?: string
 ) =>
   callAiService(
     "/agent/turn",
@@ -68,5 +74,6 @@ export const chatTurn = (
       history: history ?? [],
       context_changed: contextChanged ?? false,
     },
-    AGENT_TIMEOUT_MS
+    AGENT_TIMEOUT_MS,
+    authToken
   );

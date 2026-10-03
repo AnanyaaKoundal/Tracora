@@ -1,6 +1,6 @@
 from uuid import uuid4
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Header, HTTPException
 
 from app.core.logging import Stage, log, request_id
 from app.domains.agent.loop import AgentError, run_turn
@@ -10,7 +10,10 @@ router = APIRouter(prefix="/agent", tags=["agent"])
 
 
 @router.post("/turn", response_model=AgentTurnResponse)
-def turn(payload: AgentTurnRequest) -> AgentTurnResponse:
+def turn(
+    payload: AgentTurnRequest,
+    authorization: str | None = Header(default=None),
+) -> AgentTurnResponse:
     rid = uuid4().hex[:8]
     token = request_id.set(rid)
     log("turn.start", "agent turn")
@@ -22,6 +25,7 @@ def turn(payload: AgentTurnRequest) -> AgentTurnResponse:
                 context=payload.context,
                 history=[turn.model_dump() for turn in payload.history],
                 context_changed=payload.context_changed,
+                authorization=authorization,
             )
     except AgentError as exc:
         log("turn.error", "agent error", error=str(exc)[:300])

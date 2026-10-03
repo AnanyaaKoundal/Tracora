@@ -2,7 +2,7 @@ from collections.abc import Callable
 from typing import Any
 
 from app.config import settings
-from app.core.db.mongo import all_projects, find_bug, find_project
+from app.core import data_client
 from app.core.llm.embedder import embed_query
 from app.core.vector.qdrant import search_entities
 from app.domains.projects.resolver import choose_project, resolve_project
@@ -15,7 +15,10 @@ _PRIORITY_LABELS = {1: "Critical", 2: "High", 3: "Medium", 4: "Low", 5: "Trivial
 
 
 def _iso(value: Any) -> str | None:
-    return value.isoformat() if hasattr(value, "isoformat") else None
+    if hasattr(value, "isoformat"):
+        return value.isoformat()
+    # Express serialises dates to JSON, so they arrive as strings over HTTP.
+    return value if isinstance(value, str) else None
 
 TOOL_SPECS: list[dict[str, Any]] = [
     {
@@ -125,7 +128,9 @@ def _clamp_limit(limit: Any) -> int:
     return max(1, min(value, MAX_LIMIT))
 
 
-def _project_scope(company_id: str, project: str | None) -> dict[str, Any] | None:
+def _project_scope(
+    company_id: str, project: str | None, authorization: str | None
+) -> dict[str, Any] | None:
     """Decide which project a bug search should be filtered to.
 
     Returns None for the whole company. Only a project named in the message reaches the
@@ -133,12 +138,14 @@ def _project_scope(company_id: str, project: str | None) -> dict[str, Any] | Non
     """
     candidate = project.strip() if isinstance(project, str) else ""
     if candidate:
-        return choose_project(candidate, company_id)
+        projects = data_client.list_projects(authorization)
+        return choose_project(candidate, company_id, projects)
     return None
 
 
 def _find_similar_bugs(
     company_id: str,
+    authorization: str | None,
     text: str,
     limit: Any = DEFAULT_LIMIT,
     project: str | None = None,
@@ -150,7 +157,7 @@ def _find_similar_bugs(
     gives the model an explicit "this is not the same bug" signal rather than leaving
     it to infer relevance from a number it was never told how to interpret.
     """
-    scope = _project_scope(company_id, project)
+    scope = _project_scope(company_id, project, authorization)
     if scope and scope["status"] == "ambiguous":
         return {
             "status": "ambiguous",
@@ -195,25 +202,22 @@ def _find_similar_bugs(
     }
 
 
-def _get_bug(company_id: str, bug_id: str) -> dict[str, Any]:
+def _get_bug(authorization: str | None, bug_id: str) -> dict[str, Any]:
     """Return one bug by exact id, or a not_found result.
 
     The deterministic counterpart to find_similar_bugs: an id is not in any vector, so
-    semantic search can never match one, but reading by id is exact and cheap.
+    semantic search can never match one, but reading by id is exact and cheap. Express
+    returns not_found when the bug is missing or not visible to this user, and the two
+    are deliberately indistinguishable.
     """
     reference = bug_id.strip() if isinstance(bug_id, str) else ""
     if not reference:
         return {"status": "not_found", "bug_id": bug_id}
 
-    bug = find_bug(reference, company_id)
+    bug = data_client.get_bug(reference, authorization)
     if not bug:
         return {"status": "not_found", "bug_id": reference}
 
-    project = (
-        find_project(bug.get("project_id"), company_id)
-        if bug.get("project_id")
-        else None
-    )
     return {
         "status": "ok",
         "bug": {
@@ -222,7 +226,7 @@ def _get_bug(company_id: str, bug_id: str) -> dict[str, Any]:
             "description": (bug.get("bug_description") or "")[:DESCRIPTION_CHAR_LIMIT],
             "status": bug.get("bug_status"),
             "priority": _PRIORITY_LABELS.get(bug.get("bug_priority"), bug.get("bug_priority")),
-            "project": project.get("project_name") if project else None,
+            "project": bug.get("project_name"),
             "reported_by": bug.get("reported_by"),
             "assigned_to": bug.get("assigned_to"),
             "created_at": _iso(bug.get("createdAt")),
@@ -231,13 +235,18 @@ def _get_bug(company_id: str, bug_id: str) -> dict[str, Any]:
     }
 
 
-def _find_projects(company_id: str, query: str | None = None, limit: Any = DEFAULT_LIMIT) -> dict[str, Any]:
-    """Rank a company's projects against a reference, or list them when query is empty."""
+def _find_projects(
+    company_id: str,
+    authorization: str | None,
+    query: str | None = None,
+    limit: Any = DEFAULT_LIMIT,
+) -> dict[str, Any]:
+    """Rank the user's visible projects against a reference, or list them when empty."""
     capped = _clamp_limit(limit)
     text = (query or "").strip()
+    projects = data_client.list_projects(authorization)
 
     if not text:
-        projects = all_projects(company_id)[:capped]
         return {
             "status": "ok",
             "reference": None,
@@ -249,13 +258,13 @@ def _find_projects(company_id: str, query: str | None = None, limit: Any = DEFAU
                     "description": (project.get("project_description") or "")[:DESCRIPTION_CHAR_LIMIT]
                     or None,
                 }
-                for project in projects
+                for project in projects[:capped]
             ],
         }
 
     candidates = [
         candidate
-        for candidate in resolve_project(text, company_id)
+        for candidate in resolve_project(text, company_id, projects)
         if candidate.score >= settings.project_match_min_score
     ][:capped]
     return {
@@ -265,20 +274,23 @@ def _find_projects(company_id: str, query: str | None = None, limit: Any = DEFAU
     }
 
 
-def build_registry(company_id: str) -> dict[str, Callable[..., Any]]:
+def build_registry(
+    company_id: str, authorization: str | None
+) -> dict[str, Callable[..., Any]]:
     """Map tool name -> implementation.
 
-    Every closure captures company_id from the authenticated request context. The
-    model supplies only the declared arguments, so it has no path to choose a tenant.
+    Every closure captures company_id and the caller's token from the authenticated
+    request context. The model supplies only the declared arguments, so it has no path
+    to choose a tenant or read data the user could not see in the UI.
     """
     return {
         "find_similar_bugs": lambda text, limit=DEFAULT_LIMIT, project=None: (
-            _find_similar_bugs(company_id, text, limit, project)
+            _find_similar_bugs(company_id, authorization, text, limit, project)
         ),
         "find_projects": lambda query=None, limit=DEFAULT_LIMIT: _find_projects(
-            company_id, query, limit
+            company_id, authorization, query, limit
         ),
-        "get_bug": lambda bug_id: _get_bug(company_id, bug_id),
+        "get_bug": lambda bug_id: _get_bug(authorization, bug_id),
     }
 
 

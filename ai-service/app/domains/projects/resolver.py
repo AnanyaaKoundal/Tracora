@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from typing import Any
 
 from app.config import settings
-from app.core.db.mongo import all_projects
 from app.core.llm.embedder import embed_query
 from app.core.vector.qdrant import search_entities
 
@@ -51,15 +50,17 @@ def _candidate(project: dict, score: float) -> ProjectCandidate:
     )
 
 
-def resolve_project(reference: str, company_id: str) -> list[ProjectCandidate]:
-    """Rank this company's projects against a free-text reference.
+def resolve_project(
+    reference: str, company_id: str, projects: list[dict]
+) -> list[ProjectCandidate]:
+    """Rank the caller's visible projects against a free-text reference.
 
     Returns a ranked list, never a single pick: choosing is the caller's job and must
-    account for how close the runner-up is. Exact and substring matching run against
-    Mongo because it is authoritative and already tenant-scoped. Only when those miss
-    does the embedding fallback run, over project entities in the vector store.
+    account for how close the runner-up is. `projects` comes from Express, already
+    tenant- and role-scoped, so exact and substring matching can run on it directly.
+    Only when those miss does the embedding fallback run, over project entities in the
+    vector store.
     """
-    projects = all_projects(company_id)
     ref = _normalize(reference)
     if not ref or not projects:
         return []
@@ -93,7 +94,9 @@ def resolve_project(reference: str, company_id: str) -> list[ProjectCandidate]:
     return candidates
 
 
-def choose_project(reference: str, company_id: str) -> dict[str, Any]:
+def choose_project(
+    reference: str, company_id: str, projects: list[dict]
+) -> dict[str, Any]:
     """Turn a reference into a decision: resolved, ambiguous, or not_found.
 
     The policy is separate from the scorer so the thresholds live in one place and the
@@ -101,7 +104,7 @@ def choose_project(reference: str, company_id: str) -> dict[str, Any]:
     ambiguous on purpose. Answering about the wrong project is a worse failure than
     asking one extra question, so ties and near-ties abstain.
     """
-    candidates = resolve_project(reference, company_id)
+    candidates = resolve_project(reference, company_id, projects)
     if not candidates:
         return {"status": "not_found", "reference": reference, "candidates": []}
 

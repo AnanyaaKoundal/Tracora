@@ -1,3 +1,10 @@
+"""Direct Mongo access for offline indexing scripts only.
+
+The running ai-service never imports this: it reads tenant data from Express. The
+reindex and connectivity scripts are operators' tools and keep their own connection so
+the service itself has no database credentials to leak.
+"""
+
 from pymongo import MongoClient
 from pymongo.database import Database
 
@@ -9,6 +16,8 @@ _client: MongoClient | None = None
 def get_client() -> MongoClient:
     global _client
     if _client is None:
+        if not settings.mongo_uri:
+            raise RuntimeError("MONGO_URI must be set to run the indexing scripts")
         _client = MongoClient(
             settings.mongo_uri,
             serverSelectionTimeoutMS=5000,

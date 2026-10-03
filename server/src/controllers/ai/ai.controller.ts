@@ -84,6 +84,12 @@ export const chat = asyncHandler(async (req: Request, res: Response) => {
     // agent is never allowed to choose a tenant.
     const user = (req as any).user;
 
+    // The AI service reads data back through Express on this user's behalf, so it needs
+    // the credential this request carried. Accept either transport the client used.
+    const authToken =
+      req.headers.authorization ||
+      (req.cookies?.token ? `Bearer ${req.cookies.token}` : undefined);
+
     if (conversation_id !== undefined && conversation_id !== null && conversation_id !== "") {
       if (typeof conversation_id !== "string") {
         throw new ApiError(400, "conversation_id must be a string");
@@ -124,7 +130,8 @@ export const chat = asyncHandler(async (req: Request, res: Response) => {
         user.employee_id,
         normalizedContext,
         history,
-        contextChanged
+        contextChanged,
+        authToken
       );
 
       await conversationService.appendExchange(

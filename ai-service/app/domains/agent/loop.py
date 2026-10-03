@@ -322,8 +322,9 @@ def run_turn(
     context: dict[str, Any] | None = None,
     history: list[dict[str, str]] | None = None,
     context_changed: bool = False,
+    authorization: str | None = None,
 ) -> tuple[str, list[str]]:
-    registry = build_registry(company_id)
+    registry = build_registry(company_id, authorization)
     tools = function_schemas()
     steps: list[str] = []
 

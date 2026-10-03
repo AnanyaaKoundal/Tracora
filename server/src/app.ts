@@ -14,6 +14,7 @@ import commentRoutes from "@/routes/comment.route"
 import sseRoutes from "@/routes/sse.route";
 import notificationRoutes from "@/routes/notification.route"
 import aiRoutes from "@/routes/ai.route";
+import agentDataRoutes from "@/routes/agentData.route";
 
 const app = express();
 
@@ -42,6 +43,8 @@ app.use("/comment", commentRoutes);
 app.use("/sse", sseRoutes);
 app.use("/notification", notificationRoutes);
 app.use("/ai", aiRoutes);
+// Internal data reads for the AI service. Not used by the browser.
+app.use("/agent", agentDataRoutes);
 
 app.use(errorHandler);
 

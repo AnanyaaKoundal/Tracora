@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
 from app.core.llm.chat import active_backend
-from app.routers import agent, bugs, debug, health
+from app.routers import agent, bugs, health
 
 app = FastAPI(
     title="Tracora AI Service",
@@ -10,7 +10,6 @@ app = FastAPI(
 )
 
 app.include_router(health.router)
-app.include_router(debug.router)
 app.include_router(bugs.router)
 app.include_router(agent.router)
 

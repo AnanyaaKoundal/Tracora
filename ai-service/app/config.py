@@ -8,8 +8,15 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    mongo_uri: str
+    # Used only by the offline indexing scripts in scripts/. The running service reads
+    # tenant data from Express and never talks to Mongo itself.
+    mongo_uri: str = ""
     mongo_db: str | None = None
+
+    # Where the agent reads tenant data from, and the shared secret that marks a call
+    # as coming from this service. Both must match the Express side.
+    express_base_url: str = "http://127.0.0.1:5000"
+    internal_api_key: str = "dev-internal-key"
 
     ollama_host: str = "http://localhost:11434"
     ollama_chat_model: str = "llama3.2"

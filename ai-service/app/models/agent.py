@@ -29,6 +29,19 @@ class AgentTurnRequest(BaseModel):
     user_id: str | None = None
 
 
+class Citation(BaseModel):
+    """A record the answer referenced, rendered as a clickable chip.
+
+    `type` tells the client where the chip links: a bug has a detail page, a project
+    does not yet, so it falls back to the projects list.
+    """
+
+    type: Literal["bug", "project"]
+    id: str
+    title: str | None = None
+
+
 class AgentTurnResponse(BaseModel):
     reply: str
     steps: list[str] = Field(default_factory=list)
+    citations: list[Citation] = Field(default_factory=list)

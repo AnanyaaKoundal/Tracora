@@ -118,6 +118,41 @@ def _ungrounded_ids(reply: str, grounded: set[str]) -> list[str]:
     return sorted({found for found in _ENTITY_ID_RE.findall(reply) if found not in grounded})
 
 
+def _records_in(result: Any) -> list[dict[str, str]]:
+    """The bugs and projects a single tool result exposes, as citation candidates.
+
+    Only entities the tool actually returned become candidates; the final reply still
+    has to name one for it to be cited (see `_cited`).
+    """
+    found: list[dict[str, str]] = []
+    if not isinstance(result, dict):
+        return found
+    bug = result.get("bug")
+    if isinstance(bug, dict) and bug.get("bug_id"):
+        found.append({"type": "bug", "id": str(bug["bug_id"]), "title": bug.get("title")})
+    for hit in result.get("results") or []:
+        if not isinstance(hit, dict):
+            continue
+        if hit.get("bug_id"):
+            found.append({"type": "bug", "id": str(hit["bug_id"]), "title": hit.get("title")})
+        elif hit.get("project_id"):
+            found.append(
+                {"type": "project", "id": str(hit["project_id"]), "title": hit.get("name")}
+            )
+    return found
+
+
+def _cited(records: dict[str, dict[str, str]], reply: str) -> list[dict[str, str]]:
+    """The candidates the reply actually names, de-duped and in discovery order.
+
+    A citation means "the answer used this", so a reply that names nothing cites
+    nothing. Keying by id keeps the same bug from appearing twice when several tool
+    calls return it.
+    """
+    mentioned = set(_ENTITY_ID_RE.findall(reply))
+    return [record for rid, record in records.items() if rid in mentioned]
+
+
 # Words that point at the screen rather than at the conversation. When one of these is
 # present, the open page is the referent even mid-conversation.
 _PAGE_POINT_RE = re.compile(
@@ -133,6 +168,26 @@ def _page_id(context: dict[str, Any] | None) -> str | None:
     label = context.get("label")
     ids = sorted(_ids_in(label)) if isinstance(label, str) else []
     return ids[0] if ids else None
+
+
+def _context_records(context: dict[str, Any] | None) -> dict[str, dict[str, str]]:
+    """The bug the user is looking at, as a citation candidate.
+
+    A page-context answer can name the on-screen bug without any tool call, so it has to
+    be a candidate too. Whether it is actually cited is still decided by `_cited`.
+    """
+    page_id = _page_id(context)
+    if not page_id:
+        return {}
+    data = context.get("data") if context else None
+    title = data.get("title") if isinstance(data, dict) else None
+    return {
+        page_id: {
+            "type": "bug",
+            "id": page_id,
+            "title": title if isinstance(title, str) else None,
+        }
+    }
 
 
 def _history_id(history: list[dict[str, str]] | None) -> str | None:
@@ -323,10 +378,13 @@ def run_turn(
     history: list[dict[str, str]] | None = None,
     context_changed: bool = False,
     authorization: str | None = None,
-) -> tuple[str, list[str]]:
+) -> tuple[str, list[str], list[dict[str, str]]]:
     registry = build_registry(company_id, authorization)
     tools = function_schemas()
     steps: list[str] = []
+    # Every entity the reply may legitimately cite, keyed by id: the on-screen bug,
+    # plus anything a tool returns below. `_cited` trims this to the ones it names.
+    records: dict[str, dict[str, str]] = _context_records(context)
 
     # Resolve what a bare "it"/"that" points to before the model sees the turn. The
     # client flags a page change, which lets a freshly opened bug take over mid-thread.
@@ -406,9 +464,9 @@ def run_turn(
                     continue
                 if bad:
                     log("agent.grounding", action="rejected", ids=",".join(bad))
-                    return GROUNDING_REPLY, steps
+                    return GROUNDING_REPLY, steps, []
                 log("agent.turn", outcome="answer")
-                return reply.strip(), steps
+                return reply.strip(), steps, _cited(records, reply)
             # No usable text and no tool call. Ask once more rather than dropping the
             # whole turn on a formatting slip.
             messages.append({"role": "assistant", "content": reply or ""})
@@ -464,12 +522,14 @@ def run_turn(
 
             used.add(signature)
             grounded |= _ids_in(result)
+            for record in _records_in(result):
+                records.setdefault(record["id"], record)
             messages.append(_tool_result(call.id, json.dumps(result, ensure_ascii=False)))
 
     final = _forced_answer(messages, grounded)
     if final:
         log("agent.turn", outcome="forced_answer")
-        return final, steps
+        return final, steps, _cited(records, final)
 
     log("agent.turn", outcome="fallback")
-    return FALLBACK_REPLY, steps
+    return FALLBACK_REPLY, steps, []

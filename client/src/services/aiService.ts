@@ -41,10 +41,19 @@ export type AssistantContext = {
   data: { title?: string; description?: string };
 };
 
+// A record the answer referenced. `type` decides the chip's link: a bug has a detail
+// page, a project does not yet, so it falls back to the projects list.
+export type Citation = {
+  type: "bug" | "project";
+  id: string;
+  title: string | null;
+};
+
 export type AgentReply = {
   conversation_id: string;
   reply: string;
   steps: string[];
+  citations: Citation[];
 };
 
 export type ConversationSummary = {
@@ -60,6 +69,7 @@ export type ConversationMessage = {
   role: "user" | "assistant";
   content: string;
   steps: string[];
+  citations: Citation[];
 };
 
 export type ConversationDetail = {

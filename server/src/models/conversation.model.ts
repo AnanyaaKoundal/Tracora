@@ -1,5 +1,24 @@
 import mongoose from "mongoose";
 
+const citationSchema = new mongoose.Schema(
+  {
+    type: {
+      type: String,
+      enum: ["bug", "project"],
+      required: true,
+    },
+    id: {
+      type: String,
+      required: true,
+    },
+    title: {
+      type: String,
+      default: null,
+    },
+  },
+  { _id: false }
+);
+
 const conversationMessageSchema = new mongoose.Schema(
   {
     role: {
@@ -15,6 +34,12 @@ const conversationMessageSchema = new mongoose.Schema(
     // reopened conversation looks the same as it did when it was live.
     steps: {
       type: [String],
+      default: [],
+    },
+    // Records the answer referenced, rendered as clickable chips. Stored so a
+    // reopened conversation still shows what each answer grounded on.
+    citations: {
+      type: [citationSchema],
       default: [],
     },
     // The bug/project page the user was on for this turn, if any. Compared against

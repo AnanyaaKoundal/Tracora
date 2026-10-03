@@ -19,7 +19,7 @@ def turn(
     log("turn.start", "agent turn")
     try:
         with Stage("turn"):
-            reply, steps = run_turn(
+            reply, steps, citations = run_turn(
                 message=payload.message,
                 company_id=payload.company_id,
                 context=payload.context,
@@ -43,4 +43,4 @@ def turn(
         request_id.reset(token)
 
     log("turn.done", "turn complete", steps=len(steps), reply_chars=len(reply))
-    return AgentTurnResponse(reply=reply, steps=steps)
+    return AgentTurnResponse(reply=reply, steps=steps, citations=citations)

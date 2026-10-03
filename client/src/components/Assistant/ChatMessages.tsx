@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import { Loader2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import { Check, Copy, Loader2 } from 'lucide-react';
 import { useAssistantStore } from '@/schemas/assistantStore';
 import Markdown from './Markdown';
 
@@ -10,6 +11,31 @@ const STARTERS = [
   'Any existing bugs about slow loading?',
   'Is there a known issue with the login page?',
 ];
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // Clipboard access can be denied by the browser; leave the label unchanged.
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      className="inline-flex items-center gap-1 text-xs text-slate-400 transition-colors hover:text-slate-600"
+    >
+      {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+      {copied ? 'Copied' : 'Copy'}
+    </button>
+  );
+}
 
 export default function ChatMessages() {
   const messages = useAssistantStore((s) => s.messages);
@@ -62,8 +88,27 @@ export default function ChatMessages() {
             ) : (
               <div className="rounded-2xl rounded-bl-sm border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-800">
                 <Markdown>{m.content}</Markdown>
+                {m.citations && m.citations.length > 0 && (
+                  <div className="mt-2.5 border-t border-slate-200 pt-2">
+                    <p className="mb-1 text-xs font-medium text-slate-500">Sources</p>
+                    <ol className="list-decimal space-y-0.5 pl-4 text-xs text-slate-500">
+                      {m.citations.map((c) => (
+                        <li key={`${c.type}:${c.id}`}>
+                          <Link
+                            href={c.type === 'bug' ? `/bugs/${c.id}` : '/projects'}
+                            title={c.title ?? c.id}
+                            className="font-mono text-xs text-teal-700 hover:underline"
+                          >
+                            {c.id}
+                          </Link>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                )}
               </div>
             )}
+            {m.role === 'assistant' && <CopyButton text={m.content} />}
           </div>
         </div>
       ))}

@@ -139,13 +139,15 @@ export const chat = asyncHandler(async (req: Request, res: Response) => {
         message.trim(),
         result.reply,
         result.steps ?? [],
-        activeContextId
+        activeContextId,
+        result.citations ?? []
       );
 
       res.status(200).json({
         conversation_id: conversation.conversation_id,
         reply: result.reply,
         steps: result.steps ?? [],
+        citations: result.citations ?? [],
       });
     } catch (err) {
       if (err instanceof AiServiceError) {

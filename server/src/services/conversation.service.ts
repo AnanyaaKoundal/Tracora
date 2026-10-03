@@ -28,6 +28,7 @@ export const toClient = (conversation: any) => ({
     role: m.role,
     content: m.content,
     steps: m.steps ?? [],
+    citations: m.citations ?? [],
   })),
 });
 
@@ -85,13 +86,15 @@ export const appendExchange = async (
   userContent: string,
   assistantContent: string,
   steps: string[],
-  contextId?: string | null
+  contextId?: string | null,
+  citations?: Array<{ type: string; id: string; title?: string | null }>
 ) => {
   conversation.messages.push({ role: "user", content: userContent, context_id: contextId ?? null });
   conversation.messages.push({
     role: "assistant",
     content: assistantContent,
     steps: steps ?? [],
+    citations: citations ?? [],
   });
   await conversation.save();
 };

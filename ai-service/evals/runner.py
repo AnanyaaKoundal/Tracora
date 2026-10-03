@@ -152,7 +152,7 @@ def run_once(
         if data_mode == "recorded":
             with recorded_data.patched(company_id):
                 with recorder:
-                    reply, steps = run_turn(
+                    reply, steps, _ = run_turn(
                         message=case["message"],
                         company_id=company_id,
                         context=case.get("context"),
@@ -162,7 +162,7 @@ def run_once(
                     )
         else:
             with recorder:
-                reply, steps = run_turn(
+                reply, steps, _ = run_turn(
                     message=case["message"],
                     company_id=company_id,
                     context=case.get("context"),

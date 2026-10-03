@@ -2,6 +2,7 @@ import { create } from "zustand";
 import {
   AssistantContext,
   chatService,
+  Citation,
   ConversationSummary,
   deleteConversationService,
   getConversationService,
@@ -12,6 +13,7 @@ export type AssistantMessage = {
   role: "user" | "assistant";
   content: string;
   steps?: string[];
+  citations?: Citation[];
 };
 
 type AssistantState = {
@@ -85,6 +87,7 @@ export const useAssistantStore = create<AssistantState>((set, get) => ({
           role: m.role,
           content: m.content,
           steps: m.steps,
+          citations: m.citations,
         })),
       });
     } catch {
@@ -126,7 +129,12 @@ export const useAssistantStore = create<AssistantState>((set, get) => ({
         conversationId: result.conversation_id,
         messages: [
           ...s.messages,
-          { role: "assistant", content: result.reply, steps: result.steps },
+          {
+            role: "assistant",
+            content: result.reply,
+            steps: result.steps,
+            citations: result.citations,
+          },
         ],
       }));
       await get().loadConversations();

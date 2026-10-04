@@ -31,11 +31,26 @@ class Settings(BaseSettings):
     # "auto" walks llm_fallback_order and skips anything without a credential.
     llm_backend: str = "ollama"
     llm_fallback_order: str = "groq,hf,ollama"
-    llm_timeout_seconds: float = 180.0
+    # A single model call. Lowered from 180s: a call that hangs for three minutes is a
+    # failure, and the shorter ceiling is what lets retry plus the turn budget below
+    # stay inside the caller's own request timeout.
+    llm_timeout_seconds: float = 60.0
     llm_temperature: float = 0.2
     # Structured-output strict mode. Requires every property to be listed in
     # "required"; leave off for schemas that model optional fields.
     llm_strict_schema: bool = False
+
+    # Transient-failure retry. A 429, a timeout or a 5xx is retried up to this many
+    # times per backend before failover; terminal errors (bad key, bad request) are
+    # never retried. 1 disables retry.
+    llm_max_attempts: int = 3
+    llm_retry_base_seconds: float = 1.0
+    llm_retry_max_seconds: float = 20.0
+
+    # Whole-turn wall-clock budget for the agent loop. Past this point no new model call
+    # is started (including retries), so a slow provider cannot make the turn outlive
+    # Express's request timeout. Worst case is roughly this plus one call.
+    agent_turn_budget_seconds: float = 120.0
 
     groq_model: str = "openai/gpt-oss-120b"
     groq_api_key: str = ""

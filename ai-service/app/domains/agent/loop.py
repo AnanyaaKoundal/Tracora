@@ -1,7 +1,9 @@
 import json
 import re
+import time
 from typing import Any
 
+from app.config import settings
 from app.core.llm.chat import complete
 from app.core.logging import Stage, log
 from app.domains.agent.tools import (
@@ -95,6 +97,14 @@ FALLBACK_REPLY = (
 GROUNDING_REPLY = (
     "I shouldn't describe bugs or projects I have not actually looked up. "
     "Tell me what to search for and I will pull the real records."
+)
+
+# Shown only when the model could not be reached at all. Deliberately says nothing about
+# backends, retries or errors: the cause belongs in the logs, and a person just needs a
+# calm sentence and a reason to try again. It must not read like a normal answer, or a
+# provider outage would look like "the assistant had nothing to say".
+UNAVAILABLE_REPLY = (
+    "Sorry, I'm having trouble reaching my tools right now. Please try again in a moment."
 )
 
 # Entity ids the assistant is allowed to quote: the page context, what the user just
@@ -275,7 +285,11 @@ def _tool_result(tool_call_id: str, content: str) -> dict[str, str]:
     return {"role": "tool", "tool_call_id": tool_call_id, "content": content}
 
 
-def _forced_answer(messages: list[dict[str, Any]], grounded: set[str]) -> str | None:
+def _forced_answer(
+    messages: list[dict[str, Any]],
+    grounded: set[str],
+    deadline: float | None = None,
+) -> str | None:
     """One last model call with no tools, used only when the step budget ran out.
 
     The alternative is a generic "I couldn't work that out" even though every tool
@@ -284,6 +298,8 @@ def _forced_answer(messages: list[dict[str, Any]], grounded: set[str]) -> str | 
     provider-agnostic way to say "answer, do not call anything" (Ollama has no
     tool_choice).
     """
+    if deadline is not None and time.monotonic() >= deadline:
+        return None
     forced = messages + [
         {
             "role": "user",
@@ -294,7 +310,7 @@ def _forced_answer(messages: list[dict[str, Any]], grounded: set[str]) -> str | 
         }
     ]
     try:
-        completion = complete(forced, num_predict=NUM_PREDICT)
+        completion = complete(forced, num_predict=NUM_PREDICT, deadline=deadline)
     except Exception:
         return None
     reply = completion.content
@@ -385,6 +401,9 @@ def run_turn(
     # Every entity the reply may legitimately cite, keyed by id: the on-screen bug,
     # plus anything a tool returns below. `_cited` trims this to the ones it names.
     records: dict[str, dict[str, str]] = _context_records(context)
+    # One wall-clock budget for the whole turn, so retries and extra steps cannot make
+    # it outlive the caller's own timeout (see chat.complete's `deadline`).
+    deadline = time.monotonic() + settings.agent_turn_budget_seconds
 
     # Resolve what a bare "it"/"that" points to before the model sees the turn. The
     # client flags a page change, which lets a freshly opened bug take over mid-thread.
@@ -423,13 +442,22 @@ def run_turn(
     # typed, and earlier turns. Tool results widen this as the loop runs.
     grounded: set[str] = _ids_in(context) | _ids_in(message) | _ids_in(history)
 
+    upstream_failed = False
     for _ in range(MAX_STEPS):
+        if time.monotonic() >= deadline:
+            # No time left for another model call; use whatever was gathered.
+            log("agent.step", action="budget_exhausted")
+            upstream_failed = True
+            break
         try:
-            completion = complete(messages, tools=tools, num_predict=NUM_PREDICT)
+            completion = complete(
+                messages, tools=tools, num_predict=NUM_PREDICT, deadline=deadline
+            )
         except Exception as exc:
             # A failed step should not end the turn: the results already gathered are
             # still usable, and _forced_answer gets one tool-free call.
             log("agent.step", action="error", thought=str(exc)[:60])
+            upstream_failed = True
             break
 
         log(
@@ -526,10 +554,16 @@ def run_turn(
                 records.setdefault(record["id"], record)
             messages.append(_tool_result(call.id, json.dumps(result, ensure_ascii=False)))
 
-    final = _forced_answer(messages, grounded)
+    final = _forced_answer(messages, grounded, deadline)
     if final:
         log("agent.turn", outcome="forced_answer")
         return final, steps, _cited(records, final)
+
+    # If a model call failed, the honest reply is "I couldn't reach my tools", not the
+    # step-budget message that blames the question. The real cause is already logged.
+    if upstream_failed:
+        log("agent.turn", outcome="upstream_unavailable")
+        return UNAVAILABLE_REPLY, steps, []
 
     log("agent.turn", outcome="fallback")
     return FALLBACK_REPLY, steps, []

@@ -1,4 +1,5 @@
 import json
+import time
 from typing import Any
 
 from app.config import settings
@@ -8,7 +9,7 @@ from app.core.llm.providers import (
     BackendUnavailable,
     Completion,
     _DISPATCH,
-    invoke,
+    invoke_retrying,
     registry,
     resolve_order,
 )
@@ -53,6 +54,7 @@ def complete(
     model: str | None = None,
     json_schema: dict[str, Any] | None = None,
     num_predict: int | None = None,
+    deadline: float | None = None,
 ) -> Completion:
     """One chat call against the configured backend, returning text and/or tool calls.
 
@@ -60,8 +62,11 @@ def complete(
     callers. `model` selects a specific Ollama model. Hosted backends use the model id
     from config, because a local name like "phi3:latest" is meaningless to them.
 
-    Raises BackendUnavailable if every candidate backend fails, with the reason for
-    each so the cause is visible in the 502 the API returns.
+    Each backend is tried with bounded retries for transient faults (see
+    `invoke_retrying`). `deadline` is an optional time.monotonic instant: once it passes
+    no further backend or retry is attempted, so the whole turn stays inside the caller's
+    timeout. Raises BackendUnavailable if every candidate backend fails, with the reason
+    for each so the cause is visible in the log.
     """
     max_tokens = num_predict if num_predict is not None else DEFAULT_MAX_TOKENS
     temperature = settings.llm_temperature
@@ -105,8 +110,11 @@ def complete(
 
     failures: list[str] = []
     for attempt, backend in enumerate(order):
+        if deadline is not None and time.monotonic() >= deadline:
+            failures.append("turn deadline reached before trying " + backend.name)
+            break
         try:
-            completion = invoke(
+            completion = invoke_retrying(
                 backend,
                 messages,
                 json_schema,
@@ -114,6 +122,7 @@ def complete(
                 temperature,
                 tools,
                 tool_choice,
+                deadline=deadline,
             )
         except BackendUnavailable as exc:
             failures.append(str(exc))

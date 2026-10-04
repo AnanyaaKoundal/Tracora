@@ -13,8 +13,12 @@ from __future__ import annotations
 
 import json
 import os
+import random
+import time
 from dataclasses import dataclass, field
 from typing import Any, Callable
+
+import httpx
 
 from app.config import settings
 from app.core.logging import Stage, log, log_verbose
@@ -37,15 +41,78 @@ class BackendError(BackendUnavailable):
     """A backend answered with an HTTP error.
 
     Carries the status, url and full response body so the caller can log the cause
-    directly instead of re-parsing it out of the message string.
+    directly instead of re-parsing it out of the message string. `retry_after` holds the
+    provider's own cool-off hint (seconds) when it sent one, so a retry can wait exactly
+    as long as the provider asked instead of guessing.
     """
 
-    def __init__(self, backend: str, status: int, url: str, body: str) -> None:
+    def __init__(
+        self,
+        backend: str,
+        status: int,
+        url: str,
+        body: str,
+        retry_after: float | None = None,
+    ) -> None:
         super().__init__(f"{backend} returned {status}: {body}")
         self.backend_name = backend
         self.status = status
         self.url = url
         self.body = body
+        self.retry_after = retry_after
+
+
+# Statuses worth a second attempt: request timeout/conflict/too-early, rate limiting, and
+# any server-side failure. Everything else (400, 401, 403, 404, 422...) will be rejected
+# identically no matter how many times it is sent, so it is terminal and never retried.
+RETRYABLE_STATUS = frozenset({408, 409, 425, 429, 500, 502, 503, 504})
+
+
+def _retry_after_seconds(response: "httpx.Response") -> float | None:
+    """The provider's Retry-After, in seconds, or None.
+
+    The header is either a number of seconds or an HTTP-date. Only the numeric form is
+    used; a date falls back to the normal exponential backoff, which keeps this simple
+    and provider-agnostic.
+    """
+    raw = response.headers.get("retry-after")
+    if not raw:
+        return None
+    try:
+        return max(0.0, float(raw.strip()))
+    except (TypeError, ValueError):
+        return None
+
+
+def is_retryable(exc: BaseException) -> bool:
+    """True if re-sending the same request could plausibly succeed.
+
+    `BackendError` carries the status, so a 429/5xx is retryable while a 400/401 is not.
+    Network faults (connect refused, read error, timeout) are transient by nature. A
+    bare `BackendUnavailable` with no status means the provider answered with an empty
+    body, which a second call often fixes; a truly unconfigured backend is filtered out
+    earlier by `resolve_order`/`is_available` and never reaches a retry.
+    """
+    status = getattr(exc, "status", None)
+    if status is not None:
+        return status in RETRYABLE_STATUS
+    if isinstance(exc, httpx.HTTPError):
+        return True
+    return isinstance(exc, BackendUnavailable)
+
+
+def retry_delay(attempt: int, retry_after: float | None = None) -> float:
+    """Seconds to wait before retry `attempt` (1-based).
+
+    Prefer the provider's own Retry-After when it sent one; otherwise exponential
+    backoff with jitter so several clients do not retry in lockstep. Both are capped by
+    `llm_retry_max_seconds`.
+    """
+    cap = max(0.0, settings.llm_retry_max_seconds)
+    if retry_after is not None:
+        return min(float(retry_after), cap)
+    backoff = min(cap, max(0.0, settings.llm_retry_base_seconds) * (2 ** (attempt - 1)))
+    return backoff + random.uniform(0, 0.25 * backoff)
 
 
 def _parse_arguments(raw: Any) -> dict[str, Any]:
@@ -283,8 +350,6 @@ def call_openai_compatible(
     tools: list[dict[str, Any]] | None = None,
     tool_choice: str | None = None,
 ) -> Completion:
-    import httpx
-
     payload: dict[str, Any] = {
         "model": backend.model,
         "messages": messages,
@@ -315,7 +380,13 @@ def call_openai_compatible(
     if response.status_code >= 400:
         # The full body, not a slice. An error body is the one place a provider tells
         # you exactly what it rejected; clipping it is how a 400 stays a mystery.
-        raise BackendError(backend.name, response.status_code, url, response.text)
+        raise BackendError(
+            backend.name,
+            response.status_code,
+            url,
+            response.text,
+            _retry_after_seconds(response),
+        )
 
     body = response.json()
     choice = body["choices"][0]
@@ -352,8 +423,6 @@ def call_ollama(
     tools: list[dict[str, Any]] | None = None,
     tool_choice: str | None = None,
 ) -> Completion:
-    import httpx
-
     payload: dict[str, Any] = {
         "model": backend.model,
         "messages": _ollama_messages(messages),
@@ -377,7 +446,13 @@ def call_ollama(
     )
 
     if response.status_code >= 400:
-        raise BackendError(backend.name, response.status_code, url, response.text)
+        raise BackendError(
+            backend.name,
+            response.status_code,
+            url,
+            response.text,
+            _retry_after_seconds(response),
+        )
 
     body = response.json()
     message = body.get("message") if isinstance(body.get("message"), dict) else {}
@@ -444,3 +519,45 @@ def invoke(
         stage.add(tokens=completion.usage.get("total_tokens"))
         log_verbose("llm.preview", preview=completion.content)
         return completion
+
+
+def invoke_retrying(
+    backend: Backend,
+    messages: list[dict[str, Any]],
+    json_schema: dict[str, Any] | None,
+    max_tokens: int,
+    temperature: float,
+    tools: list[dict[str, Any]] | None = None,
+    tool_choice: str | None = None,
+    *,
+    deadline: float | None = None,
+) -> Completion:
+    """`invoke` with a bounded retry for transient faults.
+
+    A transient error (timeout, 429, 5xx, empty body) gets another attempt after a
+    backoff that honours the provider's Retry-After when present. A terminal error
+    (400/401/403...) is re-raised at once: retrying an identical rejected request only
+    burns time and quota. `deadline` is a time.monotonic instant; once the turn's budget
+    is spent no further attempt is made, so retries cannot outlive the caller's timeout.
+    """
+    attempts = max(1, settings.llm_max_attempts)
+    for attempt in range(1, attempts + 1):
+        try:
+            return invoke(
+                backend, messages, json_schema, max_tokens, temperature, tools, tool_choice
+            )
+        except Exception as exc:
+            out_of_time = deadline is not None and time.monotonic() >= deadline
+            if attempt >= attempts or not is_retryable(exc) or out_of_time:
+                raise
+            delay = retry_delay(attempt, getattr(exc, "retry_after", None))
+            log(
+                "llm.retry",
+                backend=backend.name,
+                attempt=attempt,
+                of=attempts,
+                seconds=round(delay, 1),
+                reason=f"{type(exc).__name__}: {exc}",
+            )
+            time.sleep(delay)
+    raise AssertionError("unreachable")

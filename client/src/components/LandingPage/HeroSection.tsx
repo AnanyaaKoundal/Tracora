@@ -41,8 +41,9 @@ export default function HeroSection() {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="text-xl text-muted-foreground text-center max-w-2xl mx-auto mb-10"
         >
-          Streamline your bug tracking with real-time collaboration, smart notifications, 
-          and powerful analytics. Built for developers who ship quality code.
+          Streamline your bug tracking with real-time collaboration, smart notifications,
+          and an in-app AI assistant that answers questions about your bugs with a source
+          for every claim. Built for developers who ship quality code.
         </motion.p>
 
         <motion.div

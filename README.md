@@ -1,371 +1,326 @@
-# 🐞 Tracora — Enterprise Bug Tracking System
+<p align="center">
+  <img src="client/public/logo-tracora.png" alt="Tracora logo" width="120" />
+</p>
+
+<h1 align="center">Tracora</h1>
+
+A multi-tenant bug tracker where **every query is tenant-scoped**, bug events fan out
+through **Kafka → WebSocket**, and an in-app **AI assistant** answers questions about
+your bugs with **clickable citations**: every id it quotes came from a tool that
+returned it.
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Status-Active-success?style=for-the-badge" alt="status" />
-  <img src="https://img.shields.io/badge/Tech%20Stack-Next.js%20%7C%20Node.js%20%7C%20MongoDB%20%7C%20TypeScript-blue?style=for-the-badge" alt="stack" />
-  <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="license" />
+  <img src="https://img.shields.io/badge/status-active-success?style=flat-square" alt="status" />
+  <img src="https://img.shields.io/badge/Next.js-15-black?style=flat-square&logo=next.js" alt="next" />
+  <img src="https://img.shields.io/badge/Express-5-black?style=flat-square&logo=express" alt="express" />
+  <img src="https://img.shields.io/badge/FastAPI-ai--service-009688?style=flat-square&logo=fastapi&logoColor=white" alt="fastapi" />
+  <img src="https://img.shields.io/badge/MongoDB-green?style=flat-square&logo=mongodb" alt="mongo" />
+  <img src="https://img.shields.io/badge/Kafka-events-231F20?style=flat-square&logo=apachekafka" alt="kafka" />
+  <img src="https://img.shields.io/badge/Qdrant-vector--search-E5743B?style=flat-square&logo=qdrant&logoColor=white" alt="qdrant" />
+  <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="license" />
 </p>
 
 ---
 
-## 📋 Table of Contents
+## The two guarantees
 
-1. [Project Overview](#project-overview)
-2. [Key Features](#key-features)
-3. [Architecture & Tech Stack](#architecture--tech-stack)
-4. [Database Schema](#database-schema)
-5. [API Endpoints](#api-endpoints)
-6. [Authentication & Authorization](#authentication--authorization)
-7. [Project Structure](#project-structure)
-8. [Getting Started](#getting-started)
-9. [Screenshots (Placeholders)](#screenshots-placeholders)
-10. [What I Learned](#what-i-learned)
-11. [Future Improvements](#future-improvements)
+Two properties the rest of the code is written around.
 
----
+**1. Data never crosses a tenant.**
+`company_id` is taken from the verified JWT and is part of *every* id-addressed query.
+Another company's bug, project, role or employee is a `404`, never a `403`: a `403`
+confirms the record exists. An admin of company A asking for company B's record
+gets the same answer as asking for a record nobody ever created.
 
-## 🎯 Project Overview
-
-Tracora is a **full-stack, multi-tenant bug tracking system** designed for software development teams. It enables organizations to manage projects, track bugs, assign tasks, and collaborate in real-time.
-
-### Why I Built This
-- To understand **enterprise-grade application architecture**
-- To implement **role-based access control (RBAC)** at scale
-- To learn **real-time communication** using WebSockets and SSE
-- To handle **async event processing** with Apache Kafka
+**2. The assistant never invents an id.**
+Before a reply is shown, every id in it is checked against the records the tools
+returned for this tenant. Citations are built from those same records, so a
+cited id is by construction one the model saw.
 
 ---
 
-## ✨ Key Features
+## Tech stack
 
-### 1. Multi-Tenant Architecture
-- Each company has isolated data (projects, employees, bugs, roles)
-- Company-specific role creation (admin, manager, developer, tester)
-- Dashboard and stats filtered by company
-
-### 2. Role-Based Access Control (RBAC)
-| Role | Permissions |
-|------|-------------|
-| **Admin** | Full access: Create/Edit/Delete projects, employees, roles |
-| **Manager** | View all projects, manage bugs |
-| **Developer** | View assigned projects, update assigned bugs |
-| **Tester** | Report bugs, view reported bugs |
-
-### 3. Bug Lifecycle Management
-- Create bugs with priority (Critical, High, Medium, Low, Trivial)
-- Assign bugs to developers
-- Track status: Open → Under Review → Fixed → Closed
-- Real-time notifications on status changes
-
-### 4. Authentication & Security
-- JWT-based authentication with HTTP-only cookies
-- OTP verification for company registration and login
-- Password hashing (bcrypt)
-- Protected routes with middleware
-
-### 5. Real-Time Features
-- **Server-Sent Events (SSE)** for live notifications
-- **WebSocket** integration for instant updates
-- **Kafka** for async event processing (bug creation, status changes)
-
-### 6. Dashboard Analytics
-- Project statistics (total, active, completed)
-- Bug statistics (total, open, closed by priority)
-- Recent projects, employees, and bugs
+| Layer | Choice |
+|---|---|
+| Client | Next.js 15 (App Router) · React 19 · TypeScript · Tailwind + shadcn/ui · React Hook Form + Zod · Recharts · Zustand · react-markdown |
+| API | Node.js · Express 5 · TypeScript · Mongoose |
+| Assistant service | FastAPI · Pydantic · httpx · hand-rolled provider adapter over **Ollama / Groq / Hugging Face / OpenAI** (no vendor SDK lock-in) |
+| Events | Kafka via KafkaJS · 4 topics, one consumer group |
+| Realtime | WebSocket (`ws://…/ws`), shared with the API server |
+| Vector search | Qdrant (`tracora_entities`) + Ollama `nomic-embed-text` |
+| Auth | JWT in an HTTP-only cookie · bcrypt · OTP via Resend |
+| Tests | pytest (104) · graded eval suite (41 cases) · see [Tests & evals](#tests--evals) |
 
 ---
 
-## 🏗️ Architecture & Tech Stack
+## System at a glance
 
-### Frontend
-- **Next.js 15** — React framework with App Router
-- **TypeScript** — Type safety
-- **TailwindCSS + shadcn/ui** — Modern, accessible UI components
-- **React Hook Form + Zod** — Form validation
-- **Recharts** — Data visualization
+```mermaid
+graph TB
+    subgraph client ["Next.js client :3000"]
+        UI["App Router pages<br/>bugs · projects · dashboard · admin"]
+        ASST["Assistant overlay<br/>badge → panel → workspace"]
+        WSCLIENT["WebSocket client"]
+    end
 
-### Backend
-- **Node.js + Express** — API server
-- **TypeScript** — Type safety
-- **MongoDB + Mongoose** — Database and ODM
+    subgraph api ["Express API :5000"]
+        REST["REST controllers"]
+        INTERNAL["Internal /agent API<br/>service key + forwarded JWT"]
+        WSSERVER["WebSocket server /ws"]
+        PRODUCER["Kafka producer"]
+        CONSUMER["Kafka consumer<br/>notification-consumer-group"]
+    end
 
-### Real-Time & Events
-- **WebSocket** — Bi-directional communication
-- **Server-Sent Events (SSE)** — Push notifications
-- **Apache Kafka** — Event-driven architecture
+    subgraph agent ["ai-service FastAPI :8000"]
+        LOOP["grounded agent loop<br/>max 4 steps · one 120s budget"]
+        ADAPTER["provider adapter<br/>Ollama / Groq / HF / OpenAI"]
+    end
 
-### Additional Tools
-- **JWT** — Token-based auth
-- **UUID** — Unique ID generation
-- **Cookie Parser** — Session management
+    subgraph data ["Stores"]
+        MONGO[("MongoDB")]
+        QDRANT[("Qdrant")]
+    end
 
----
+    KAFKA[("Kafka")]
 
-## 🗃️ Database Schema
-
-```
-Company (company_id, name, email, phone, password)
-├── Employee (employee_id, name, email, contact, roleId[], projectId)
-│   ├── Role (role_id, name, company_id, is_admin, is_default)
-│   └── Project (project_id, name, description, start_date, end_date, status)
-│       └── Bug (bug_id, name, description, status, priority, reported_by, assigned_to)
-│           ├── Comment (comment_id, text, author, timestamp)
-│           └── Notification (notification_id, user, message, read)
+    UI --> REST
+    ASST -->|"POST /ai/chat"| REST
+    REST --> MONGO
+    REST --> PRODUCER --> KAFKA
+    KAFKA --> CONSUMER --> WSSERVER --> WSCLIENT
+    REST -->|"POST /agent/turn"| LOOP
+    LOOP --> ADAPTER
+    LOOP --> QDRANT
+    LOOP -->|"GET /agent/bugs · /agent/projects"| INTERNAL
+    INTERNAL --> MONGO
 ```
 
-### Key Schema Highlights:
-
-- **Roles** are scoped per company (unique constraint: role_name + company_id)
-- **Employees** have unique email/mobile per company (not globally)
-- **Projects & Bugs** are filtered by company_id
-- **Admin role** is protected (non-editable, non-deletable)
+The assistant service **never opens a database connection** for a live request: it asks
+Express over an internal, key-protected endpoint, and Express applies the tenant filter
+that came in on the user's forwarded JWT.
 
 ---
 
-## 🌐 API Endpoints
+## What's in it
 
-### Authentication
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/auth/registerCompany` | Register new company |
-| POST | `/auth/company/verify` | Verify OTP and create company |
-| POST | `/auth/login` | Login with email + mobile |
-| POST | `/auth/logout` | Logout |
-| GET | `/auth/me` | Get current user info |
+### 1. Multi-tenant + RBAC
 
-### Projects (Admin)
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/admin/get-projects` | Get all projects |
-| POST | `/admin/createProject` | Create project |
-| PUT | `/admin/project/:id` | Update project |
-| DELETE | `/admin/project/:id` | Delete project |
+- Every company's projects, employees, roles and bugs are isolated by `company_id`
+- Four built-in roles (admin, manager, developer, tester) plus company-defined roles;
+  `is_admin` is server-assigned, so an edit body can't grant it to itself
+- Tenant and identity fields (`company_id`, `*_id`, `is_admin`, `is_default`) are
+  stripped from update payloads: no moving a record between companies, no self-promotion
+- Unauthenticated requests are rejected before scoping: a token that omits `company_id`
+  would otherwise *widen* a Mongoose filter to every tenant, so it is refused outright
 
-### Projects (User)
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/projects/get-projects` | Get accessible projects |
+### 2. Bug lifecycle
 
-### Bugs
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/bug` | Get all bugs |
-| POST | `/bug` | Create bug |
-| PUT | `/bug/:id` | Update bug |
-| DELETE | `/bug/:id` | Delete bug |
+- Priority (Critical → Trivial), assignment, and status: Open → Under Review → Fixed → Closed
+- Project assignment is re-validated on create **and** on edit, so a bug can't be moved
+  into another tenant's project
+- Comments with tagging/seen-state, dashboard analytics per role
 
-### Employees
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/admin/getAllEmployees` | Get all employees |
-| POST | `/admin/createEmployee` | Create employee |
-| PUT | `/admin/employee/:id` | Update employee |
-| DELETE | `/admin/employee/:id` | Delete employee |
-| GET | `/employee/getAssignees` | Get all employees for assignment |
+### 3. Real-time fan-out
 
-### Roles
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/admin/getRoles` | Get company roles |
-| POST | `/admin/createRole` | Create role |
-| PUT | `/admin/role/:id` | Update role |
-| DELETE | `/admin/role/:id` | Delete role |
+```mermaid
+sequenceDiagram
+    actor U as Developer
+    participant C as Client
+    participant E as Express
+    participant K as Kafka
+    participant N as Consumer
+    participant W as WebSocket
 
-### Dashboard
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/admin/stats` | Admin dashboard stats |
-| GET | `/admin/stats/employees` | Recent employees |
-| GET | `/admin/stats/projects` | Recent projects |
-| GET | `/admin/stats/buglist` | Recent bugs |
-
-### Comments & Notifications
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET/POST | `/comment/:bugId` | Get/Add comments |
-| GET | `/notification` | Get notifications |
-| GET | `/sse/stream` | SSE for real-time updates |
-
----
-
-## 🔐 Authentication & Authorization
-
-### Authentication Flow
-1. **Company Registration** → OTP verification → Admin employee auto-created
-2. **Login** → Email + Mobile validation → JWT token in HTTP-only cookie
-3. **Protected Routes** → Middleware validates token → Adds user to request
-
-### Authorization Flow
-```
-User Login → Token contains (employee_id, company_id, role)
-     ↓
-Middleware extracts company_id from token
-     ↓
-Role checked via authorizeRole middleware
-     ↓
-Admin: Full CRUD on all resources
-Non-Admin: Read-only on projects, CRUD on own bugs
+    U->>C: changes a bug status
+    C->>E: PUT /bug/:id (JWT cookie)
+    E->>E: Mongo update filtered by bug_id + company_id
+    E->>K: bug-status-changed-topic (awaited)
+    K->>N: notification-consumer-group
+    N->>N: createNotification(...)
+    N->>W: broadcastNotification(employeeId)
+    W-->>C: event over ws://…/ws
+    C-->>U: notification appears
 ```
 
-### Security Implementation
-- JWT stored in HTTP-only cookies (not localStorage)
-- Role-based route protection on backend
-- Company-scoped data queries (all queries filter by company_id)
-- Protected admin routes (only "admin" role can access)
+Topics: `bug-created-topic`, `bug-status-changed-topic`, `bug-assigned-topic`,
+`comment-topic`. The produce is **awaited**, so a bug write requires a running broker:
+Kafka is a dependency of this project, not an optional extra.
+
+### 4. In-app AI assistant
+
+Ask questions in plain English, in the app, on whatever page you're on:
+
+> *"which open bugs are critical?"* → the agent searches, answers in prose, and lists
+> `B1JL6JJQLHN` as a clickable **Source**: each id was returned by a tool
+> scoped to your company.
+
+```mermaid
+sequenceDiagram
+    actor U as User
+    participant O as Assistant overlay
+    participant X as Express /ai/chat
+    participant A as ai-service /agent/turn
+    participant T as Internal /agent API
+    participant L as LLM provider
+    participant Q as Qdrant
+    participant M as MongoDB
+
+    U->>O: "which open bugs are critical?"
+    O->>X: message + context + conversation_id
+    X->>A: Bearer JWT + company_id, history capped at 4
+    loop up to 4 steps, one shared 120s budget
+        A->>L: plan (JSON: tool call, or final answer)
+        L-->>A: tool call
+        alt fuzzy / semantic lookup
+            A->>Q: vector search (company-scoped)
+            Q-->>A: candidates
+        else authoritative record read
+            A->>T: GET /agent/bugs?…
+            T->>M: query filtered by company_id
+            M-->>T: records
+            T-->>A: records
+        end
+    end
+    A->>A: grounding: every id in the reply must be in a tool result
+    A->>A: citations: records the reply names
+    A-->>X: reply + steps + citations
+    X-->>O: answer + Sources + copy button
+    O-->>U: rendered markdown, clickable ids
+```
+
+Progress is shown as steps while the agent works; the answer then arrives as one
+complete, grounded message with its Sources and a copy button. The assistant has no
+write path, so a prompt injection has nothing to pull on. Full rules, tool contract and
+failure handling live in [`docs/AI-ASSISTANT.md`](docs/AI-ASSISTANT.md).
 
 ---
 
-## 📁 Project Structure
+## Decisions & what they cost
+
+| Decision | Why, and what it cost |
+|---|---|
+| **Express owns every Mongo read** | The assistant service is stateless w.r.t. your data. Cost: an extra hop per tool call, plus an internal key to protect. |
+| **Grounding checks the reply *text*, not a provider's `tool_calls` field** | Works on any backend, including ones with no structured tool-calling. Cost: string matching instead of exact structure. |
+| **The tenant filter lives *inside* the query, not after it** | "Not found" and "not visible" become the same `404`, so existence is never disclosed. Cost: every id-addressed function takes `company_id` (24 call sites). |
+| **No forced retrieval** | The model isn't ordered to search; a guard catches an uncited id and forces one retry, so grounding holds even when the model is confident. |
+| **The assistant has no write path** | Search and explain only, which removes the entire mutation surface from a prompt injection. Next: acting tools behind an explicit confirmation step. |
+| **One tenant boundary, enforced in one place** | Tenant isolation is the hard boundary and every handler applies it identically. Role-level scoping layers on top of the same queries later. |
+| **Provider-agnostic adapter + a hard paid gate** | Ollama/Groq/HF/OpenAI behind one interface, `llm_allow_paid=false` by default, so no paid API is called unless you flip it. Cost: no vendor-specific features. |
+| **Citations come only from tool results** | The model cannot cite a record it never fetched. Cost: a reply with no fetched records shows no sources. |
+| **Kafka for fan-out, not in-process emits** | Events outlive the process and are replayable. Cost: a required broker; bug writes fail without it. |
+| **Auth before scoping** | Every router declares `Router.use(authenticate)` ahead of its handlers, so a `company_id` from a verified token is always there to scope with, and a token missing it is refused outright. |
+| **Server-owned fields stripped from edit bodies** | Prevents tenant moves and `is_admin` self-promotion. Cost: none, the client never needed to send them. |
+
+---
+
+## Tests & evals
+
+| Layer | Covers | How to run |
+|---|---|---|
+| `ai-service/tests` (104) | grounding, citations, tool contracts, retries/deadlines, config, graders | `python -m pytest` (from `ai-service/`) |
+| `ai-service/evals` (41 cases, 10 categories) | graded behaviour against a live model: honesty, scoping, ambiguity, tool use | `python evals/runner.py --live --backend groq` |
+| `server` | typecheck | `yarn build` (from `server/`) |
+| `client` | lint + typecheck | `yarn lint` |
+
+The eval layer is separate from tests on purpose: a model doesn't return the same string
+twice, so equality assertions are useless. Each live run is committed under
+`ai-service/evals/baselines/` with its backend, model and prompt hash; pass rates are
+quoted from the latest committed run, never from memory.
+
+---
+
+## Run it locally
+
+Three services, a one-off indexer, four dependencies.
+
+```bash
+# Dependencies
+mongod                                   # MongoDB
+docker run -p 6333:6333 qdrant/qdrant    # vector store
+# Kafka (single broker), REQUIRED: bug/comment writes await a produce
+ollama serve
+ollama pull llama3.2 && ollama pull nomic-embed-text
+
+# 1. API (:5000)
+cd server && yarn && yarn dev
+
+# 2. Assistant service (:8000)
+cd ai-service && pip install -r requirements.txt -r requirements-dev.txt && python run.py
+
+# 3. Vector index (once, after Mongo has data)
+cd ai-service && python scripts/reindex.py
+
+# 4. Client (:3000)
+cd client && yarn && yarn dev
+```
+
+**Environment**: `server/.env` needs `MONGO_URI`, `JWT_SECRET`, `KAFKA_BROKERS`,
+`RESEND_API_KEY` (OTP mail) and `NODE_ENV` (optional `PORT`, defaults to 5000).
+For `ai-service/.env`: `llm_backend`, `llm_fallback_order`, `groq_api_key` / `hf_token` /
+`openai_api_key`, `llm_allow_paid`, `ollama_host`, `qdrant_url`, `express_base_url`,
+`internal_api_key`. Defaults in `ai-service/app/config.py` are enough for local dev.
+
+---
+
+## Screenshots
+
+| | |
+|:-:|:-:|
+| ![Login](./docs/screenshots/01-login.png)<br/><sub>**Login**</sub> | ![Company registration](./docs/screenshots/02-company-register.png)<br/><sub>**Company registration**</sub> |
+| ![Admin dashboard](./docs/screenshots/03-admin-dashboard.png)<br/><sub>**Admin dashboard**</sub> | ![Projects (admin)](./docs/screenshots/04-projects-admin.png)<br/><sub>**Projects management**</sub> |
+| ![Add employee](./docs/screenshots/05-add-employee.png)<br/><sub>**Add employee**</sub> | ![Roles management](./docs/screenshots/06-roles-management.png)<br/><sub>**Roles & permissions**</sub> |
+| ![Bug list](./docs/screenshots/07-bug-list.png)<br/><sub>**Bug list**</sub> | ![Create bug](./docs/screenshots/08-create-bug.png)<br/><sub>**Create bug**</sub> |
+| ![Bug details with comments](./docs/screenshots/09-bug-details.png)<br/><sub>**Bug details + comments**</sub> | ![Non-admin dashboard](./docs/screenshots/10-user-dashboard.png)<br/><sub>**Non-admin dashboard**</sub> |
+| ![AI assistant panel](./docs/screenshots/11-ai-assistant-badge-opened.png)<br/><sub>**AI assistant (panel)**</sub> | ![AI assistant fullscreen](./docs/screenshots/12-ai-assistant-fullscreen-view.png)<br/><sub>**AI assistant (fullscreen)**</sub> |
+
+---
+
+## Project layout
 
 ```
 Tracora/
-├── client/                    # Next.js frontend
-│   ├── src/
-│   │   ├── actions/           # Server action handlers
-│   │   ├── app/               # App router pages
-│   │   ├── components/        # React components
-│   │   ├── schemas/           # Zod validation schemas
-│   │   ├── services/          # API service functions
-│   │   └── lib/               # Utilities
-│   └── package.json
-│
-└── server/                    # Express.js backend
-    ├── src/
-    │   ├── config/            # DB, Kafka, WebSocket configs
-    │   ├── controllers/       # Request handlers
-    │   ├── models/            # Mongoose schemas
-    │   ├── routes/            # Express routes
-    │   ├── services/          # Business logic
-    │   ├── middlewares/       # Auth, error handling
-    │   └── utils/             # Helpers
-    └── package.json
+├── client/          Next.js 15 · pages, assistant overlay, WebSocket client
+├── server/          Express 5 · REST, auth, Kafka producer/consumer, WebSocket
+│   ├── src/config/      db, kafka, websocket
+│   ├── src/controllers/ request handlers
+│   ├── src/services/    business logic (tenant-scoped queries live here)
+│   ├── src/models/      Mongoose schemas
+│   └── src/routes/      mounts + authenticate/authorizeRole
+├── ai-service/      FastAPI · grounded agent loop, provider adapter, evals
+│   ├── app/             main + config entrypoints
+│   ├── app/routers/     agent, bugs, health endpoints
+│   ├── app/domains/     agent loop, bugs, projects
+│   ├── app/core/        llm (providers/chat), vector (qdrant), Express data client, logging
+│   ├── app/models/      Pydantic schemas
+│   ├── evals/           41 graded cases + committed baselines
+│   └── tests/           104 unit tests
+└── docs/            AI-ASSISTANT.md (assistant depth), API.md (routes), screenshots/
 ```
 
----
-
-## 🚀 Getting Started
-
-### Prerequisites
-- Node.js 18+
-- MongoDB (local or Atlas)
-- Kafka (optional, for events)
-
-### Installation
-
-```bash
-# Clone repository
-git clone https://github.com/AnanyaaKoundal/Tracora.git
-cd Tracora
-
-# Install all dependencies
-npm install
-# or
-yarn install
-```
-
-### Environment Variables
-
-Create `server/.env`:
-```env
-PORT=5000
-MONGO_URI=mongodb://localhost:27017/tracora
-JWT_SECRET=your_super_secret_key
-NODE_ENV=development
-
-# Optional (Kafka)
-KAFKA_BROKER=localhost:9092
-```
-
-### Running the App
-
-```bash
-# Start backend (from server)
-npm run dev
-
-# Start frontend (from client)
-npm run dev
-```
-
-Visit **http://localhost:3000**
+Route-by-route reference: [`docs/API.md`](docs/API.md). Assistant rules, tool contract
+and eval method: [`docs/AI-ASSISTANT.md`](docs/AI-ASSISTANT.md).
 
 ---
 
-## 📸 Screenshots
+## What's next
 
-### 1. Login Page
-![Login Page](./docs/screenshots/01-login.png)
-
-### 2. Company Selection
-![Company Registration](./docs/screenshots/02-company-register.png)
-
-### 3. Admin Dashboard
-![Admin Dashboard](./docs/screenshots/03-admin-dashboard.png)
-
-### 4. Projects Management (Admin)
-![Projects Admin](./docs/screenshots/04-projects-admin.png)
-
-### 5. Add Employee Modal
-![Add Employee](./docs/screenshots/05-add-employee.png)
-
-### 6. Roles Management
-![Roles Management](./docs/screenshots/06-roles-management.png)
-
-### 7. Bug List Page
-![Bug List](./docs/screenshots/07-bug-list.png)
-
-### 8. Create Bug Form
-![Create Bug](./docs/screenshots/08-create-bug.png)
-
-### 9. Bug Details with Comments
-![Bug Details](./docs/screenshots/09-bug-details.png)
-
-### 10. Non-Admin User Dashboard
-![User Dashboard](./docs/screenshots/10-user-dashboard.png)
-
+- **Feedback → eval cases**: thumbs-down captures the exchange as a new eval case, so
+  every complaint becomes a regression test
+- **Acting tools**: file-the-bug-for-me, behind an explicit confirmation step
+- **Field-level role policy**: a developer should not read bugs assigned to other people
+- **Token/cost readout** per assistant turn
+- **Per-category eval dashboard** with a dated pass-rate history
 
 ---
 
-## 💡 What I Learned
+## License
 
-### Technical Skills
-- **Multi-tenancy** — Implementing company-scoped data isolation
-- **RBAC** — Role-based access control at database and API level
-- **Real-time communication** — WebSockets, SSE, and Kafka integration
-- **Authentication** — JWT, HTTP-only cookies, OTP flow
-- **TypeScript** — Type safety across frontend and backend
+MIT, for learning and portfolio use.
 
-### System Design
-- **Database modeling** — Schema design with proper indexing and constraints
-- **API design** — RESTful patterns, error handling, validation
-- **Security** — Protecting sensitive routes and data
-
-### Best Practices
-- **Code organization** — Modular, maintainable structure
-- **Error handling** — Consistent error responses
-- **Validation** — Zod schemas for type-safe validation
-
----
-
-## 🔮 Future Improvements
-
-- [ ] Email notifications
-- [ ] File attachments for bugs
-- [ ] Slack/Discord integration
-- [ ] Advanced analytics
-- [ ] Mobile app (React Native/Flutter)
-- [ ] CI/CD integration
-
----
-
-## 📄 License
-
-MIT License — feel free to use this project for learning and portfolio purposes.
-
----
-
-## 🙋‍♂️ Connect
+## Connect
 
 - **GitHub**: [AnanyaaKoundal](https://github.com/AnanyaaKoundal)
 - **LinkedIn**: [Ananyaa Koundal](https://linkedin.com/in/ananyaakoundal)
 
-If you use this project, ⭐ the repo and share your feedback!
+If this was useful, ⭐ the repo and tell me what broke.

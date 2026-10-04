@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "../ui/button";
-import { Bug, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { usePathname } from 'next/navigation';
 
 export default function Navbar() {
@@ -37,9 +38,7 @@ export default function Navbar() {
       <div className="w-full px-6 lg:px-12">
         <nav className="flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
-              <Bug className="w-6 h-6 text-white" />
-            </div>
+            <Image src="/logo-tracora.png" alt="Tracora" width={40} height={40} className="h-10 w-10" />
             <span className="text-xl font-bold text-primary">Tracora</span>
           </Link>
 

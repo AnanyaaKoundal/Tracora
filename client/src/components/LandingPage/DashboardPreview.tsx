@@ -356,7 +356,7 @@ export default function DashboardPreview() {
             </motion.div>
             
             <p className="text-center mt-4 text-sm text-muted-foreground">
-              Click on the tabs above to explore different features • Add real screenshots to public/images/landing/
+              Pick a screen on the left to explore the app
             </p>
           </div>
         </div>

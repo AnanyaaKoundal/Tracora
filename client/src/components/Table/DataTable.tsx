@@ -5,6 +5,30 @@ import { motion } from "framer-motion";
 import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Search, X, Filter, Calendar } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { formatDate, formatDateTime } from "@/lib/dates";
+
+const DATE_KEYS = new Set([
+  "project_start_date",
+  "project_end_date",
+  "start_date",
+  "end_date",
+  "due_date",
+]);
+const DATETIME_KEYS = new Set([
+  "createdAt",
+  "updatedAt",
+  "created_at",
+  "updated_at",
+]);
+
+function displayValue(key: string, raw: unknown): string {
+  if (raw === null || raw === undefined || raw === "") return "-";
+  if (typeof raw === "string" || typeof raw === "number" || raw instanceof Date) {
+    if (DATETIME_KEYS.has(key)) return formatDateTime(raw) || String(raw);
+    if (DATE_KEYS.has(key)) return formatDate(raw) || String(raw);
+  }
+  return String(raw);
+}
 
 export type Column<T> = {
   key: keyof T | "actions";
@@ -400,7 +424,9 @@ export function DataTable<T extends Record<string, unknown>>({
                   >
                     {columns.map((col, colIndex) => (
                       <td key={colIndex} className="px-4 py-3 text-sm text-slate-700">
-                        {col.render ? col.render(row) : String(row[col.key as string] ?? '-')}
+                        {col.render
+                          ? col.render(row)
+                          : displayValue(String(col.key), row[col.key as string])}
                       </td>
                     ))}
                   </motion.tr>

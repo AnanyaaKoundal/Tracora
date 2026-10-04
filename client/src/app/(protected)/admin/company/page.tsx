@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { formatDate } from "@/lib/dates";
 import { Company } from "@/schemas/admin.schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -140,7 +141,7 @@ export default function CompanyDetailsPage() {
             <div className="flex items-center gap-4 mt-3 text-sm text-white/70">
               <span className="flex items-center gap-1">
                 <Calendar className="w-4 h-4" />
-                Created {new Date(company.createdAt ?? "").toLocaleDateString()}
+                Created {formatDate(company.createdAt)}
               </span>
               <span className="flex items-center gap-1">
                 <Shield className="w-4 h-4" />

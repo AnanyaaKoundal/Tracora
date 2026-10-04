@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { formatDateTime } from "@/lib/dates";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
 import { postComment, fetchComments } from "@/actions/commentAction";
@@ -42,7 +43,7 @@ export default function BugActivitySection({
         type: "comment",
         message: c.message,
         createdBy: c.senderId?.employee_name || "User",
-        createdAt: new Date(c.createdAt).toLocaleString(),
+        createdAt: formatDateTime(c.createdAt),
       }));
 
       setActivities((prev) => {

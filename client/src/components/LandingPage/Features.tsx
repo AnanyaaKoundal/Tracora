@@ -11,10 +11,17 @@ import {
   Kanban,
   Zap,
   Layers,
-  TrendingUp
+  TrendingUp,
+  Sparkles
 } from "lucide-react";
 
 const features = [
+  {
+    icon: Sparkles,
+    title: "AI Bug Assistant",
+    description: "Ask questions in plain English and get answers back with clickable sources from your own bugs and projects.",
+    color: "bg-teal-100 text-teal-600",
+  },
   {
     icon: Bug,
     title: "Smart Bug Tracking",

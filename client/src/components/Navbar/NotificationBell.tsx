@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useMemo } from "react";
+import { formatDateTime } from "@/lib/dates";
 import { useRouter } from "next/navigation";
 import { Bell } from "lucide-react";
 import {
@@ -307,8 +308,7 @@ export default function NotificationBell({ employeeId }: NotificationBellProps) 
 
                     <div className="flex justify-between items-center text-xs text-gray-400">
                       <span>
-                        {n.createdAt &&
-                          new Date(n.createdAt).toLocaleString()}
+                        {n.createdAt && formatDateTime(n.createdAt)}
                       </span>
 
                       {!n.read && (

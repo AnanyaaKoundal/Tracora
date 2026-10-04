@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { formatDate } from "@/lib/dates";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import { fetchProjectForDashboard } from "@/services/adminService";
@@ -89,7 +90,7 @@ export default function ProjectsList() {
                   </span>
                   <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground justify-end">
                     <Calendar className="w-3 h-3" />
-                    {p.project_end_date ? new Date(p.project_end_date).toLocaleDateString() : "No deadline"}
+                    {p.project_end_date ? formatDate(p.project_end_date) : "No deadline"}
                   </div>
                 </div>
               </motion.div>

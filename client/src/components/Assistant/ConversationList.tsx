@@ -37,9 +37,6 @@ export default function ConversationList({ onSelect }: { onSelect?: () => void }
           >
             <p className="truncate text-xs font-medium text-slate-900">{c.title}</p>
             {c.preview && <p className="truncate text-[11px] text-slate-400">{c.preview}</p>}
-            <span className="mt-1 inline-block rounded bg-slate-100 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-slate-500">
-              {c.kind}
-            </span>
           </button>
           <button
             type="button"

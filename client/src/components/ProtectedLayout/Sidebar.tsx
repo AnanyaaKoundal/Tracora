@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Menu, X, LayoutDashboard, FolderKanban, Bug, LogOut, ChevronRight } from 'lucide-react';
+import Image from 'next/image';
 import { logout } from '@/actions/loginAction';
 import { useRouter, usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -58,9 +59,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
         {/* Logo */}
         <div className="px-6 py-4 border-b border-gray-100">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
-              <Bug className="w-5 h-5 text-white" />
-            </div>
+            <Image src="/logo-tracora.png" alt="Tracora" width={40} height={40} className="h-10 w-10" />
             <span className="text-lg font-bold text-foreground">Tracora</span>
           </div>
         </div>

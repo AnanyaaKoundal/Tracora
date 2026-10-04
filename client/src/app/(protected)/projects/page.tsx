@@ -36,11 +36,7 @@ export default function ProjectsPage() {
     { key: "project_name", header: "Name", sortable: true },
     { key: "project_status", header: "Status", sortable: true },
     { key: "project_start_date", header: "Start Date", sortable: true },
-    {
-      key: "project_end_date",
-      header: "End Date",
-      render: (row) => row.project_end_date || "-",
-    },
+    { key: "project_end_date", header: "End Date" },
     { key: "createdAt", header: "Created At", sortable: true },
     ...(isAdmin ? [{
       key: "actions",

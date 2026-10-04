@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { formatDate } from "@/lib/dates";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { fetchBugsforDashboard } from "@/services/adminService";
 import { toast } from "sonner";
@@ -89,7 +90,7 @@ export default function RecentBugsList() {
                       <span className="font-mono">{bug.bug_id}</span>
                       <span>•</span>
                       <Calendar className="w-3 h-3" />
-                      {new Date(bug.createdAt).toLocaleDateString()}
+                      {formatDate(bug.createdAt)}
                     </div>
                   </div>
                 </div>

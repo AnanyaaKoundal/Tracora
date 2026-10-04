@@ -2,20 +2,14 @@ import type { Metadata } from "next";
 import "@/app/globals.css";
 
 export const metadata: Metadata = {
-  title: "Bug Tracker | Landing",
-  description: "Track and manage your software bugs with ease",
+  title: "Tracora",
+  description: "Multi-tenant bug tracker with a cited AI assistant.",
 };
 
-export default function RootLayout({
+export default function OpenLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return (
-    <html lang="en">
-      <body>
-        {children}
-      </body>
-    </html>
-  );
+  return children;
 }

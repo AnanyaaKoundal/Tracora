@@ -7,6 +7,7 @@ import StatusPieCharts from "@/components/AdminPanel/Dashboard/BugStatusPieChart
 import BugTrendChart from "@/components/AdminPanel/Dashboard/BugTrendsLineChart";
 import DashboardStatsRow from "@/components/AdminPanel/Dashboard/StatsRow";
 import { useEffect, useState } from "react";
+import { formatDate } from "@/lib/dates";
 import { getDashboardStats } from "@/actions/dsahboardAction";
 import { motion } from "framer-motion";
 import { usePageContext } from "@/hooks/useAssistantContext";
@@ -43,12 +44,7 @@ export default function AdminDashboardPage() {
           <p className="text-muted-foreground">Welcome back! Here's what's happening with your projects.</p>
         </div>
         <div className="text-sm text-muted-foreground">
-          Last updated: {new Date().toLocaleDateString('en-US', { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
-          })}
+          Last updated: {formatDate(new Date())}
         </div>
       </motion.div>
 

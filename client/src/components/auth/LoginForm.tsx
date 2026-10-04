@@ -20,7 +20,8 @@ import {
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bug, ArrowRight, Mail, Phone, Lock, Building2 } from "lucide-react";
+import { ArrowRight, Mail, Phone, Lock, Building2 } from "lucide-react";
+import Image from "next/image";
 
 export default function LoginForm() {
   const [step, setStep] = useState<"company" | "details" | "otp">("company");
@@ -129,8 +130,8 @@ export default function LoginForm() {
             transition={{ duration: 0.6 }}
             className="text-center"
           >
-            <div className="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-8 backdrop-blur-sm">
-              <Bug className="w-10 h-10" />
+            <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center mx-auto mb-8 p-2">
+              <Image src="/logo-tracora.png" alt="Tracora" width={64} height={64} className="h-full w-full" />
             </div>
             <h1 className="text-5xl font-bold mb-4">Tracora</h1>
             <p className="text-xl opacity-90 max-w-md">
@@ -162,9 +163,7 @@ export default function LoginForm() {
           className="w-full max-w-md"
         >
           <div className="lg:hidden flex items-center gap-2 mb-8 justify-center">
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
-              <Bug className="w-6 h-6 text-white" />
-            </div>
+            <Image src="/logo-tracora.png" alt="Tracora" width={40} height={40} className="h-10 w-10" />
             <span className="text-2xl font-bold text-primary">Tracora</span>
           </div>
 

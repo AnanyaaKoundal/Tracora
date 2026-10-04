@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Bug, Github, Twitter, Mail, Send, CheckCircle, ArrowRight } from "lucide-react";
+import { Github, Twitter, Mail, Send, CheckCircle, ArrowRight } from "lucide-react";
+import Image from "next/image";
 import { Button } from "../ui/button";
 import Link from "next/link";
 
@@ -63,9 +64,7 @@ export default function Footer() {
           >
             <div className="space-y-6">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
-                  <Bug className="w-5 h-5 text-white" />
-                </div>
+                <Image src="/logo-tracora.png" alt="Tracora" width={40} height={40} className="h-10 w-10" />
                 <span className="text-2xl font-bold text-white">Tracora</span>
               </div>
               <p className="text-slate-400 text-lg max-w-md">

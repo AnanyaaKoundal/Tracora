@@ -3,6 +3,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { formatDateTime } from "@/lib/dates";
 import websocketService from "@/services/websockets/websocketService";
 
 interface Props {
@@ -37,7 +38,7 @@ export function useBugComments({ bugId, employeeId, setActivities }: Props) {
           type: "comment",
           message: comment.message,
           createdBy: comment.senderId?.employee_name || "User",
-          createdAt: new Date(comment.createdAt).toLocaleString(),
+          createdAt: formatDateTime(comment.createdAt),
         };
 
         return [newActivity, ...prev];

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { formatDateTime } from "@/lib/dates";
 import { getBugById } from "@/actions/bugAction";
 import { Bug as BugSchema } from "@/schemas/bug.schema";
 import { fetchAllAssigneesService } from "@/services/bugService";
@@ -47,7 +48,7 @@ export default function BugInfoPage() {
               type: "status",
               message: "Bug created with status Open",
               createdBy: res.data.reported_by || "unknown",
-              createdAt: new Date(res.data.createdAt).toLocaleString(),
+              createdAt: formatDateTime(res.data.createdAt),
             },
           ]);
         } else toast.error(res.message || "Failed to fetch bug");

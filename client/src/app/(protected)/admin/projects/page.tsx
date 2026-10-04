@@ -38,11 +38,7 @@ export default function ProjectsPage() {
     { key: "project_id", header: "ID" },
     { key: "project_name", header: "Name" },
     { key: "project_start_date", header: "Start Date" },
-    {
-      key: "project_end_date",
-      header: "End Date",
-      render: (row) => row.project_end_date || "-",
-    },
+    { key: "project_end_date", header: "End Date" },
     { key: "project_status", header: "Status" },
     { key: "createdAt", header: "Created At" },
     { key: "updatedAt", header: "Updated At" },

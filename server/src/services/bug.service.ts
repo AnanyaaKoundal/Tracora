@@ -61,8 +61,10 @@ export const getAllBugs = async (company_id?: string, project_id?: string) => {
   return bugs;
 };
 
-export const getBugById = async (bug_id: string) => {
-  const bug = await Bug.findOne({ bug_id });
+export const getBugById = async (bug_id: string, company_id: string) => {
+  // company_id comes from the verified token. Filtering on it here (rather than after
+  // the read) is what makes "not visible" and "not found" the same 404.
+  const bug = await Bug.findOne({ bug_id, company_id });
 
   if (!bug) {
     throw new ApiError(404, "Bug not found");
@@ -71,40 +73,37 @@ export const getBugById = async (bug_id: string) => {
   return bug;
 };
 
-export const editBug = async (bug_id: string, updateData: any, user?: any) => {
-  const oldBug = await Bug.findOne({ bug_id });
+export const editBug = async (bug_id: string, updateData: any, user: any) => {
+  const company_id = user?.company_id;
+  const oldBug = await Bug.findOne({ bug_id, company_id });
 
   if (oldBug && "project_id" in updateData) {
     // Re-checked on edit too, otherwise a bug could be moved into another tenant's
     // project after creation.
     updateData.project_id = await assertProjectInTenant(
       updateData.project_id,
-      oldBug.company_id
+      company_id
     );
   }
 
+  // Tenant and identity fields are server-owned: an edit body must never be able to
+  // move a bug between companies or rewrite its id.
+  const safeUpdate = { ...updateData };
+  delete safeUpdate.company_id;
+  delete safeUpdate.bug_id;
+
   const bug = await Bug.findOneAndUpdate(
-    { bug_id },
-    { ...updateData, updated_at: Date.now() },
+    { bug_id, company_id },
+    { ...safeUpdate, updated_at: Date.now() },
     { new: true }
   );
-  
+
   if (!bug) {
     throw new ApiError(404, "bug not found");
   }
 
   if (oldBug && updateData.bug_status && oldBug.bug_status !== updateData.bug_status && user) {
     console.log("SENDING STATUS CHANGE NOTIFICATION", { oldStatus: oldBug.bug_status, newStatus: updateData.bug_status });
-    await kafkaProducer.send("bug-status-changed-topic", {
-      bug,
-      senderId: user.employee_id,
-      senderName: user.employee_name || user.employeeId,
-      oldStatus: oldBug.bug_status,
-      newStatus: updateData.bug_status,
-    });
-  }
-
-  if (oldBug && updateData.bug_status && oldBug.bug_status !== updateData.bug_status && user) {
     await kafkaProducer.send("bug-status-changed-topic", {
       bug,
       senderId: user.employee_id,
@@ -126,9 +125,9 @@ export const editBug = async (bug_id: string, updateData: any, user?: any) => {
   return bug;
 };
 
-export const deleteBugById = async (bug_id: string) => {
+export const deleteBugById = async (bug_id: string, company_id: string) => {
 
-  const bug = await Bug.findOneAndDelete({ bug_id });
+  const bug = await Bug.findOneAndDelete({ bug_id, company_id });
 
   if (!bug) {
     throw new ApiError(404, "bug not found");
@@ -137,12 +136,12 @@ export const deleteBugById = async (bug_id: string) => {
   return bug;
 };
 
-export const deleteBugsByIds = async (bugIds: string[]) => {
+export const deleteBugsByIds = async (bugIds: string[], company_id: string) => {
   if (!Array.isArray(bugIds) || bugIds.length === 0) {
     throw new ApiError(400, "No bug IDs provided");
   }
 
-  const result = await Bug.deleteMany({ bug_id: { $in: bugIds } });
+  const result = await Bug.deleteMany({ bug_id: { $in: bugIds }, company_id });
 
   if (result.deletedCount === 0) {
     throw new ApiError(404, "No bugs deleted");

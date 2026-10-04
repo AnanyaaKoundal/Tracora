@@ -6,7 +6,9 @@ import Employee from "@/models/employee.model";
 export const createCommentService = async (data: any, user: any) => {
   const { bug_id } = data;
 
-  const existingbug = await Bug.findOne({ bug_id });
+  // Resolved inside the caller's tenant: commenting on another company's bug must be
+  // indistinguishable from that bug not existing.
+  const existingbug = await Bug.findOne({ bug_id, company_id: user.company_id });
   if (!existingbug) {
     throw new ApiError(400, "Bug not found");
   }
@@ -28,7 +30,14 @@ export const createCommentService = async (data: any, user: any) => {
   return newComment;
 };
 
-export const fetchCommentsService = async (bugId: string) => {
+export const fetchCommentsService = async (bugId: string, company_id: string) => {
+  // Comment has no company_id field, so the parent bug is the gate: resolve it inside
+  // the tenant first, then read its comments.
+  const bug = await Bug.findOne({ bug_id: bugId, company_id });
+  if (!bug) {
+    throw new ApiError(404, "Bug not found");
+  }
+
   const comments = await Comment.find({ bug_id: bugId })
     .populate({
       path: "senderId",

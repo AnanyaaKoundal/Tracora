@@ -20,6 +20,14 @@ export const authenticate: RequestHandler = async (req, res, next) => {
         company_id: string;
         role: string;
       };
+
+      // Every tenant-scoped query downstream filters on company_id from this token.
+      // A token without one would silently widen those queries to all tenants, so it
+      // must never be accepted.
+      if (!decoded.employee_id || !decoded.company_id) {
+        res.status(401).json({ message: "Unauthorized: Invalid token" });
+        return;
+      }
       
       const user = await Employee.findOne({ employee_id: decoded.employee_id });
       if (!user) {

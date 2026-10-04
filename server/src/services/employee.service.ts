@@ -71,7 +71,7 @@ export const getEmployees = async (company_id?: string) => {
   const enrichedEmployees = await Promise.all(
     employees.map(async (employee) => {
       const project = employee.projectId
-        ? await Project.findOne({ project_id: employee.projectId })
+        ? await Project.findOne({ project_id: employee.projectId, company_id })
         : null;
 
       const roles = employee.roleId?.length
@@ -90,8 +90,10 @@ export const getEmployees = async (company_id?: string) => {
 
 
 // Get user by ID
-export const getEmployeeById = async (user_id: string) => {
-  const user = await Employee.findOne({ user_id });
+export const getEmployeeById = async (employee_id: string, company_id: string) => {
+  // The Employee schema has no user_id field; querying one made this endpoint 404 on
+  // every request. employee_id is the actual key, scoped to the caller's tenant.
+  const user = await Employee.findOne({ employee_id, company_id });
 
   if (!user) {
     throw new ApiError(404, "Employee not found");
@@ -101,13 +103,13 @@ export const getEmployeeById = async (user_id: string) => {
 };
 
 // Edit user
-export const editEmployee = async (employee_id: string, updateData: any) => {
-  const existingUser = await Employee.findOne({ employee_id });
+export const editEmployee = async (employee_id: string, updateData: any, company_id: string) => {
+  const existingUser = await Employee.findOne({ employee_id, company_id });
   if (!existingUser) {
     throw new ApiError(404, "Employee not found");
   }
 
-  const { employee_email, employee_contact_number, company_id } = updateData;
+  const { employee_email, employee_contact_number } = updateData;
 
   if (employee_email && employee_email !== existingUser.employee_email) {
     const duplicateEmail = await Employee.findOne({ employee_email, company_id, employee_id: { $ne: employee_id } });
@@ -123,9 +125,14 @@ export const editEmployee = async (employee_id: string, updateData: any) => {
     }
   }
 
+  // Tenant and identity fields are server-owned and cannot be rewritten from a body.
+  const safeUpdate = { ...updateData };
+  delete safeUpdate.company_id;
+  delete safeUpdate.employee_id;
+
   const user = await Employee.findOneAndUpdate(
-    { employee_id },
-    { ...updateData, updated_at: Date.now() },
+    { employee_id, company_id },
+    { ...safeUpdate, updated_at: Date.now() },
     { new: true }
   );
 
@@ -133,8 +140,8 @@ export const editEmployee = async (employee_id: string, updateData: any) => {
 };
 
 // Delete user
-export const deleteEmployeeById = async (employee_id: string) => {
-  const user = await Employee.findOneAndDelete({ employee_id });
+export const deleteEmployeeById = async (employee_id: string, company_id: string) => {
+  const user = await Employee.findOneAndDelete({ employee_id, company_id });
 
   if (!user) {
     throw new ApiError(404, "Employee not found");
@@ -143,14 +150,14 @@ export const deleteEmployeeById = async (employee_id: string) => {
   return user;
 };
 
-export const getRoleName = async (employee_id: string) => {
-  const emp = await Employee.findOne({ employee_id });
+export const getRoleName = async (employee_id: string, company_id: string) => {
+  const emp = await Employee.findOne({ employee_id, company_id });
   if (!emp) {
     throw new ApiError(404, "Employee not found");
   }
 
   // since roleId is stored as an array of string IDs
-  const role = await Role.findOne({ role_id: emp.roleId[0] });
+  const role = await Role.findOne({ role_id: emp.roleId[0], company_id });
   if (!role) {
     throw new ApiError(404, "Role not found");
   }

@@ -29,11 +29,9 @@ export const getAllProjects = async (company_id?: string) => {
   return projects;
 };
 
-export const getProjectById = async (project_id: string, company_id?: string) => {
+export const getProjectById = async (project_id: string, company_id: string) => {
   // company_id is required to keep a guessed project_id from reading another tenant.
-  const project = company_id
-    ? await Project.findOne({ project_id, company_id })
-    : await Project.findOne({ project_id });
+  const project = await Project.findOne({ project_id, company_id });
 
   if (!project) {
     throw new ApiError(404, "Project not found");
@@ -42,10 +40,15 @@ export const getProjectById = async (project_id: string, company_id?: string) =>
   return project;
 };
 
-export const editProject = async (project_id: string, updateData: any) => {
+export const editProject = async (project_id: string, updateData: any, company_id: string) => {
+  // Tenant and identity fields are server-owned and cannot be rewritten from a body.
+  const safeUpdate = { ...updateData };
+  delete safeUpdate.company_id;
+  delete safeUpdate.project_id;
+
   const project = await Project.findOneAndUpdate(
-    { project_id },
-    { ...updateData, updated_at: Date.now() },
+    { project_id, company_id },
+    { ...safeUpdate, updated_at: Date.now() },
     { new: true }
   );
 
@@ -56,13 +59,13 @@ export const editProject = async (project_id: string, updateData: any) => {
   return project;
 };
 
-export const deleteProjectById = async (project_id: string) => {
-  const assignedEmployees = await Employee.findOne({ projectId: project_id });
+export const deleteProjectById = async (project_id: string, company_id: string) => {
+  const assignedEmployees = await Employee.findOne({ projectId: project_id, company_id });
   if (assignedEmployees) {
     throw new ApiError(400, "Cannot delete project. Employees are assigned to it.");
   }
 
-  const project = await Project.findOneAndDelete({ project_id });
+  const project = await Project.findOneAndDelete({ project_id, company_id });
 
   if (!project) {
     throw new ApiError(404, "Project not found");
@@ -71,12 +74,12 @@ export const deleteProjectById = async (project_id: string) => {
   return project;
 };
 
-export const deleteProjectsByIds = async (projectIds: string[]) => {
+export const deleteProjectsByIds = async (projectIds: string[], company_id: string) => {
   if (!Array.isArray(projectIds) || projectIds.length === 0) {
     throw new ApiError(400, "No project IDs provided");
   }
 
-  const result = await Project.deleteMany({ project_id: { $in: projectIds } });
+  const result = await Project.deleteMany({ project_id: { $in: projectIds }, company_id });
 
   if (result.deletedCount === 0) {
     throw new ApiError(404, "No projects deleted");

@@ -25,8 +25,9 @@ export const createComment = asyncHandler(async (req: Request, res: Response) =>
 });
 
 export const fetchComments = asyncHandler(async (req: Request, res: Response) => {
+    const company_id = (req as any).user.company_id;
     const {bugId} = req.body;
-    const bug = await fetchCommentsService(bugId);
+    const bug = await fetchCommentsService(bugId, company_id);
     res.status(200).json({
         success: true,
         message: "Bugs fetched successfully",

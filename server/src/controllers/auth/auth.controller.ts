@@ -43,7 +43,7 @@ export const verifyLoginOtpController = asyncHandler(async (req: Request, res: R
     return res.status(400).json(new ApiError(400, "Invalid OTP"));
   }
 
-  const role = await getRoleName(employee_id);
+  const role = await getRoleName(employee_id, company_id);
   const token = generateToken({
     company_id: company_id,
     employee_id: employee_id,

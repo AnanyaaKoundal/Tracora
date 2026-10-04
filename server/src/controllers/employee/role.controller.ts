@@ -20,20 +20,23 @@ export const getRoles = asyncHandler(async (req: Request, res: Response) => {
 
 // Get Role by ID
 export const getRoleById = asyncHandler(async (req: Request, res: Response) => {
-  const role = await roleService.getRoleById(req.params.role_id);
+  const company_id = (req as any).user.company_id;
+  const role = await roleService.getRoleById(req.params.role_id, company_id);
   res.status(200).json(new ApiResponse(200, "Role fetched successfully", role));
 });
 
 // Edit Role by ID
 export const editRole = asyncHandler(async (req: Request, res: Response) => {
-  const updatedRole = await roleService.editRole(req.params.role_id, req.body);
+  const company_id = (req as any).user.company_id;
+  const updatedRole = await roleService.editRole(req.params.role_id, req.body, company_id);
   res.status(200).json(new ApiResponse(200, "Role updated successfully", updatedRole));
 });
 
 // Delete Role by ID
 export const deleteRoleById = asyncHandler(async (req: Request, res: Response) => {
+  const company_id = (req as any).user.company_id;
   try{
-  const deletedRole = await roleService.deleteRoleById(req.params.role_id);
+  const deletedRole = await roleService.deleteRoleById(req.params.role_id, company_id);
   res.status(200).json(new ApiResponse(200, "Role deleted successfully", deletedRole));
   }catch(error: Error | any){
     res.status(400).json(new ApiError(400, error.message) );
@@ -42,7 +45,8 @@ export const deleteRoleById = asyncHandler(async (req: Request, res: Response) =
 
 // Delete multiple Roles by IDs (expects array of role_ids in req.body.roleIds)
 export const deleteRolesByIds = asyncHandler(async (req: Request, res: Response) => {
+  const company_id = (req as any).user.company_id;
   const { roleIds } = req.body;
-  const result = await roleService.deleteRolesByIds(roleIds);
+  const result = await roleService.deleteRolesByIds(roleIds, company_id);
   res.status(200).json(new ApiResponse(200, `${result.deletedCount} roles deleted successfully`, result));
 });

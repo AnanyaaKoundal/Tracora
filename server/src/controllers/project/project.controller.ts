@@ -47,7 +47,8 @@ export const getCompanyProjects = asyncHandler(async (req: Request, res: Respons
 });
 
 export const editProject = asyncHandler(async (req: Request, res: Response) => {
-  const updatedProject = await projectService.editProject(req.params.p_id, req.body);
+  const company_id = (req as any).user.company_id;
+  const updatedProject = await projectService.editProject(req.params.p_id, req.body, company_id);
   res.status(200).json({
     success: true,
     message: "Project updated successfully",
@@ -56,7 +57,8 @@ export const editProject = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const deleteProjectById = asyncHandler(async (req: Request, res: Response) => {
-  const deletedProject = await projectService.deleteProjectById(req.params.p_id);
+  const company_id = (req as any).user.company_id;
+  const deletedProject = await projectService.deleteProjectById(req.params.p_id, company_id);
   res.status(200).json({
     success: true,
     message: "Project deleted successfully",
@@ -65,8 +67,9 @@ export const deleteProjectById = asyncHandler(async (req: Request, res: Response
 });
 
 export const deleteProjectsByIds = asyncHandler(async (req: Request, res: Response) => {
+  const company_id = (req as any).user.company_id;
   const { projectIds } = req.body as { projectIds: string[] };
-  const result = await projectService.deleteProjectsByIds(projectIds);
+  const result = await projectService.deleteProjectsByIds(projectIds, company_id);
   res.status(200).json({
     success: true,
     message: "Projects deleted successfully",

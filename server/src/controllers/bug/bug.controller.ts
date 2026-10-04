@@ -30,7 +30,8 @@ export const getAllBugs = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const getbugById = asyncHandler(async (req: Request, res: Response) => {
-    const bug = await bugService.getBugById(req.params.bug_id);
+    const company_id = (req as any).user.company_id;
+    const bug = await bugService.getBugById(req.params.bug_id, company_id);
     res.status(200).json({
         success: true,
         message: "Bug fetched successfully",
@@ -50,7 +51,8 @@ export const editBug = asyncHandler(async (req: Request, res: Response) => {
   });
   
   export const deleteBugById = asyncHandler(async (req: Request, res: Response) => {
-    const deletedBug = await bugService.deleteBugById(req.params.bug_id);
+    const company_id = (req as any).user.company_id;
+    const deletedBug = await bugService.deleteBugById(req.params.bug_id, company_id);
     res.status(200).json({
       success: true,
       message: "Bug deleted successfully",

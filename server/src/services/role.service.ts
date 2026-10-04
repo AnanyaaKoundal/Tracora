@@ -67,8 +67,8 @@ export const getRoles = async (company_id?: string) => {
   return roles;
 };
 
-export const getRoleById = async (role_id: string) => {
-  const role = await Role.findOne({ role_id });
+export const getRoleById = async (role_id: string, company_id: string) => {
+  const role = await Role.findOne({ role_id, company_id });
 
   if (!role) {
     throw new ApiError(404, "Role not found");
@@ -82,8 +82,8 @@ export const getCompanyAdminRole = async (company_id: string) => {
   return role;
 };
 
-export const editRole = async (role_id: string, updateData: any) => {
-  const existingRole = await Role.findOne({ role_id });
+export const editRole = async (role_id: string, updateData: any, company_id: string) => {
+  const existingRole = await Role.findOne({ role_id, company_id });
   if (!existingRole) {
     throw new ApiError(404, "Role not found");
   }
@@ -97,7 +97,7 @@ export const editRole = async (role_id: string, updateData: any) => {
   if (role_name) {
     const duplicateCheck = await Role.findOne({
       role_name,
-      company_id: existingRole.company_id,
+      company_id,
       role_id: { $ne: role_id },
     });
     if (duplicateCheck) {
@@ -105,17 +105,25 @@ export const editRole = async (role_id: string, updateData: any) => {
     }
   }
 
+  // is_admin / is_default are server-assigned. Letting a body set is_admin would be
+  // privilege escalation: the caller could promote their own role to admin.
+  const safeUpdate = { ...updateData };
+  delete safeUpdate.company_id;
+  delete safeUpdate.role_id;
+  delete safeUpdate.is_admin;
+  delete safeUpdate.is_default;
+
   const role = await Role.findOneAndUpdate(
-    { role_id },
-    { ...updateData, updated_at: Date.now() },
+    { role_id, company_id },
+    { ...safeUpdate, updated_at: Date.now() },
     { new: true }
   );
 
   return role;
 };
 
-export const deleteRoleById = async (role_id: string) => {
-  const role = await Role.findOne({ role_id });
+export const deleteRoleById = async (role_id: string, company_id: string) => {
+  const role = await Role.findOne({ role_id, company_id });
   if (!role) {
     throw new ApiError(404, "Role not found");
   }
@@ -124,33 +132,33 @@ export const deleteRoleById = async (role_id: string) => {
     throw new ApiError(403, "Cannot delete admin role");
   }
 
-  const assignedEmployee = await Employee.findOne({ roleId: role_id });
+  const assignedEmployee = await Employee.findOne({ roleId: role_id, company_id });
   if (assignedEmployee) {
     throw new ApiError(400, "Cannot delete role. Employees are assigned to it.");
   }
 
-  const deletedRole = await Role.findOneAndDelete({ role_id });
+  const deletedRole = await Role.findOneAndDelete({ role_id, company_id });
 
   return deletedRole;
 };
 
-export const deleteRolesByIds = async (roleIds: string[]) => {
+export const deleteRolesByIds = async (roleIds: string[], company_id: string) => {
     if (!Array.isArray(roleIds) || roleIds.length === 0) {
       throw new ApiError(400, "No role IDs provided");
     }
 
-    const roles = await Role.find({ role_id: { $in: roleIds } });
+    const roles = await Role.find({ role_id: { $in: roleIds }, company_id });
     const adminRoles = roles.filter(r => r.is_admin);
     if (adminRoles.length > 0) {
       throw new ApiError(403, "Cannot delete admin role(s)");
     }
 
-    const rolesWithEmployees = await Employee.find({ roleId: { $in: roleIds } });
+    const rolesWithEmployees = await Employee.find({ roleId: { $in: roleIds }, company_id });
     if (rolesWithEmployees.length > 0) {
       throw new ApiError(400, "Cannot delete role(s). Employees are assigned to them.");
     }
   
-    const result = await Role.deleteMany({ role_id: { $in: roleIds } });
+    const result = await Role.deleteMany({ role_id: { $in: roleIds }, company_id });
   
     if (result.deletedCount === 0) {
       throw new ApiError(404, "No roles deleted");

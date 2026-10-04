@@ -165,8 +165,8 @@ export const getBugsforDashboard = async (company_id: string) => {
 };
 
 // Return recent bugs (sorted by creation date)
-export const getRecentBugs = async (limit = 5) => {
-  const bugs = await Bug.find()
+export const getRecentBugs = async (company_id: string, limit = 5) => {
+  const bugs = await Bug.find({ company_id })
     .sort({ createdAt: -1 } as Record<string, SortOrder>)
     .limit(limit)
     .populate({ path: "reported_by", select: "employee_name employee_id" })
